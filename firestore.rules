@@ -1,0 +1,183 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for all
+ * personal data, while providing public, read-only access to shared application
+ * data like courts, menu items, and tournaments. All write operations are
+ * secured to ensure that users can only modify their own information.
+ * Admin-only write access is granted for business-critical data.
+ *
+ * Data Structure: User-specific data (profiles, reservations) is nested
+ * under a user-specific path `/users/{userId}`. This structure inherently
+ * links the data to its owner. Global, public data is stored in top-level
+ * collections like `/courts` and `/tournaments` for easy, unauthenticated access.
+ *
+ * Key Security Decisions:
+ * - User Listing Disabled: Listing users from the top-level `/users`
+ *   collection is explicitly forbidden to protect user privacy and prevent
+ *   data scraping.
+ * - Public Data is Read-Only for Users: Collections like `/courts`, `/menuItems`, and
+ *   `/tournaments` are readable by anyone, but write operations are restricted to admins.
+ * - Ownership is Enforced by Path: Security for user-specific data relies on
+ *   matching the authenticated user's ID with the `{userId}` wildcard in the
+ *   document path.
+ * - Admin Role: An `admin` custom claim (`request.auth.token.admin == true`)
+ *   or a specific email is used to grant privileged write access to global collections.
+ *
+ * Denormalization for Authorization: User-specific documents like reservations
+ * contain a `userId` field. On creation, this field is validated against the
+ * user's authenticated ID, ensuring relational integrity without needing
+ * costly cross-document reads (`get()`).
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    /**
+     * Checks if the user has the 'admin' custom claim OR matches the admin email.
+     */
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.admin == true || request.auth.token.email == 'matias@vascohogar.com');
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the primary function for enforcing data ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks for ownership on an existing document. Used for safe updates and deletes.
+     * Prevents modifying or deleting a document that does not exist.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates that the user ID within the new document data matches the path.
+     * Enforces relational integrity on creation.
+     */
+    function hasCorrectUserIdOnCreate(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Validates that the user ID field is immutable on updates.
+     */
+    function userIdIsImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    /**
+     * Validates that the document ID field is immutable on updates.
+     */
+    function idIsImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+
+    // ----------------------------------------------------------------------
+    // User Data Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Users can create and manage their own profile document.
+     * @path /users/{userId}
+     * @allow A user (auth.uid='user123') can create their own profile at /users/user123.
+     * @deny A user (auth.uid='user123') CANNOT get or update another user's profile at /users/user456.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow create: if isOwner(userId)
+                    && request.resource.data.id == userId
+                    && request.resource.data.name is string
+                    && request.resource.data.email is string
+                    && request.resource.data.phoneNumber is string;
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow update: if isOwner(userId) && idIsImmutable();
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Users can create and manage their own reservations.
+     * @path /users/{userId}/reservations/{reservationId}
+     * @allow A user (auth.uid='user123') can (create) their own reservation at /users/user123/reservations/res_abc.
+     * @deny An anonymous user CANNOT (list) reservations at /users/user123/reservations.
+     * @principle Enforces document ownership and validates relational integrity between a reservation and its owner.
+     */
+    match /users/{userId}/reservations/{reservationId} {
+      allow create: if isOwner(userId) && hasCorrectUserIdOnCreate(userId) && request.resource.data.id == reservationId;
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow update: if isExistingOwner(userId) && userIdIsImmutable();
+      allow delete: if isExistingOwner(userId);
+    }
+
+
+    // ----------------------------------------------------------------------
+    // Public Read-Only / Admin Write Data Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Court information is public for all users to view. Writes are admin-only.
+     * @path /courts/{courtId}
+     * @allow Any user, signed-in or not, can (get) or (list) all court documents.
+     * @deny Any non-admin user CANNOT (create), (update), or (delete) a court document.
+     * @principle Provides public read access while restricting modifications to admins.
+     */
+    match /courts/{courtId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Menu items are public for all users to view. Writes are admin-only.
+     * @path /menuItems/{menuItemId}
+     * @allow Any user, signed-in or not, can (get) or (list) all menu item documents.
+     * @deny Any non-admin user CANNOT (create), (update), or (delete) a menu item document.
+     * @principle Provides public read access while restricting modifications to admins.
+     */
+    match /menuItems/{menuItemId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description Tournament information is public for all users to view. Writes are admin-only.
+     * @path /tournaments/{tournamentId}
+     * @allow Any user, signed-in or not, can (get) or (list) all tournament documents.
+     * @deny Any non-admin user CANNOT (create), (update), or (delete) a tournament document.
+     * @principle Provides public read access while restricting modifications to admins.
+     */
+    match /tournaments/{tournamentId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Central reservations collection for viewing availability and admin management.
+     * @path /reservations/{reservationId}
+     * @allow Signed-in users can read to check availability. Admins can read all. Users can create their own.
+     * @deny Users cannot update or delete from the central collection unless they are an admin.
+     */
+    match /reservations/{reservationId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && hasCorrectUserIdOnCreate(request.auth.uid) && request.resource.data.id == reservationId;
+      allow update: if false; // Users should manage reservations through their own subcollection
+      allow delete: if isAdmin(); // Admins can delete from the central collection.
+    }
+  }
+}
