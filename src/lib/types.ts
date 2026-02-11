@@ -19,6 +19,12 @@ export interface Cabinet {
   pieces: Piece[];
 }
 
+export interface CabinetComponent {
+  id: string;
+  type: 'drawer' | 'door';
+  height: number;
+}
+
 export interface PlacedCabinet {
   instanceId: string;
   cabinetId: string;
@@ -27,4 +33,5 @@ export interface PlacedCabinet {
   width: number;
   height: number;
   depth: number;
+  components: CabinetComponent[];
 }

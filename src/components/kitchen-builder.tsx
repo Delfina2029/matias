@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { PlacedCabinet } from '@/lib/types';
+import type { PlacedCabinet, CabinetComponent } from '@/lib/types';
 import { CabinetSelector } from './cabinet-selector';
 import { KitchenLayout } from './kitchen-layout';
 import { CuttingListPanel } from './cutting-list-panel';
@@ -16,6 +16,15 @@ export function KitchenBuilder() {
     const cabinetInfo = cabinetData.find((c) => c.id === cabinetId);
     if (!cabinetInfo) return;
 
+    // Infer default components from pieces
+    const defaultComponents: CabinetComponent[] = cabinetInfo.pieces
+      .filter(p => p.name.toLowerCase().includes('puerta'))
+      .map((p, i) => ({
+        id: `comp_${Date.now()}_${Math.random()}_${i}`,
+        type: 'door',
+        height: p.height
+      }));
+
     const newCabinet: PlacedCabinet = {
       cabinetId,
       instanceId: `cab_${Date.now()}_${Math.random()}`,
@@ -24,6 +33,7 @@ export function KitchenBuilder() {
       width: cabinetInfo.width,
       height: cabinetInfo.height,
       depth: cabinetInfo.depth,
+      components: defaultComponents,
     };
     setPlacedCabinets((prev) => [...prev, newCabinet]);
   };

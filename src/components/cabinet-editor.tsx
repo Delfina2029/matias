@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import type { PlacedCabinet } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import type { PlacedCabinet, CabinetComponent } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Archive, PlusSquare } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 type CabinetEditorProps = {
@@ -29,7 +29,20 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     height: cabinet.height,
     depth: cabinet.depth,
   });
+  const [components, setComponents] = useState<CabinetComponent[]>(cabinet.components || []);
+  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
+
   const { toast } = useToast();
+
+  useEffect(() => {
+    setDimensions({
+        width: cabinet.width,
+        height: cabinet.height,
+        depth: cabinet.depth,
+    });
+    setComponents(cabinet.components || []);
+    setSelectedComponentId(null);
+  }, [cabinet]);
 
   const handleDimensionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -37,84 +50,140 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
   };
 
   const handleSave = () => {
-    onUpdate({ ...cabinet, ...dimensions });
+    onUpdate({ ...cabinet, ...dimensions, components });
     toast({
       title: 'Gabinete Actualizado',
-      description: 'Las dimensiones del gabinete han sido guardadas.',
+      description: 'Las dimensiones y componentes del gabinete han sido guardados.',
     });
   };
-  
-  const handleComingSoon = () => {
-    toast({
-        title: '¡Próximamente!',
-        description: 'Esta función está en desarrollo.',
-    });
+
+  const handleAddAnotherDrawer = () => {
+      const newDrawer: CabinetComponent = {
+          id: `comp_${Date.now()}_${Math.random()}`,
+          type: 'drawer',
+          height: 180,
+      }
+      setComponents(prev => [...prev, newDrawer]);
   }
+
+  const handleUpdateComponentHeight = (id: string, newHeight: number) => {
+    setComponents(prev => prev.map(c => c.id === id ? { ...c, height: newHeight } : c));
+  };
+
+  const handleRemoveComponent = (id: string) => {
+    setComponents(prev => prev.filter(c => c.id !== id));
+    if (selectedComponentId === id) {
+        setSelectedComponentId(null);
+    }
+  };
+  
+  const totalComponentsHeight = components.reduce((sum, c) => sum + c.height, 0);
+  const remainingHeight = dimensions.height - totalComponentsHeight;
+
+  const selectedComponent = components.find(c => c.id === selectedComponentId);
+
 
   return (
     <Dialog open={!!cabinet} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Editar Gabinete</DialogTitle>
           <DialogDescription>
-            Modifica las dimensiones y propiedades del gabinete. Nota: cambiar las dimensiones aún no actualiza la lista de corte.
+            Modifica las dimensiones y componentes del gabinete. Los cambios en componentes aún no afectan la lista de corte.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="width" className="text-right">
-              Ancho
-            </Label>
-            <Input
-              id="width"
-              name="width"
-              type="number"
-              value={dimensions.width}
-              onChange={handleDimensionChange}
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="height" className="text-right">
-              Alto
-            </Label>
-            <Input
-              id="height"
-              name="height"
-              type="number"
-              value={dimensions.height}
-              onChange={handleDimensionChange}
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="depth" className="text-right">
-              Profundidad
-            </Label>
-            <Input
-              id="depth"
-              name="depth"
-              type="number"
-              value={dimensions.depth}
-              onChange={handleDimensionChange}
-              className="col-span-3"
-            />
-          </div>
+            <div className="grid grid-cols-3 gap-4">
+                <div>
+                    <Label htmlFor="width">Ancho (mm)</Label>
+                    <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
+                </div>
+                <div>
+                    <Label htmlFor="height">Alto (mm)</Label>
+                    <Input id="height" name="height" type="number" value={dimensions.height} onChange={handleDimensionChange} />
+                </div>
+                <div>
+                    <Label htmlFor="depth">Profundidad (mm)</Label>
+                    <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} />
+                </div>
+            </div>
         </div>
         
         <Separator />
 
         <div className="space-y-4">
             <h4 className="font-medium text-center">Personalizar Componentes</h4>
-            <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-20 flex-col gap-2" onClick={handleComingSoon}>
-                    <Archive className="w-6 h-6" />
-                    <span>Añadir Cajones</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex-col gap-2" onClick={handleComingSoon}>
-                    <PlusSquare className="w-6 h-6" />
-                    <span>Cambiar Puertas</span>
-                </Button>
+            <div className="grid grid-cols-2 gap-6">
+                {/* Visual Preview */}
+                <div className="relative bg-secondary/30 rounded-md p-1 border-2 border-dashed flex flex-col justify-end" style={{ height: 400 }}>
+                    <div className="w-full h-full flex flex-col-reverse gap-1">
+                        {components.map(comp => {
+                            const compHeightPercentage = (comp.height / dimensions.height) * 100;
+                            return (
+                                <div 
+                                    key={comp.id}
+                                    onClick={() => setSelectedComponentId(comp.id)}
+                                    className={`relative w-full bg-primary/20 border border-primary rounded-sm flex items-center justify-center cursor-pointer hover:bg-primary/30 transition-all ${selectedComponentId === comp.id ? 'ring-2 ring-accent z-10' : ''}`}
+                                    style={{ height: `${compHeightPercentage}%` }}
+                                >
+                                    <span className="text-xs font-medium text-primary-foreground/80 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                {/* Controls */}
+                <div className="space-y-4">
+                    <div>
+                        <h5 className="font-semibold mb-2">Configuración Rápida</h5>
+                        <div className="grid grid-cols-2 gap-2">
+                             <Button variant="outline" onClick={() => { setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: dimensions.height }]); setSelectedComponentId(null);}}>
+                                <Plus className="mr-2 h-4 w-4" /> 1 Puerta
+                            </Button>
+                            <Button variant="outline" onClick={() => { setComponents([{ id: `comp_${Date.now()}`, type: 'drawer', height: 180 }]); setSelectedComponentId(null);}}>
+                                <Plus className="mr-2 h-4 w-4" /> Cajones
+                            </Button>
+                        </div>
+                    </div>
+
+                    {components.length > 0 && components.every(c => c.type === 'drawer') && (
+                        <Button variant="outline" size="sm" className="w-full" onClick={handleAddAnotherDrawer}>Añadir otro cajón</Button>
+                    )}
+                   
+                    <Separator />
+                    
+                    {selectedComponent ? (
+                        <div className="space-y-3 p-3 border rounded-md bg-background animate-in fade-in-50">
+                            <div className="flex justify-between items-center">
+                                <h5 className="font-medium">Editar Componente</h5>
+                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveComponent(selectedComponent.id)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="comp-height">Alto (mm)</Label>
+                                <Input 
+                                    id="comp-height"
+                                    type="number"
+                                    value={selectedComponent.height}
+                                    onChange={(e) => handleUpdateComponentHeight(selectedComponent.id, Number(e.target.value))}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center text-sm text-muted-foreground p-4 flex items-center justify-center h-full">
+                            <p>Selecciona un componente de la izquierda para editar sus medidas.</p>
+                        </div>
+                    )}
+
+                    {components.length > 0 && (
+                        <div className="text-xs text-muted-foreground space-y-1 pt-2">
+                            <div className="flex justify-between"><span>Suma de alturas:</span> <span>{totalComponentsHeight}mm</span></div>
+                            <div className={`flex justify-between font-medium ${remainingHeight < 0 ? 'text-destructive' : ''}`}><span>Espacio restante:</span> <span>{remainingHeight}mm</span></div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
 
