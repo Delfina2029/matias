@@ -67,7 +67,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
       });
 
       // 2. Drawer Box (Cajón Interior)
-      const drawerBoxHeight = Math.min(component.height - 40, 150); // Box is shorter than the front
+      const drawerBoxHeight = Math.min(component.height - 40, 200); // Box is shorter than the front
       const drawerBoxWidth = interiorWidth - 26; // Space for slides (13mm each side)
       const drawerBoxDepth = depth - 30; // Shorter than cabinet depth
 
