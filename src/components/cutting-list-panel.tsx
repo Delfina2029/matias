@@ -26,7 +26,7 @@ export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
       const cabinet = cabinetData.find((c) => c.id === pc.cabinetId);
       if (cabinet) {
         cabinet.pieces.forEach((piece) => {
-          const key = `${piece.width}x${piece.height}x${piece.material}`;
+          const key = `${piece.name}|${piece.width}|${piece.height}|${piece.material}`;
           const existing = pieceMap.get(key);
           if (existing) {
             existing.quantity += piece.quantity;
@@ -67,6 +67,7 @@ export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Cant</TableHead>
+                    <TableHead>Pieza</TableHead>
                     <TableHead>Dimensiones (AnxAl)</TableHead>
                     <TableHead>Material</TableHead>
                   </TableRow>
@@ -75,6 +76,7 @@ export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
                   {aggregatedPieces.map((piece, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{piece.quantity}</TableCell>
+                      <TableCell>{piece.name}</TableCell>
                       <TableCell>{`${piece.width} x ${piece.height} mm`}</TableCell>
                       <TableCell>{piece.material}</TableCell>
                     </TableRow>
