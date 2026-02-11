@@ -123,12 +123,15 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     const drawerBoxDepth = depth - 30;
     const drawerSizeLabel = drawerBoxHeight <= 150 ? 'Chico' : 'Grande';
     
-    const frontHeight = component.height - 4;
+    let frontHeight = component.height - 4;
     const frontName = component.handle === 'j-profile' ? 'Frente de Cajón (Perfil J)' : 'Frente de Cajón';
+    if (component.handle === 'j-profile') {
+        frontHeight -= 26.8;
+    }
 
     pieces.push({
       name: frontName,
-      dimensions: `${width - 4} x ${frontHeight} mm`,
+      dimensions: `${width - 4} x ${frontHeight.toFixed(1)} mm`,
       quantity: 1,
     });
     pieces.push({

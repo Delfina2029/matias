@@ -30,9 +30,9 @@ export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
       const pieces = generatePiecesForCabinet(pc);
       
       pieces.forEach((piece) => {
-        // Round dimensions to avoid floating point issues creating many unique parts
-        const roundedWidth = Math.round(piece.width);
-        const roundedHeight = Math.round(piece.height);
+        // Round dimensions to one decimal to avoid floating point issues creating many unique parts
+        const roundedWidth = Math.round(piece.width * 10) / 10;
+        const roundedHeight = Math.round(piece.height * 10) / 10;
         const key = `${piece.name}|${roundedWidth}|${roundedHeight}|${piece.material}`;
         
         const existing = pieceMap.get(key);
