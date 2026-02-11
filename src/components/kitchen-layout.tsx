@@ -46,9 +46,10 @@ function Cabinet3D({
   const height = cabinetInfo.height * scale;
   const depth = cabinetInfo.depth * scale;
   
-  const layoutScale = 0.05;
-  const posX = placedCabinet.x * layoutScale - (1200 * layoutScale / 2) + width / 2;
-  const posZ = placedCabinet.y * layoutScale - (700 * layoutScale / 2) + depth / 2;
+  // Map 2D pixels to 3D world units
+  const layoutScale = 0.04;
+  const posX = placedCabinet.x * layoutScale + width / 2;
+  const posZ = placedCabinet.y * layoutScale + depth / 2;
 
 
   return (
@@ -76,67 +77,68 @@ function Cabinet3D({
 }
 
 function View3D({ placedCabinets }: { placedCabinets: PlacedCabinet[] }) {
-    const floorSize = 60;
+    const layoutSize = 60; // Represents the size of the kitchen area in 3D units
     const wallHeight = 15;
     const [selectedCabinet, setSelectedCabinet] = useState<string | null>(null);
 
     return (
         <div className="flex-1 relative">
-            <Canvas shadows camera={{ position: [8, 6, 8], fov: 50 }} onClick={() => setSelectedCabinet(null)}>
-            <ambientLight intensity={0.8} />
-            <directionalLight 
-                castShadow
-                position={[10, 20, 5]}
-                intensity={1.5}
-                shadow-mapSize-width={2048}
-                shadow-mapSize-height={2048}
-                shadow-camera-far={50}
-                shadow-camera-left={-25}
-                shadow-camera-right={25}
-                shadow-camera-top={25}
-                shadow-camera-bottom={-25}
-            />
-            
-            {/* Floor */}
-            <Plane args={[floorSize, floorSize]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-                <meshStandardMaterial color="#d1b7a3" roughness={0.7} />
-            </Plane>
-            
-            {/* Walls */}
-            <Plane args={[floorSize, wallHeight]} rotation={[0, 0, 0]} position={[0, wallHeight/2, -floorSize/2]} receiveShadow>
-                <meshStandardMaterial color="#e9ecef" />
-            </Plane>
-            <Plane args={[floorSize, wallHeight]} rotation={[0, Math.PI / 2, 0]} position={[-floorSize/2, wallHeight/2, 0]} receiveShadow>
-                <meshStandardMaterial color="#e9ecef" />
-            </Plane>
-            
-            <Grid3D
-                position={[0, 0.01, 0]}
-                args={[100, 100]}
-                cellSize={0.5}
-                cellThickness={1}
-                cellColor="#cccccc"
-                sectionSize={1}
-                sectionThickness={1.5}
-                sectionColor="#999999"
-                fadeDistance={50}
-                fadeStrength={1}
-                infiniteGrid
-            />
+            <Canvas 
+              shadows 
+              camera={{ position: [layoutSize * 0.7, 12, layoutSize * 0.7], fov: 50 }} 
+              onPointerMissed={() => setSelectedCabinet(null)}
+            >
+              <ambientLight intensity={0.8} />
+              <directionalLight 
+                  castShadow
+                  position={[layoutSize * 0.25, 20, layoutSize * 0.25]}
+                  intensity={1.5}
+                  shadow-mapSize-width={2048}
+                  shadow-mapSize-height={2048}
+                  shadow-camera-far={70}
+                  shadow-camera-left={-35}
+                  shadow-camera-right={35}
+                  shadow-camera-top={35}
+                  shadow-camera-bottom={-35}
+              />
+              
+              {/* Floor */}
+              <Plane args={[layoutSize, layoutSize]} rotation={[-Math.PI / 2, 0, 0]} position={[layoutSize/2, 0, layoutSize/2]} receiveShadow>
+                  <meshStandardMaterial color="#d1b7a3" roughness={0.7} />
+              </Plane>
+              
+              {/* Walls in a corner */}
+              <Plane args={[layoutSize, wallHeight]} rotation={[0, 0, 0]} position={[layoutSize/2, wallHeight/2, 0]} receiveShadow>
+                  <meshStandardMaterial color="#e9ecef" />
+              </Plane>
+              <Plane args={[layoutSize, wallHeight]} rotation={[0, Math.PI / 2, 0]} position={[0, wallHeight/2, layoutSize/2]} receiveShadow>
+                  <meshStandardMaterial color="#e9ecef" />
+              </Plane>
+              
+              <Grid3D
+                  position={[0, 0.01, 0]}
+                  args={[100, 100]}
+                  sectionColor="#999999"
+                  cellColor="#cccccc"
+                  cellThickness={1}
+                  sectionThickness={1.5}
+                  fadeDistance={60}
+                  infiniteGrid
+              />
 
-            {placedCabinets.map((placed) => (
-                <Cabinet3D 
-                  key={placed.instanceId} 
-                  placedCabinet={placed}
-                  isSelected={selectedCabinet === placed.instanceId}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedCabinet(placed.instanceId);
-                  }}
-                />
-            ))}
-            
-            <OrbitControls makeDefault minDistance={0.5} maxDistance={30} />
+              {placedCabinets.map((placed) => (
+                  <Cabinet3D 
+                    key={placed.instanceId} 
+                    placedCabinet={placed}
+                    isSelected={selectedCabinet === placed.instanceId}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCabinet(placed.instanceId);
+                    }}
+                  />
+              ))}
+              
+              <OrbitControls makeDefault minDistance={2} maxDistance={50} target={[layoutSize/3, 2, layoutSize/3]} />
             </Canvas>
             <div className="absolute bottom-2 right-2 bg-background/80 p-2 rounded-md text-xs text-muted-foreground">
                 Use mouse to orbit, zoom, and pan. Click a cabinet to select.
