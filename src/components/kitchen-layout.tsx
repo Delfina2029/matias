@@ -163,6 +163,8 @@ function View2D({
         if ((e.target as HTMLElement).closest('.remove-btn')) {
             return;
         }
+        e.preventDefault();
+        e.stopPropagation();
 
         const cabinetElement = (e.currentTarget as HTMLDivElement);
         onSelectCabinet(instanceId);
@@ -174,8 +176,8 @@ function View2D({
             y: e.clientY - rect.top,
         };
     };
-
-    const handleMouseMove = (e: React.MouseEvent) => {
+    
+    const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!dragging || !layoutRef.current) return;
         
         const layoutRect = layoutRef.current.getBoundingClientRect();
@@ -188,19 +190,32 @@ function View2D({
                 cab.instanceId === dragging ? { ...cab, x: Math.max(0, newX), y: Math.max(0, newY) } : cab
             )
         );
-    };
+    }, [dragging, onUpdateLayout]);
 
-    const handleMouseUp = () => {
+    const handleMouseUp = useCallback(() => {
         setDragging(null);
-    };
+    }, []);
+
+    useEffect(() => {
+        if (dragging) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        } else {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [dragging, handleMouseMove, handleMouseUp]);
+
 
     return (
         <div 
             className="flex-1 relative overflow-auto bg-muted/10 p-4" 
             ref={layoutRef}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
         >
              <div className="relative w-[3000px] h-[2000px]">
                  {placedCabinets.map((placed) => {
