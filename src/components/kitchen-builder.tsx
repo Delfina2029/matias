@@ -28,6 +28,7 @@ export function KitchenBuilder() {
     const newCabinet: PlacedCabinet = {
       cabinetId,
       instanceId: `cab_${Date.now()}_${Math.random()}`,
+      type: cabinetInfo.type,
       x: 20,
       y: 20,
       width: cabinetInfo.width,

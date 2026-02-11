@@ -1,21 +1,25 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { PlacedCabinet, Piece } from '@/lib/types';
-import { cabinetData } from '@/lib/cabinets';
+import type { PlacedCabinet } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { OptimizerForm } from './optimizer-form';
 import { Sparkles } from 'lucide-react';
+import { generatePiecesForCabinet } from '@/lib/cutting-logic';
 
 type CuttingListPanelProps = {
   placedCabinets: PlacedCabinet[];
 };
 
-type AggregatedPiece = Piece & {
-  from: string[];
+type AggregatedPiece = {
+  name: string;
+  width: number;
+  height: number;
+  quantity: number;
+  material: string;
 };
 
 export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
@@ -23,21 +27,21 @@ export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
     const pieceMap = new Map<string, AggregatedPiece>();
 
     placedCabinets.forEach((pc) => {
-      const cabinet = cabinetData.find((c) => c.id === pc.cabinetId);
-      if (cabinet) {
-        cabinet.pieces.forEach((piece) => {
-          const key = `${piece.name}|${piece.width}|${piece.height}|${piece.material}`;
-          const existing = pieceMap.get(key);
-          if (existing) {
-            existing.quantity += piece.quantity;
-            if (!existing.from.includes(cabinet.name)) {
-              existing.from.push(cabinet.name);
-            }
-          } else {
-            pieceMap.set(key, { ...piece, from: [cabinet.name] });
-          }
-        });
-      }
+      const pieces = generatePiecesForCabinet(pc);
+      
+      pieces.forEach((piece) => {
+        // Round dimensions to avoid floating point issues creating many unique parts
+        const roundedWidth = Math.round(piece.width);
+        const roundedHeight = Math.round(piece.height);
+        const key = `${piece.name}|${roundedWidth}|${roundedHeight}|${piece.material}`;
+        
+        const existing = pieceMap.get(key);
+        if (existing) {
+          existing.quantity += piece.quantity;
+        } else {
+          pieceMap.set(key, { ...piece, width: roundedWidth, height: roundedHeight });
+        }
+      });
     });
 
     const piecesArray = Array.from(pieceMap.values());

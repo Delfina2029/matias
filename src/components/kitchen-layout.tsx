@@ -27,8 +27,6 @@ type KitchenLayoutProps = {
   selectedCabinetId?: string;
 };
 
-const GRID_SIZE = 20;
-
 // --- 3D Components ---
 
 function Cabinet3D({ 
@@ -149,136 +147,69 @@ function View3D({ placedCabinets, selectedCabinetId, onSelectCabinet }: { placed
 }
 
 // --- 2D Components ---
-
-function View2D({ placedCabinets, onUpdateLayout, onRemoveCabinet, onSelectCabinet, selectedCabinetId }: Pick<KitchenLayoutProps, 'placedCabinets' | 'onUpdateLayout' | 'onRemoveCabinet' | 'onSelectCabinet' | 'selectedCabinetId'>) {
-    const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number; } | null>(null);
+function View2D({ placedCabinets, onSelectCabinet, onRemoveCabinet, selectedCabinetId }: Pick<KitchenLayoutProps, 'placedCabinets' | 'onSelectCabinet' | 'onRemoveCabinet' | 'selectedCabinetId'>) {
     const layoutRef = useRef<HTMLDivElement>(null);
-    const dragStartPos = useRef<{ x: number, y: number } | null>(null);
-  
-    const handleMouseDown = (
-      e: React.MouseEvent<HTMLDivElement>,
-      id: string
-    ) => {
-      if ((e.target as HTMLElement).closest('.remove-btn')) return;
+    const scaleFactor = 6;
 
-      dragStartPos.current = { x: e.clientX, y: e.clientY };
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      setDragging({
-        id,
-        offsetX: e.clientX - rect.left,
-        offsetY: e.clientY - rect.top,
-      });
-      e.preventDefault();
-    };
-  
-    const handleMouseMove = useCallback((e: MouseEvent) => {
-      if (!dragging || !layoutRef.current) return;
-      
-      const layoutRect = layoutRef.current.getBoundingClientRect();
-      let x = e.clientX - layoutRect.left - dragging.offsetX;
-      let y = e.clientY - layoutRect.top - dragging.offsetY;
-  
-      x = Math.round(x / GRID_SIZE) * GRID_SIZE;
-      y = Math.round(y / GRID_SIZE) * GRID_SIZE;
-      
-      const cabinet = placedCabinets.find(c => c.instanceId === dragging.id);
-      if(!cabinet) return;
-
-      const cabWidth = cabinet.width / 10;
-      const cabDepth = cabinet.depth / 10;
-
-      x = Math.max(0, Math.min(x, layoutRect.width - cabWidth));
-      y = Math.max(0, Math.min(y, layoutRect.height - cabDepth));
-  
-      onUpdateLayout((prev) =>
-        prev.map((c) => (c.instanceId === dragging.id ? { ...c, x, y } : c))
-      );
-    }, [dragging, onUpdateLayout, placedCabinets]);
-  
-    const handleMouseUp = useCallback((e: MouseEvent) => {
-        if (dragging && dragStartPos.current) {
-            const dist = Math.sqrt(
-                Math.pow(e.clientX - dragStartPos.current.x, 2) +
-                Math.pow(e.clientY - dragStartPos.current.y, 2)
-            );
-            if (dist < 5) { // If mouse moved less than 5px, it's a click
-                onSelectCabinet(dragging.id);
-            }
-        }
-        setDragging(null);
-        dragStartPos.current = null;
-    }, [dragging, onSelectCabinet]);
-  
+    // Scroll to the end when a new cabinet is added
     useEffect(() => {
-      if (dragging) {
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-      } else {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      }
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }, [dragging, handleMouseMove, handleMouseUp]);
-    
-    const scaleFactor = 10;
+        if (layoutRef.current) {
+            layoutRef.current.scrollLeft = layoutRef.current.scrollWidth;
+        }
+    }, [placedCabinets.length]);
 
     return (
-        <div className="flex-1 p-4 relative overflow-auto" ref={layoutRef}>
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)`,
-            backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
-          }}
-        />
-        {placedCabinets.map((placed) => {
-          const cabinetInfo = cabinetData.find(c => c.id === placed.cabinetId);
-          return (
-            <div
-              key={placed.instanceId}
-              onMouseDown={(e) => handleMouseDown(e, placed.instanceId)}
-              className={cn(
-                'absolute bg-primary/20 border-2 border-primary rounded-md group transition-all duration-100 ease-in-out',
-                dragging?.id === placed.instanceId ? 'cursor-grabbing shadow-2xl z-10' : 'cursor-grab',
-                selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent'
-              )}
-              style={{
-                left: placed.x,
-                top: placed.y,
-                width: placed.width / scaleFactor,
-                height: placed.depth / scaleFactor,
-                transition: dragging?.id === placed.instanceId ? 'none' : 'all 0.2s ease',
-              }}
-            >
-              <div className="w-full h-full flex items-center justify-center p-2">
-                 <span className="text-xs text-primary-foreground/80 font-medium select-none truncate">
-                  {cabinetInfo?.name}
-                </span>
-              </div>
-              <Button
-                size="icon"
-                variant="destructive"
-                className="remove-btn absolute -top-3 -right-3 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => onRemoveCabinet(placed.instanceId)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-    )
+        <div className="flex-1 p-4 overflow-x-auto overflow-y-hidden bg-muted/10" ref={layoutRef}>
+             <div className="relative w-max h-full flex flex-row items-end gap-2">
+                 {placedCabinets.map((placed) => {
+                      return (
+                          <div
+                              key={placed.instanceId}
+                              onClick={() => onSelectCabinet(placed.instanceId)}
+                              className={cn(
+                                'relative bg-card border-2 border-primary/50 group cursor-pointer hover:border-primary transition-colors flex flex-col-reverse p-1 gap-px rounded-md',
+                                selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent'
+                              )}
+                              style={{
+                                  width: placed.width / scaleFactor,
+                                  height: placed.height / scaleFactor,
+                              }}
+                          >
+                            {/* Render components inside */}
+                            {placed.components.map(comp => {
+                                const compHeightPercentage = (comp.height / placed.height) * 100;
+                                return (
+                                    <div 
+                                        key={comp.id}
+                                        className="relative w-full bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center"
+                                        style={{ height: `${compHeightPercentage}%` }}
+                                    >
+                                        <span className="text-[9px] font-medium text-primary-foreground/70 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
+                                    </div>
+                                )
+                            })}
+
+                            <Button
+                              size="icon"
+                              variant="destructive"
+                              className="remove-btn absolute -top-3 -right-3 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                              onClick={(e) => { e.stopPropagation(); onRemoveCabinet(placed.instanceId); }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                      );
+                 })}
+             </div>
+        </div>
+    );
 }
 
 // --- Main Component ---
 export function KitchenLayout(props: KitchenLayoutProps) {
   const [is3D, setIs3D] = useState(false);
 
-  const { onClearLayout, ...rest } = props;
+  const { onClearLayout } = props;
 
   return (
     <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm">
@@ -286,7 +217,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
         <h2 className="text-lg font-headline">Diseño de Cocina</h2>
         <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-                <Label htmlFor="view-mode">2D</Label>
+                <Label htmlFor="view-mode">Alzado 2D</Label>
                 <Switch id="view-mode" checked={is3D} onCheckedChange={setIs3D} />
                 <Label htmlFor="view-mode" className="flex items-center gap-1">
                     <Cuboid className="w-4 h-4" /> 3D
@@ -306,7 +237,19 @@ export function KitchenLayout(props: KitchenLayoutProps) {
             </TooltipProvider>
         </div>
       </div>
-      {is3D ? <View3D placedCabinets={props.placedCabinets} selectedCabinetId={props.selectedCabinetId} onSelectCabinet={props.onSelectCabinet} /> : <View2D {...rest} />}
+      {is3D ? (
+        <View3D 
+            placedCabinets={props.placedCabinets} 
+            selectedCabinetId={props.selectedCabinetId} 
+            onSelectCabinet={props.onSelectCabinet} /> 
+      ) : (
+        <View2D 
+            placedCabinets={props.placedCabinets} 
+            onSelectCabinet={props.onSelectCabinet}
+            onRemoveCabinet={props.onRemoveCabinet}
+            selectedCabinetId={props.selectedCabinetId}
+        />
+      )}
     </div>
   );
 }

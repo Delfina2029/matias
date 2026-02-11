@@ -28,6 +28,7 @@ export interface CabinetComponent {
 export interface PlacedCabinet {
   instanceId: string;
   cabinetId: string;
+  type: 'base' | 'wall' | 'tall';
   x: number;
   y: number;
   width: number;
