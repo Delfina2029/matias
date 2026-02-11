@@ -159,6 +159,10 @@ function View2D({
     const [dragging, setDragging] = useState<string | null>(null);
     const dragOffset = useRef({ x: 0, y: 0 });
 
+    const isDraggingRef = useRef(false);
+    const dragStartPos = useRef({ x: 0, y: 0 });
+    const DRAG_THRESHOLD = 5;
+
     const handleMouseDown = (e: React.MouseEvent, instanceId: string) => {
         if ((e.target as HTMLElement).closest('.remove-btn')) {
             return;
@@ -166,35 +170,48 @@ function View2D({
         e.preventDefault();
         e.stopPropagation();
 
-        const cabinetElement = (e.currentTarget as HTMLDivElement);
-        onSelectCabinet(instanceId);
         setDragging(instanceId);
         
+        const cabinetElement = (e.currentTarget as HTMLDivElement);
         const rect = cabinetElement.getBoundingClientRect();
         dragOffset.current = {
             x: e.clientX - rect.left,
             y: e.clientY - rect.top,
         };
+
+        dragStartPos.current = { x: e.clientX, y: e.clientY };
+        isDraggingRef.current = false;
     };
     
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (!dragging || !layoutRef.current) return;
-        
-        const layoutRect = layoutRef.current.getBoundingClientRect();
-        
-        const newX = e.clientX - layoutRect.left + layoutRef.current.scrollLeft - dragOffset.current.x;
-        const newY = e.clientY - layoutRect.top + layoutRef.current.scrollTop - dragOffset.current.y;
-        
-        onUpdateLayout((prev) =>
-            prev.map((cab) =>
-                cab.instanceId === dragging ? { ...cab, x: Math.max(0, newX), y: Math.max(0, newY) } : cab
-            )
-        );
+
+        const dx = e.clientX - dragStartPos.current.x;
+        const dy = e.clientY - dragStartPos.current.y;
+        if (!isDraggingRef.current && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+            isDraggingRef.current = true;
+        }
+
+        if (isDraggingRef.current) {
+            const layoutRect = layoutRef.current.getBoundingClientRect();
+            
+            const newX = e.clientX - layoutRect.left + layoutRef.current.scrollLeft - dragOffset.current.x;
+            const newY = e.clientY - layoutRect.top + layoutRef.current.scrollTop - dragOffset.current.y;
+            
+            onUpdateLayout((prev) =>
+                prev.map((cab) =>
+                    cab.instanceId === dragging ? { ...cab, x: Math.max(0, newX), y: Math.max(0, newY) } : cab
+                )
+            );
+        }
     }, [dragging, onUpdateLayout]);
 
     const handleMouseUp = useCallback(() => {
+        if (dragging && !isDraggingRef.current) {
+            onSelectCabinet(dragging);
+        }
         setDragging(null);
-    }, []);
+    }, [dragging, onSelectCabinet]);
 
     useEffect(() => {
         if (dragging) {
@@ -216,6 +233,11 @@ function View2D({
         <div 
             className="flex-1 relative overflow-auto bg-muted/10 p-4" 
             ref={layoutRef}
+            onClick={(e) => {
+                if (e.target === e.currentTarget || e.target === layoutRef.current?.querySelector('.relative.w-\\[3000px\\].h-\\[2000px\\]')) {
+                    onSelectCabinet(null);
+                }
+            }}
         >
              <div className="relative w-[3000px] h-[2000px]">
                  {placedCabinets.map((placed) => {
