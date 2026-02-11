@@ -24,4 +24,7 @@ export interface PlacedCabinet {
   cabinetId: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
+  depth: number;
 }
