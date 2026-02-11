@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Box, Grid as Grid3D, Text, Plane } from '@react-three/drei';
 import type { PlacedCabinet } from '@/lib/types';
 import { cabinetData } from '@/lib/cabinets';
@@ -29,7 +29,15 @@ const GRID_SIZE = 20;
 
 // --- 3D Components ---
 
-function Cabinet3D({ placedCabinet }: { placedCabinet: PlacedCabinet }) {
+function Cabinet3D({ 
+  placedCabinet, 
+  isSelected,
+  onClick
+}: { 
+  placedCabinet: PlacedCabinet, 
+  isSelected: boolean,
+  onClick: (event: ThreeEvent<MouseEvent>) => void,
+}) {
   const cabinetInfo = cabinetData.find(c => c.id === placedCabinet.cabinetId);
   if (!cabinetInfo) return null;
 
@@ -44,9 +52,9 @@ function Cabinet3D({ placedCabinet }: { placedCabinet: PlacedCabinet }) {
 
 
   return (
-    <group position={[posX, height / 2, posZ]}>
+    <group position={[posX, height / 2, posZ]} onClick={onClick}>
       <Box args={[width, height, depth]} castShadow receiveShadow>
-        <meshStandardMaterial color="#f8f9fa" roughness={0.5} metalness={0.1} />
+        <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
       </Box>
       {cabinetInfo.type === 'base' && (
          <Box args={[width, 0.05, depth]} position={[0, height/2 + 0.025, 0]} castShadow>
@@ -70,10 +78,11 @@ function Cabinet3D({ placedCabinet }: { placedCabinet: PlacedCabinet }) {
 function View3D({ placedCabinets }: { placedCabinets: PlacedCabinet[] }) {
     const floorSize = 60;
     const wallHeight = 15;
+    const [selectedCabinet, setSelectedCabinet] = useState<string | null>(null);
 
     return (
         <div className="flex-1 relative">
-            <Canvas shadows camera={{ position: [8, 6, 8], fov: 50 }}>
+            <Canvas shadows camera={{ position: [8, 6, 8], fov: 50 }} onClick={() => setSelectedCabinet(null)}>
             <ambientLight intensity={0.8} />
             <directionalLight 
                 castShadow
@@ -116,13 +125,21 @@ function View3D({ placedCabinets }: { placedCabinets: PlacedCabinet[] }) {
             />
 
             {placedCabinets.map((placed) => (
-                <Cabinet3D key={placed.instanceId} placedCabinet={placed} />
+                <Cabinet3D 
+                  key={placed.instanceId} 
+                  placedCabinet={placed}
+                  isSelected={selectedCabinet === placed.instanceId}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCabinet(placed.instanceId);
+                  }}
+                />
             ))}
             
-            <OrbitControls makeDefault minDistance={2} maxDistance={30} />
+            <OrbitControls makeDefault minDistance={0.5} maxDistance={30} />
             </Canvas>
             <div className="absolute bottom-2 right-2 bg-background/80 p-2 rounded-md text-xs text-muted-foreground">
-                Use mouse to orbit, zoom, and pan.
+                Use mouse to orbit, zoom, and pan. Click a cabinet to select.
             </div>
       </div>
     )
