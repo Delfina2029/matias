@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { PlacedCabinet, CabinetComponent } from '@/lib/types';
 import {
   Dialog,
@@ -16,12 +16,23 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
 
 type CabinetEditorProps = {
   cabinet: PlacedCabinet;
   onUpdate: (cabinet: PlacedCabinet) => void;
   onClose: () => void;
 };
+
+const MELAMINE_THICKNESS = 18;
 
 export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps) {
   const [dimensions, setDimensions] = useState({
@@ -82,6 +93,46 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
 
   const selectedComponent = components.find(c => c.id === selectedComponentId);
 
+  const selectedDrawerPieces = useMemo(() => {
+    if (!selectedComponent || selectedComponent.type !== 'drawer') {
+      return [];
+    }
+
+    const component = selectedComponent;
+    // Use the dimensions from the state, as they might be edited
+    const { width, depth } = dimensions;
+    const pieces: {name: string, dimensions: string, quantity: number}[] = [];
+
+    const interiorWidth = width - (2 * MELAMINE_THICKNESS);
+    const drawerBoxHeight = Math.min(component.height - 40, 200);
+    const drawerBoxWidth = interiorWidth - 26;
+    const drawerBoxDepth = depth - 30;
+    const drawerSizeLabel = drawerBoxHeight <= 150 ? 'Chico' : 'Grande';
+
+    pieces.push({
+      name: 'Frente de Cajón',
+      dimensions: `${width - 4} x ${component.height - 4} mm`,
+      quantity: 1,
+    });
+    pieces.push({
+      name: `Lateral de Cajón ${drawerSizeLabel}`,
+      dimensions: `${drawerBoxDepth} x ${drawerBoxHeight} mm`,
+      quantity: 2,
+    });
+    pieces.push({
+      name: `Frente/Trasero de Cajón ${drawerSizeLabel}`,
+      dimensions: `${Math.round(drawerBoxWidth - (2*MELAMINE_THICKNESS))} x ${drawerBoxHeight} mm`,
+      quantity: 2,
+    });
+    pieces.push({
+      name: `Fondo de Cajón ${drawerSizeLabel}`,
+      dimensions: `${Math.round(drawerBoxWidth - (2*MELAMINE_THICKNESS))} x ${drawerBoxDepth} mm`,
+      quantity: 1,
+    });
+
+    return pieces;
+  }, [selectedComponent, dimensions.width, dimensions.depth, components]);
+
 
   return (
     <Dialog open={!!cabinet} onOpenChange={(open) => !open && onClose()}>
@@ -89,7 +140,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
         <DialogHeader>
           <DialogTitle>Editar Gabinete</DialogTitle>
           <DialogDescription>
-            Modifica las dimensiones y componentes del gabinete. Los cambios en componentes aún no afectan la lista de corte.
+            Modifica las dimensiones y componentes del gabinete. Los cambios se reflejarán en la lista de corte.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -162,7 +213,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                 </Button>
                             </div>
                             <div className="space-y-1">
-                                <Label htmlFor="comp-height">Alto (mm)</Label>
+                                <Label htmlFor="comp-height">Alto del Frente (mm)</Label>
                                 <Input 
                                     id="comp-height"
                                     type="number"
@@ -170,6 +221,31 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                     onChange={(e) => handleUpdateComponentHeight(selectedComponent.id, Number(e.target.value))}
                                 />
                             </div>
+
+                            {selectedComponent.type === 'drawer' && selectedDrawerPieces.length > 0 && (
+                              <div className="space-y-2 pt-2">
+                                <h6 className="text-sm font-medium">Despiece del Cajón</h6>
+                                <Table className="text-xs">
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="h-8 px-2">Cant.</TableHead>
+                                      <TableHead className="h-8 px-2">Pieza</TableHead>
+                                      <TableHead className="h-8 px-2 text-right">Dimensiones (AnxAl)</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {selectedDrawerPieces.map((piece, index) => (
+                                      <TableRow key={index}>
+                                        <TableCell className="font-medium py-1 px-2">{piece.quantity}</TableCell>
+                                        <TableCell className="py-1 px-2">{piece.name}</TableCell>
+                                        <TableCell className="text-right py-1 px-2">{piece.dimensions}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            )}
+
                         </div>
                     ) : (
                         <div className="text-center text-sm text-muted-foreground p-4 flex items-center justify-center h-full">
