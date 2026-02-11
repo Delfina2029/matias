@@ -147,30 +147,75 @@ function View3D({ placedCabinets, selectedCabinetId, onSelectCabinet }: { placed
 }
 
 // --- 2D Components ---
-function View2D({ placedCabinets, onSelectCabinet, onRemoveCabinet, selectedCabinetId }: Pick<KitchenLayoutProps, 'placedCabinets' | 'onSelectCabinet' | 'onRemoveCabinet' | 'selectedCabinetId'>) {
+function View2D({ 
+    placedCabinets, 
+    onUpdateLayout, 
+    onSelectCabinet, 
+    onRemoveCabinet, 
+    selectedCabinetId 
+}: Pick<KitchenLayoutProps, 'placedCabinets' | 'onUpdateLayout' | 'onSelectCabinet' | 'onRemoveCabinet' | 'selectedCabinetId'>) {
     const layoutRef = useRef<HTMLDivElement>(null);
     const scaleFactor = 6;
+    const [dragging, setDragging] = useState<string | null>(null);
+    const dragOffset = useRef({ x: 0, y: 0 });
 
-    // Scroll to the end when a new cabinet is added
-    useEffect(() => {
-        if (layoutRef.current) {
-            layoutRef.current.scrollLeft = layoutRef.current.scrollWidth;
+    const handleMouseDown = (e: React.MouseEvent, instanceId: string) => {
+        if ((e.target as HTMLElement).closest('.remove-btn')) {
+            return;
         }
-    }, [placedCabinets.length]);
+
+        const cabinetElement = (e.currentTarget as HTMLDivElement);
+        onSelectCabinet(instanceId);
+        setDragging(instanceId);
+        
+        const rect = cabinetElement.getBoundingClientRect();
+        dragOffset.current = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        };
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!dragging || !layoutRef.current) return;
+        
+        const layoutRect = layoutRef.current.getBoundingClientRect();
+        
+        const newX = e.clientX - layoutRect.left + layoutRef.current.scrollLeft - dragOffset.current.x;
+        const newY = e.clientY - layoutRect.top + layoutRef.current.scrollTop - dragOffset.current.y;
+        
+        onUpdateLayout((prev) =>
+            prev.map((cab) =>
+                cab.instanceId === dragging ? { ...cab, x: Math.max(0, newX), y: Math.max(0, newY) } : cab
+            )
+        );
+    };
+
+    const handleMouseUp = () => {
+        setDragging(null);
+    };
 
     return (
-        <div className="flex-1 p-4 overflow-x-auto overflow-y-hidden bg-muted/10" ref={layoutRef}>
-             <div className="relative w-max h-full flex flex-row items-end gap-2">
+        <div 
+            className="flex-1 relative overflow-auto bg-muted/10 p-4" 
+            ref={layoutRef}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+        >
+             <div className="relative w-[3000px] h-[2000px]">
                  {placedCabinets.map((placed) => {
                       return (
                           <div
                               key={placed.instanceId}
-                              onClick={() => onSelectCabinet(placed.instanceId)}
+                              onMouseDown={(e) => handleMouseDown(e, placed.instanceId)}
                               className={cn(
-                                'relative bg-card border-2 border-primary/50 group cursor-pointer hover:border-primary transition-colors flex flex-col-reverse p-1 gap-px rounded-md',
-                                selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent'
+                                'absolute bg-card border-2 border-primary/50 group cursor-grab active:cursor-grabbing hover:border-primary transition-colors flex flex-col-reverse p-1 gap-px rounded-md',
+                                selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent z-10',
+                                dragging === placed.instanceId && 'shadow-lg z-20'
                               )}
                               style={{
+                                  left: placed.x,
+                                  top: placed.y,
                                   width: placed.width / scaleFactor,
                                   height: placed.height / scaleFactor,
                               }}
@@ -245,6 +290,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
       ) : (
         <View2D 
             placedCabinets={props.placedCabinets} 
+            onUpdateLayout={props.onUpdateLayout}
             onSelectCabinet={props.onSelectCabinet}
             onRemoveCabinet={props.onRemoveCabinet}
             selectedCabinetId={props.selectedCabinetId}
