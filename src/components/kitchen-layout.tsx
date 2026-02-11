@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Box, Grid as Grid3D, Text } from '@react-three/drei';
+import { OrbitControls, Box, Grid as Grid3D, Text, Plane } from '@react-three/drei';
 import type { PlacedCabinet } from '@/lib/types';
 import { cabinetData } from '@/lib/cabinets';
 import { Button } from './ui/button';
@@ -33,12 +33,11 @@ function Cabinet3D({ placedCabinet }: { placedCabinet: PlacedCabinet }) {
   const cabinetInfo = cabinetData.find(c => c.id === placedCabinet.cabinetId);
   if (!cabinetInfo) return null;
 
-  const scale = 0.005; // smaller scale for better camera handling
+  const scale = 0.005;
   const width = cabinetInfo.width * scale;
   const height = cabinetInfo.height * scale;
   const depth = cabinetInfo.depth * scale;
   
-  // position from top-left 2d grid to center-based 3d grid
   const layoutScale = 0.05;
   const posX = placedCabinet.x * layoutScale - (1200 * layoutScale / 2) + width / 2;
   const posZ = placedCabinet.y * layoutScale - (700 * layoutScale / 2) + depth / 2;
@@ -46,15 +45,21 @@ function Cabinet3D({ placedCabinet }: { placedCabinet: PlacedCabinet }) {
 
   return (
     <group position={[posX, height / 2, posZ]}>
-      <Box args={[width, height, depth]}>
-        <meshStandardMaterial color="#fdfdfd" />
+      <Box args={[width, height, depth]} castShadow receiveShadow>
+        <meshStandardMaterial color="#f8f9fa" roughness={0.5} metalness={0.1} />
       </Box>
+      {cabinetInfo.type === 'base' && (
+         <Box args={[width, 0.05, depth]} position={[0, height/2 + 0.025, 0]} castShadow>
+            <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
+         </Box>
+      )}
       <Text
-        position={[0, height / 2 + 0.2, 0]}
-        fontSize={0.25}
+        position={[0, height / 2 + 0.3, 0]}
+        fontSize={0.2}
         color="black"
         anchorX="center"
         anchorY="middle"
+        visible={false}
       >
         {cabinetInfo.name}
       </Text>
@@ -63,11 +68,38 @@ function Cabinet3D({ placedCabinet }: { placedCabinet: PlacedCabinet }) {
 }
 
 function View3D({ placedCabinets }: { placedCabinets: PlacedCabinet[] }) {
+    const floorSize = 60;
+    const wallHeight = 15;
+
     return (
         <div className="flex-1 relative">
-            <Canvas camera={{ position: [8, 8, 8], fov: 50 }}>
-            <ambientLight intensity={1.5} />
-            <pointLight position={[10, 10, 10]} intensity={0.5}/>
+            <Canvas shadows camera={{ position: [8, 6, 8], fov: 50 }}>
+            <ambientLight intensity={0.8} />
+            <directionalLight 
+                castShadow
+                position={[10, 20, 5]}
+                intensity={1.5}
+                shadow-mapSize-width={2048}
+                shadow-mapSize-height={2048}
+                shadow-camera-far={50}
+                shadow-camera-left={-25}
+                shadow-camera-right={25}
+                shadow-camera-top={25}
+                shadow-camera-bottom={-25}
+            />
+            
+            {/* Floor */}
+            <Plane args={[floorSize, floorSize]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+                <meshStandardMaterial color="#d1b7a3" roughness={0.7} />
+            </Plane>
+            
+            {/* Walls */}
+            <Plane args={[floorSize, wallHeight]} rotation={[0, 0, 0]} position={[0, wallHeight/2, -floorSize/2]} receiveShadow>
+                <meshStandardMaterial color="#e9ecef" />
+            </Plane>
+            <Plane args={[floorSize, wallHeight]} rotation={[0, Math.PI / 2, 0]} position={[-floorSize/2, wallHeight/2, 0]} receiveShadow>
+                <meshStandardMaterial color="#e9ecef" />
+            </Plane>
             
             <Grid3D
                 position={[0, 0.01, 0]}
@@ -87,7 +119,7 @@ function View3D({ placedCabinets }: { placedCabinets: PlacedCabinet[] }) {
                 <Cabinet3D key={placed.instanceId} placedCabinet={placed} />
             ))}
             
-            <OrbitControls makeDefault />
+            <OrbitControls makeDefault minDistance={2} maxDistance={30} />
             </Canvas>
             <div className="absolute bottom-2 right-2 bg-background/80 p-2 rounded-md text-xs text-muted-foreground">
                 Use mouse to orbit, zoom, and pan.
