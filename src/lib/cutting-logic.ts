@@ -70,13 +70,15 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
       const drawerBoxHeight = Math.min(component.height - 40, 200); // Box is shorter than the front
       const drawerBoxWidth = interiorWidth - 26; // Space for slides (13mm each side)
       const drawerBoxDepth = depth - 30; // Shorter than cabinet depth
+      
+      const drawerSizeLabel = drawerBoxHeight <= 150 ? 'Chico' : 'Grande';
 
       // Drawer box sides (2)
-      pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+      pieces.push({ name: `Lateral de Cajón ${drawerSizeLabel}`, width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
       // Drawer box front & back (2)
-      pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+      pieces.push({ name: `Frente/Trasero de Cajón ${drawerSizeLabel}`, width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
       // Drawer box bottom (1)
-      pieces.push({ name: 'Fondo de Cajón', width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
+      pieces.push({ name: `Fondo de Cajón ${drawerSizeLabel}`, width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
     }
   });
 
