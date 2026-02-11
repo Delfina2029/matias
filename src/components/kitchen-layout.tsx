@@ -155,7 +155,7 @@ function View2D({
     selectedCabinetId 
 }: Pick<KitchenLayoutProps, 'placedCabinets' | 'onUpdateLayout' | 'onSelectCabinet' | 'onRemoveCabinet' | 'selectedCabinetId'>) {
     const layoutRef = useRef<HTMLDivElement>(null);
-    const scaleFactor = 6;
+    const scaleFactor = 8;
     const [dragging, setDragging] = useState<string | null>(null);
     const dragOffset = useRef({ x: 0, y: 0 });
 
@@ -257,7 +257,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
   const { onClearLayout } = props;
 
   return (
-    <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm">
+    <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm min-w-0">
       <div className="p-4 border-b flex justify-between items-center">
         <h2 className="text-lg font-headline">Diseño de Cocina</h2>
         <div className="flex items-center space-x-4">
