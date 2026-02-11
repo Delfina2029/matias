@@ -6,7 +6,7 @@ import { OrbitControls, Box, Grid as Grid3D, Text } from '@react-three/drei';
 import type { PlacedCabinet } from '@/lib/types';
 import { cabinetData } from '@/lib/cabinets';
 import { Button } from './ui/button';
-import { Trash2, X, Cube } from 'lucide-react';
+import { Trash2, X, Cuboid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -229,7 +229,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
                 <Label htmlFor="view-mode">2D</Label>
                 <Switch id="view-mode" checked={is3D} onCheckedChange={setIs3D} />
                 <Label htmlFor="view-mode" className="flex items-center gap-1">
-                    <Cube className="w-4 h-4" /> 3D
+                    <Cuboid className="w-4 h-4" /> 3D
                 </Label>
             </div>
             <TooltipProvider>
