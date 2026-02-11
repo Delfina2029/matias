@@ -39,15 +39,15 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
   const handleSave = () => {
     onUpdate({ ...cabinet, ...dimensions });
     toast({
-      title: 'Cabinet Updated',
-      description: 'The cabinet dimensions have been saved.',
+      title: 'Gabinete Actualizado',
+      description: 'Las dimensiones del gabinete han sido guardadas.',
     });
   };
   
   const handleComingSoon = () => {
     toast({
-        title: 'Coming Soon!',
-        description: 'This feature is under development.',
+        title: '¡Próximamente!',
+        description: 'Esta función está en desarrollo.',
     });
   }
 
@@ -55,15 +55,15 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     <Dialog open={!!cabinet} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Cabinet</DialogTitle>
+          <DialogTitle>Editar Gabinete</DialogTitle>
           <DialogDescription>
-            Modify the dimensions and properties of the cabinet. Note: changing dimensions does not yet update the cutting list.
+            Modifica las dimensiones y propiedades del gabinete. Nota: cambiar las dimensiones aún no actualiza la lista de corte.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="width" className="text-right">
-              Width
+              Ancho
             </Label>
             <Input
               id="width"
@@ -76,7 +76,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="height" className="text-right">
-              Height
+              Alto
             </Label>
             <Input
               id="height"
@@ -89,7 +89,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="depth" className="text-right">
-              Depth
+              Profundidad
             </Label>
             <Input
               id="depth"
@@ -105,25 +105,25 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
         <Separator />
 
         <div className="space-y-4">
-            <h4 className="font-medium text-center">Customize Components</h4>
+            <h4 className="font-medium text-center">Personalizar Componentes</h4>
             <div className="grid grid-cols-2 gap-4">
                 <Button variant="outline" className="h-20 flex-col gap-2" onClick={handleComingSoon}>
                     <Archive className="w-6 h-6" />
-                    <span>Add Drawers</span>
+                    <span>Añadir Cajones</span>
                 </Button>
                 <Button variant="outline" className="h-20 flex-col gap-2" onClick={handleComingSoon}>
                     <PlusSquare className="w-6 h-6" />
-                    <span>Change Doors</span>
+                    <span>Cambiar Puertas</span>
                 </Button>
             </div>
         </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
+            Cancelar
           </Button>
           <Button type="button" onClick={handleSave}>
-            Save changes
+            Guardar cambios
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -142,7 +142,7 @@ function View3D({ placedCabinets, selectedCabinetId, onSelectCabinet }: { placed
               <OrbitControls makeDefault minDistance={2} maxDistance={50} target={[layoutSize/3, 2, layoutSize/3]} />
             </Canvas>
             <div className="absolute bottom-2 right-2 bg-background/80 p-2 rounded-md text-xs text-muted-foreground">
-                Use mouse to orbit, zoom, and pan. Click a cabinet to select.
+                Usa el ratón para orbitar, hacer zoom y moverte. Haz clic en un gabinete para seleccionarlo.
             </div>
       </div>
     )
@@ -283,7 +283,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
   return (
     <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm">
       <div className="p-4 border-b flex justify-between items-center">
-        <h2 className="text-lg font-headline">Kitchen Layout</h2>
+        <h2 className="text-lg font-headline">Diseño de Cocina</h2>
         <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
                 <Label htmlFor="view-mode">2D</Label>
@@ -295,12 +295,12 @@ export function KitchenLayout(props: KitchenLayoutProps) {
             <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={onClearLayout} aria-label="Clear Layout">
+                <Button variant="ghost" size="icon" onClick={onClearLayout} aria-label="Limpiar Diseño">
                   <Trash2 className="w-5 h-5 text-destructive" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Clear Layout</p>
+                <p>Limpiar Diseño</p>
               </TooltipContent>
             </Tooltip>
             </TooltipProvider>

@@ -12,7 +12,7 @@ export function CabinetSelector({ onSelectCabinet }: CabinetSelectorProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="font-headline">Select Cabinets</CardTitle>
+        <CardTitle className="font-headline">Seleccionar Gabinetes</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <ScrollArea className="h-full pr-4">
@@ -33,7 +33,7 @@ export function CabinetSelector({ onSelectCabinet }: CabinetSelectorProps) {
                   variant="ghost"
                   size="icon"
                   onClick={() => onSelectCabinet(cabinet.id)}
-                  aria-label={`Add ${cabinet.name}`}
+                  aria-label={`Añadir ${cabinet.name}`}
                 >
                   <PlusCircle className="w-5 h-5 text-accent-foreground/80 hover:text-accent-foreground" />
                 </Button>

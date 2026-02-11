@@ -25,8 +25,8 @@ import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 
 const formSchema = z.object({
-  boardDimensions: z.string().min(3, 'Board dimensions are required.'),
-  melamineType: z.string().min(3, 'Melamine type is required.'),
+  boardDimensions: z.string().min(3, 'Las dimensiones del tablero son requeridas.'),
+  melamineType: z.string().min(3, 'El tipo de melamina es requerido.'),
 });
 
 type OptimizerFormProps = {
@@ -43,7 +43,7 @@ export function OptimizerForm({ cuttingListString, hasCuts }: OptimizerFormProps
     resolver: zodResolver(formSchema),
     defaultValues: {
       boardDimensions: '2440mm x 1220mm',
-      melamineType: 'White Melamine',
+      melamineType: 'Melamina Blanca',
     },
   });
 
@@ -57,16 +57,16 @@ export function OptimizerForm({ cuttingListString, hasCuts }: OptimizerFormProps
       });
       setResult(output);
       toast({
-        title: "Optimization Complete!",
-        description: "The AI has generated an optimized cutting plan.",
+        title: "¡Optimización Completa!",
+        description: "La IA ha generado un plan de corte optimizado.",
       });
     } catch (error) {
       console.error('Optimization failed:', error);
       toast({
         variant: 'destructive',
-        title: 'Optimization Error',
+        title: 'Error de Optimización',
         description:
-          'Something went wrong while optimizing the cutting list. Please try again.',
+          'Algo salió mal al optimizar la lista de corte. Por favor, inténtalo de nuevo.',
       });
     } finally {
       setIsLoading(false);
@@ -82,9 +82,9 @@ export function OptimizerForm({ cuttingListString, hasCuts }: OptimizerFormProps
             name="boardDimensions"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Board Dimensions</FormLabel>
+                <FormLabel>Dimensiones del Tablero</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., 2440mm x 1220mm" {...field} />
+                  <Input placeholder="ej: 2440mm x 1220mm" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -95,9 +95,9 @@ export function OptimizerForm({ cuttingListString, hasCuts }: OptimizerFormProps
             name="melamineType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Melamine Type</FormLabel>
+                <FormLabel>Tipo de Melamina</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., White Melamine" {...field} />
+                  <Input placeholder="ej: Melamina Blanca" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -109,30 +109,30 @@ export function OptimizerForm({ cuttingListString, hasCuts }: OptimizerFormProps
             ) : (
               <Sparkles className="mr-2 h-4 w-4" />
             )}
-            Optimize with AI
+            Optimizar con IA
           </Button>
-          {!hasCuts && <p className="text-sm text-center text-muted-foreground pt-2">Add cabinets to the layout to enable optimization.</p>}
+          {!hasCuts && <p className="text-sm text-center text-muted-foreground pt-2">Añade gabinetes al diseño para habilitar la optimización.</p>}
         </form>
       </Form>
       
       {result && (
         <Card className="mt-6 animate-in fade-in-50">
           <CardHeader>
-            <CardTitle>Optimized Layout</CardTitle>
+            <CardTitle>Diseño Optimizado</CardTitle>
             <CardDescription>
-              Estimated Waste: <Badge variant="secondary" className="bg-primary/20 text-primary">{result.wastePercentage.toFixed(2)}%</Badge>
+              Desperdicio Estimado: <Badge variant="secondary" className="bg-primary/20 text-primary">{result.wastePercentage.toFixed(2)}%</Badge>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <div>
-              <h4 className="font-semibold mb-2">Layout Plan:</h4>
+              <h4 className="font-semibold mb-2">Plan de Diseño:</h4>
               <p className="whitespace-pre-wrap text-muted-foreground bg-secondary p-3 rounded-md">{result.optimizedLayout}</p>
             </div>
             {result.notes && (
               <>
                 <Separator/>
                 <div>
-                  <h4 className="font-semibold mb-2">Notes:</h4>
+                  <h4 className="font-semibold mb-2">Notas:</h4>
                   <p className="whitespace-pre-wrap text-muted-foreground bg-secondary p-3 rounded-md">{result.notes}</p>
                 </div>
               </>

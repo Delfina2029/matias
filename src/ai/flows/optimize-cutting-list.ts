@@ -1,11 +1,11 @@
 'use server';
 
 /**
- * @fileOverview An AI agent to optimize cutting lists for melamine boards to minimize waste.
+ * @fileOverview Un agente de IA para optimizar listas de corte para tableros de melamina para minimizar el desperdicio.
  *
- * - optimizeCuttingList - A function that handles the optimization process.
- * - OptimizeCuttingListInput - The input type for the optimizeCuttingList function.
- * - OptimizeCuttingListOutput - The return type for the optimizeCuttingList function.
+ * - optimizeCuttingList - Una función que maneja el proceso de optimización.
+ * - OptimizeCuttingListInput - El tipo de entrada para la función optimizeCuttingList.
+ * - OptimizeCuttingListOutput - El tipo de retorno para la función optimizeCuttingList.
  */
 
 import {ai} from '@/ai/genkit';
@@ -15,14 +15,14 @@ const OptimizeCuttingListInputSchema = z.object({
   cuttingList: z
     .string()
     .describe(
-      'A list of cuts required for the melamine boards, including dimensions for each piece.'
+      'Una lista de cortes requeridos para los tableros de melamina, incluyendo las dimensiones para cada pieza.'
     ),
   boardDimensions: z
     .string()
     .describe(
-      'The dimensions of the melamine boards available (e.g., 2440mm x 1220mm).' 
+      'Las dimensiones de los tableros de melamina disponibles (ej., 2440mm x 1220mm).' 
     ),
-  melamineType: z.string().describe('The type of melamine board being used.'),
+  melamineType: z.string().describe('El tipo de tablero de melamina que se está utilizando.'),
 });
 
 export type OptimizeCuttingListInput = z.infer<
@@ -33,18 +33,18 @@ const OptimizeCuttingListOutputSchema = z.object({
   optimizedLayout: z
     .string()
     .describe(
-      'The optimized layout suggesting how to cut the melamine boards to minimize waste.'
+      'El diseño optimizado que sugiere cómo cortar los tableros de melamina para minimizar el desperdicio.'
     ),
   wastePercentage: z
     .number()
     .describe(
-      'The estimated percentage of waste material based on the optimized layout.'
+      'El porcentaje estimado de material de desecho basado en el diseño optimizado.'
     ),
   notes: z
     .string()
     .optional()
     .describe(
-      'Any additional notes or suggestions for cutting the melamine boards effectively.'
+      'Cualquier nota o sugerencia adicional para cortar los tableros de melamina de manera efectiva.'
     ),
 });
 
@@ -62,21 +62,21 @@ const prompt = ai.definePrompt({
   name: 'optimizeCuttingListPrompt',
   input: {schema: OptimizeCuttingListInputSchema},
   output: {schema: OptimizeCuttingListOutputSchema},
-  prompt: `You are an expert in optimizing cutting layouts for melamine boards to minimize waste.
+  prompt: `Eres un experto en optimizar diseños de corte para tableros de melamina para minimizar el desperdicio.
 
-  Given the following cutting list and board dimensions, provide an optimized layout suggesting how to cut the melamine boards to minimize waste. Also, estimate the percentage of waste material based on your layout.
+  Dada la siguiente lista de cortes y dimensiones del tablero, proporciona un diseño optimizado que sugiera cómo cortar los tableros de melamina para minimizar el desperdicio. Además, estima el porcentaje de material de desecho basado en tu diseño.
 
-  Cutting List:
+  Lista de Cortes:
   {{cuttingList}}
 
-  Board Dimensions:
+  Dimensiones del Tablero:
   {{boardDimensions}}
 
-  Melamine Type:
+  Tipo de Melamina:
   {{melamineType}}
 
-  Respond with an optimized layout and estimated waste percentage.
-  Include also any notes or suggestions for cutting the melamine boards effectively.
+  Responde con un diseño optimizado y el porcentaje de desperdicio estimado.
+  Incluye también cualquier nota o sugerencia adicional para cortar los tableros de melamina de manera efectiva.
   `,
 });
 

@@ -50,12 +50,12 @@ export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
     <Card className="h-full flex flex-col">
       <Tabs defaultValue="list" className="flex-1 flex flex-col">
         <CardHeader className="flex-row justify-between items-center">
-            <CardTitle className="font-headline">Project Pieces</CardTitle>
+            <CardTitle className="font-headline">Piezas del Proyecto</CardTitle>
             <TabsList>
-                <TabsTrigger value="list">Cutting List</TabsTrigger>
+                <TabsTrigger value="list">Lista de Corte</TabsTrigger>
                 <TabsTrigger value="optimizer" className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-accent" />
-                  Optimizer
+                  Optimizador
                 </TabsTrigger>
             </TabsList>
         </CardHeader>
@@ -63,11 +63,11 @@ export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
           <TabsContent value="list" className="h-full m-0">
             <ScrollArea className="h-full p-6 pt-0">
               <Table>
-                 {placedCabinets.length === 0 && <TableCaption>Add cabinets to the layout to see the cutting list.</TableCaption>}
+                 {placedCabinets.length === 0 && <TableCaption>Añade gabinetes al diseño para ver la lista de corte.</TableCaption>}
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Qty</TableHead>
-                    <TableHead>Dimensions (WxH)</TableHead>
+                    <TableHead>Cant</TableHead>
+                    <TableHead>Dimensiones (AnxAl)</TableHead>
                     <TableHead>Material</TableHead>
                   </TableRow>
                 </TableHeader>

@@ -30,7 +30,7 @@ export function Header() {
           <div className="flex items-center gap-2">
             <Logo />
             <h1 className="text-xl font-bold font-headline text-foreground">
-              Kitchen Builder
+              Constructor de Cocinas
             </h1>
           </div>
         </div>
