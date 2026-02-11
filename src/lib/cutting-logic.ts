@@ -58,10 +58,13 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     } else if (component.type === 'drawer') {
       // A drawer is made of a front and a box
       // 1. Drawer Front (Frente de Cajón)
+      const frontHeight = component.height - 4 + (component.handle === 'j-profile' ? 20 : 0);
+      const frontName = component.handle === 'j-profile' ? 'Frente de Cajón (Perfil J)' : 'Frente de Cajón';
+      
       pieces.push({
-        name: 'Frente de Cajón',
+        name: frontName,
         width: width - 4,
-        height: component.height - 4,
+        height: frontHeight,
         quantity: 1,
         material: MELAMINE_MATERIAL
       });

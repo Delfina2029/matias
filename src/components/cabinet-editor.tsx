@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Switch } from './ui/switch';
 
 
 type CabinetEditorProps = {
@@ -81,6 +82,19 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     setComponents(prev => prev.map(c => c.id === id ? { ...c, height: newHeight } : c));
   };
 
+  const handleToggleJProfile = (id: string, enabled: boolean) => {
+    setComponents(prev => prev.map(c => {
+        if (c.id === id) {
+            const { handle, ...rest } = c;
+            if (enabled) {
+                return { ...rest, handle: 'j-profile' as const };
+            }
+            return rest;
+        }
+        return c;
+    }));
+  };
+
   const handleRemoveComponent = (id: string) => {
     setComponents(prev => prev.filter(c => c.id !== id));
     if (selectedComponentId === id) {
@@ -108,10 +122,13 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     const drawerBoxWidth = interiorWidth - 26;
     const drawerBoxDepth = depth - 30;
     const drawerSizeLabel = drawerBoxHeight <= 150 ? 'Chico' : 'Grande';
+    
+    const frontHeight = component.height - 4 + (component.handle === 'j-profile' ? 20 : 0);
+    const frontName = component.handle === 'j-profile' ? 'Frente de Cajón (Perfil J)' : 'Frente de Cajón';
 
     pieces.push({
-      name: 'Frente de Cajón',
-      dimensions: `${width - 4} x ${component.height - 4} mm`,
+      name: frontName,
+      dimensions: `${width - 4} x ${frontHeight} mm`,
       quantity: 1,
     });
     pieces.push({
@@ -131,7 +148,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     });
 
     return pieces;
-  }, [selectedComponent, dimensions.width, dimensions.depth, components]);
+  }, [selectedComponent, dimensions.width, dimensions.depth]);
 
 
   return (
@@ -178,6 +195,9 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                     style={{ height: `${compHeightPercentage}%` }}
                                 >
                                     <span className="text-xs font-medium text-primary-foreground/80 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
+                                    {comp.type === 'drawer' && comp.handle === 'j-profile' && (
+                                        <div className="absolute top-0.5 left-0 right-0 h-1 bg-primary/50 rounded-t-sm" title="Perfil J"></div>
+                                    )}
                                 </div>
                             )
                         })}
@@ -221,6 +241,22 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                     onChange={(e) => handleUpdateComponentHeight(selectedComponent.id, Number(e.target.value))}
                                 />
                             </div>
+
+                            {selectedComponent.type === 'drawer' && (
+                                <div className="flex items-center justify-between space-x-2 pt-2 border-t mt-2">
+                                    <Label htmlFor="j-profile-switch" className="flex flex-col space-y-1">
+                                        <span>Perfil J</span>
+                                        <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                            Añade un tirador integrado en el borde superior.
+                                        </span>
+                                    </Label>
+                                    <Switch
+                                        id="j-profile-switch"
+                                        checked={selectedComponent.handle === 'j-profile'}
+                                        onCheckedChange={(checked) => handleToggleJProfile(selectedComponent.id, checked)}
+                                    />
+                                </div>
+                            )}
 
                             {selectedComponent.type === 'drawer' && selectedDrawerPieces.length > 0 && (
                               <div className="space-y-2 pt-2">

@@ -23,6 +23,7 @@ export interface CabinetComponent {
   id: string;
   type: 'drawer' | 'door';
   height: number;
+  handle?: 'j-profile';
 }
 
 export interface PlacedCabinet {
