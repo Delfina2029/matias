@@ -15,12 +15,10 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     const cornerPieces: Piece[] = [];
     const { width, height } = cabinet; // width and depth are the same
     const doorHeight = height - 4;
-    const bodyDepth = 580; // Standard cabinet depth, user refers to it as 600
+    const bodyDepth = 600;
 
     // User's formula: Door Width = Wall Space - Adjacent Cabinet Depth
-    // Example: 900mm - 600mm = 300mm.
-    // We use bodyDepth (580mm) and a 20mm margin to get the same result.
-    const doorWidth = width - bodyDepth - 20;
+    const doorWidth = width - bodyDepth;
 
     cornerPieces.push({ name: 'Puerta Esquinero A', width: doorWidth, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
     cornerPieces.push({ name: 'Puerta Esquinero B', width: doorWidth, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });

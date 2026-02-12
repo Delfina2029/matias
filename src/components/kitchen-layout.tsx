@@ -43,7 +43,7 @@ function Cabinet3D({
   if (placedCabinet.cabinetId === 'base-corner-900') {
     const width = placedCabinet.width * scale;
     const depth = placedCabinet.depth * scale;
-    const cabinetBodyDepth = 580 * scale; // Standard depth, should match other base cabinets
+    const cabinetBodyDepth = 600 * scale; // Standard depth
 
     return (
       <group position={[posX, 0, posZ]} onClick={onClick}>
@@ -270,7 +270,7 @@ function View2D({
                     if (isCornerCabinet) {
                         const cabinetWidth = placed.width / scaleFactor;
                         const cabinetDepth = placed.depth / scaleFactor;
-                        const bodyDepth = 580; // Standard cabinet depth in mm
+                        const bodyDepth = 600; // Standard cabinet depth in mm
 
                         return (
                             <div

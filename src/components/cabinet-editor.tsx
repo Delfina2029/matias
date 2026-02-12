@@ -173,6 +173,23 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
         </DialogHeader>
         <div className="overflow-y-auto -mr-6 pr-6 max-h-[calc(80vh-150px)]">
           <div className="grid gap-4 py-4">
+            {isCornerCabinet ? (
+                <>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="width">Espacio en Pared (mm)</Label>
+                            <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
+                        </div>
+                        <div>
+                            <Label htmlFor="height">Alto (mm)</Label>
+                            <Input id="height" name="height" type="number" value={dimensions.height} onChange={handleDimensionChange} />
+                        </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        Las dimensiones en la pared son simétricas (ej. 900x900mm). La profundidad del cuerpo del gabinete es de 600mm.
+                    </p>
+                </>
+            ) : (
               <div className="grid grid-cols-3 gap-4">
                   <div>
                       <Label htmlFor="width">Ancho (mm)</Label>
@@ -187,6 +204,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                       <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} />
                   </div>
               </div>
+            )}
           </div>
           
           <Separator />
