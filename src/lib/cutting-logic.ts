@@ -15,20 +15,23 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     const cornerPieces: Piece[] = [];
     const { width, height } = cabinet; // width and depth are the same
     const doorHeight = height - 4;
+    const bodyDepth = 580; // Standard cabinet depth, user refers to it as 600
 
-    // Dynamic pieces for a corner cabinet of size 'width' x 'width'
-    // These are simplified calculations and might need adjustment for real-world scenarios.
-    cornerPieces.push({ name: 'Lateral', width: 562, height: height, quantity: 2, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Piso', width: width - MELAMINE_THICKNESS, height: width - MELAMINE_THICKNESS, quantity: 1, material: MELAMINE_MATERIAL }); // To be cut in pentagon shape
-    cornerPieces.push({ name: 'Poste Trasero', width: 75, height: height, quantity: 1, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Amarre Superior', width: width - 400, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Estante', width: width - 50, height: width - 50, quantity: 1, material: MELAMINE_MATERIAL }); // To be cut
-    
-    // Proportional scaling for bifold doors based on a 900mm cabinet having 315mm doors
-    const doorWidth = (width / 900) * 315;
-    
+    // User's formula: Door Width = Wall Space - Adjacent Cabinet Depth
+    // Example: 900mm - 600mm = 300mm.
+    // We use bodyDepth (580mm) and a 20mm margin to get the same result.
+    const doorWidth = width - bodyDepth - 20;
+
     cornerPieces.push({ name: 'Puerta Esquinero A', width: doorWidth, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
     cornerPieces.push({ name: 'Puerta Esquinero B', width: doorWidth, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+    
+    // Simplified pieces for an L-shaped carcass, matching the visuals.
+    cornerPieces.push({ name: 'Lateral', width: bodyDepth, height: height, quantity: 2, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Piso/Tapa', width: width - (2*MELAMINE_THICKNESS), height: bodyDepth, quantity: 2, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Amarre', width: width - (2*MELAMINE_THICKNESS), height: 100, quantity: 2, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Panel Trasero', width: width, height: height, quantity: 1, material: BACK_PANEL_MATERIAL });
+      cornerPieces.push({ name: 'Panel Trasero Adicional', width: width - bodyDepth, height: height, quantity: 1, material: BACK_PANEL_MATERIAL });
+    cornerPieces.push({ name: 'Estante', width: width - 40, height: width - 40, quantity: 1, material: MELAMINE_MATERIAL });
 
     return cornerPieces;
   }
