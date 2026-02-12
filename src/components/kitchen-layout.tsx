@@ -41,8 +41,8 @@ function Cabinet3D({
   const posZ = placedCabinet.y * layoutScale;
 
   if (placedCabinet.cabinetId === 'base-corner-900') {
-    const width = placedCabinet.width * scale; // 900 * 0.005 = 4.5
-    const depth = placedCabinet.depth * scale; // 900 * 0.005 = 4.5
+    const width = placedCabinet.width * scale;
+    const depth = placedCabinet.depth * scale;
     const cabinetBodyDepth = 580 * scale; // Standard depth, should match other base cabinets
 
     return (
@@ -265,52 +265,100 @@ function View2D({
         >
              <div className="relative w-[3000px] h-[2000px]">
                  {placedCabinets.map((placed) => {
-                      const treatAsHorizontalDoors = placed.type !== 'tall' && placed.components.length > 1 && placed.components.every(c => c.type === 'door');
-                      return (
-                          <div
-                              key={placed.instanceId}
-                              onMouseDown={(e) => handleMouseDown(e, placed.instanceId)}
-                              className={cn(
-                                'absolute bg-card border-2 border-primary/50 group cursor-grab active:cursor-grabbing hover:border-primary transition-colors flex rounded-md',
-                                selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent z-10',
-                                dragging === placed.instanceId && 'shadow-lg z-20'
-                              )}
-                              style={{
-                                  left: placed.x,
-                                  top: placed.y,
-                                  width: placed.width / scaleFactor,
-                                  height: placed.depth / scaleFactor,
-                              }}
-                          >
-                            {/* Render components inside */}
-                            <div className={`h-full w-full flex p-1 gap-px ${treatAsHorizontalDoors ? 'flex-row' : 'flex-col-reverse'}`}>
-                              {placed.components.map(comp => {
-                                  const compStyle = treatAsHorizontalDoors 
-                                      ? { width: `${100 / placed.components.length}%` }
-                                      : { height: `${(comp.height / placed.height) * 100}%` };
+                    const isCornerCabinet = placed.cabinetId === 'base-corner-900';
 
-                                  return (
-                                      <div 
-                                          key={comp.id}
-                                          className={`relative bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center ${treatAsHorizontalDoors ? 'h-full' : 'w-full'}`}
-                                          style={compStyle}
-                                      >
-                                          <span className="text-[9px] font-medium text-primary-foreground/70 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
-                                      </div>
-                                  )
-                              })}
-                            </div>
+                    if (isCornerCabinet) {
+                        const cabinetWidth = placed.width / scaleFactor;
+                        const cabinetDepth = placed.depth / scaleFactor;
+                        const bodyDepth = 580; // Standard cabinet depth in mm
 
-                            <Button
-                              size="icon"
-                              variant="destructive"
-                              className="remove-btn absolute -top-3 -right-3 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                              onClick={(e) => { e.stopPropagation(); onRemoveCabinet(placed.instanceId); }}
+                        return (
+                            <div
+                                key={placed.instanceId}
+                                onMouseDown={(e) => handleMouseDown(e, placed.instanceId)}
+                                className={cn(
+                                    'absolute group cursor-grab active:cursor-grabbing',
+                                    dragging === placed.instanceId && 'shadow-lg z-20',
+                                    selectedCabinetId === placed.instanceId && 'z-10'
+                                )}
+                                style={{
+                                    left: placed.x,
+                                    top: placed.y,
+                                    width: cabinetWidth,
+                                    height: cabinetDepth,
+                                }}
                             >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                      );
+                                <div
+                                    className={cn(
+                                        'w-full h-full',
+                                        selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent'
+                                    )}
+                                    style={{
+                                        clipPath: `polygon(0% 0%, 100% 0%, 100% ${ (bodyDepth / placed.depth) * 100 }%, ${ (bodyDepth / placed.width) * 100 }% ${ (bodyDepth / placed.depth) * 100 }%, ${ (bodyDepth / placed.width) * 100 }% 100%, 0% 100%)`
+                                    }}
+                                >
+                                    <div className="w-full h-full bg-card border-2 border-primary/50 group-hover:border-primary transition-colors rounded-md flex items-center justify-center text-xs font-mono text-muted-foreground/50">
+                                        {/* Visual representation of L-shape, no internal components */}
+                                    </div>
+                                </div>
+                                <Button
+                                  size="icon"
+                                  variant="destructive"
+                                  className="remove-btn absolute -top-3 -right-3 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                  onClick={(e) => { e.stopPropagation(); onRemoveCabinet(placed.instanceId); }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )
+                    }
+
+                    const treatAsHorizontalDoors = placed.type !== 'tall' && placed.components.length > 1 && placed.components.every(c => c.type === 'door');
+                    return (
+                        <div
+                            key={placed.instanceId}
+                            onMouseDown={(e) => handleMouseDown(e, placed.instanceId)}
+                            className={cn(
+                            'absolute bg-card border-2 border-primary/50 group cursor-grab active:cursor-grabbing hover:border-primary transition-colors flex rounded-md',
+                            selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent z-10',
+                            dragging === placed.instanceId && 'shadow-lg z-20'
+                            )}
+                            style={{
+                                left: placed.x,
+                                top: placed.y,
+                                width: placed.width / scaleFactor,
+                                height: placed.depth / scaleFactor,
+                            }}
+                        >
+                        {/* Render components inside */}
+                        <div className={`h-full w-full flex p-1 gap-px ${treatAsHorizontalDoors ? 'flex-row' : 'flex-col-reverse'}`}>
+                            {placed.components.map(comp => {
+                                const compStyle = treatAsHorizontalDoors 
+                                    ? { width: `${100 / placed.components.length}%` }
+                                    : { height: `${(comp.height / placed.height) * 100}%` };
+
+                                return (
+                                    <div 
+                                        key={comp.id}
+                                        className={`relative bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center ${treatAsHorizontalDoors ? 'h-full' : 'w-full'}`}
+                                        style={compStyle}
+                                    >
+                                        <span className="text-[9px] font-medium text-primary-foreground/70 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
+                                    </div>
+                                )
+                            })}
+                        </div>
+
+                        <Button
+                            size="icon"
+                            variant="destructive"
+                            className="remove-btn absolute -top-3 -right-3 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            onClick={(e) => { e.stopPropagation(); onRemoveCabinet(placed.instanceId); }}
+                        >
+                            <X className="w-4 h-4" />
+                        </Button>
+                        </div>
+                    );
                  })}
              </div>
         </div>
@@ -365,4 +413,14 @@ export function KitchenLayout(props: KitchenLayoutProps) {
       )}
     </div>
   );
+}
+
+// KitchenLayoutProps needs to be defined
+interface KitchenLayoutProps {
+  placedCabinets: PlacedCabinet[];
+  onUpdateLayout: React.Dispatch<React.SetStateAction<PlacedCabinet[]>>;
+  onClearLayout: () => void;
+  onRemoveCabinet: (instanceId: string) => void;
+  onSelectCabinet: (instanceId: string | null) => void;
+  selectedCabinetId?: string | null;
 }
