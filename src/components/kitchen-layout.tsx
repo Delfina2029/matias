@@ -18,15 +18,6 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
 
-type KitchenLayoutProps = {
-  placedCabinets: PlacedCabinet[];
-  onUpdateLayout: React.Dispatch<React.SetStateAction<PlacedCabinet[]>>;
-  onClearLayout: () => void;
-  onRemoveCabinet: (instanceId: string) => void;
-  onSelectCabinet: (instanceId: string | null) => void;
-  selectedCabinetId?: string;
-};
-
 // --- 3D Components ---
 
 function Cabinet3D({ 
@@ -42,18 +33,49 @@ function Cabinet3D({
   if (!cabinetInfo) return null;
 
   const scale = 0.005;
-  const width = placedCabinet.width * scale;
   const height = placedCabinet.height * scale;
-  const depth = placedCabinet.depth * scale;
   
   // Map 2D pixels to 3D world units
   const layoutScale = 0.04;
-  const posX = placedCabinet.x * layoutScale + width / 2;
-  const posZ = placedCabinet.y * layoutScale + depth / 2;
+  const posX = placedCabinet.x * layoutScale;
+  const posZ = placedCabinet.y * layoutScale;
 
+  if (placedCabinet.cabinetId === 'base-corner-900') {
+    const width = placedCabinet.width * scale; // 900 * 0.005 = 4.5
+    const depth = placedCabinet.depth * scale; // 900 * 0.005 = 4.5
+    const cabinetBodyDepth = 580 * scale; // Standard depth, should match other base cabinets
+
+    return (
+      <group position={[posX, 0, posZ]} onClick={onClick}>
+        {/* This creates the L-shape by combining two boxes. */}
+        {/* Main box along one wall */}
+        <Box args={[width, height, cabinetBodyDepth]} position={[width/2, height/2, cabinetBodyDepth/2]} castShadow receiveShadow>
+          <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
+        </Box>
+        {/* Second box to complete the L */}
+        <Box args={[cabinetBodyDepth, height, depth - cabinetBodyDepth]} position={[cabinetBodyDepth/2, height/2, cabinetBodyDepth + (depth-cabinetBodyDepth)/2]} castShadow receiveShadow>
+          <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
+        </Box>
+
+        {/* Countertop for the L-shape */}
+        <group>
+            <Box args={[width, 0.05, cabinetBodyDepth]} position={[width / 2, height + 0.025, cabinetBodyDepth / 2]} castShadow>
+                <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
+            </Box>
+            <Box args={[cabinetBodyDepth, 0.05, depth - cabinetBodyDepth]} position={[cabinetBodyDepth / 2, height + 0.025, cabinetBodyDepth + (depth - cabinetBodyDepth) / 2]} castShadow>
+                <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
+            </Box>
+        </group>
+      </group>
+    );
+  }
+
+  // Fallback for regular rectangular cabinets
+  const width = placedCabinet.width * scale;
+  const depth = placedCabinet.depth * scale;
 
   return (
-    <group position={[posX, height / 2, posZ]} onClick={onClick}>
+    <group position={[posX + width/2, height / 2, posZ + depth/2]} onClick={onClick}>
       <Box args={[width, height, depth]} castShadow receiveShadow>
         <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
       </Box>
@@ -75,6 +97,7 @@ function Cabinet3D({
     </group>
   );
 }
+
 
 function View3D({ placedCabinets, selectedCabinetId, onSelectCabinet }: { placedCabinets: PlacedCabinet[], selectedCabinetId?: string, onSelectCabinet: (id: string | null) => void }) {
     const layoutSize = 60; // Represents the size of the kitchen area in 3D units
@@ -211,6 +234,7 @@ function View2D({
             onSelectCabinet(dragging);
         }
         setDragging(null);
+        isDraggingRef.current = false;
     }, [dragging, onSelectCabinet]);
 
     useEffect(() => {
@@ -255,7 +279,7 @@ function View2D({
                                   left: placed.x,
                                   top: placed.y,
                                   width: placed.width / scaleFactor,
-                                  height: placed.height / scaleFactor,
+                                  height: placed.depth / scaleFactor,
                               }}
                           >
                             {/* Render components inside */}
