@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { PlacedCabinet, CabinetComponent } from '@/lib/types';
+import type { PlacedCabinet, CabinetComponent, Appearance } from '@/lib/types';
 import { CabinetSelector } from './cabinet-selector';
 import { KitchenLayout } from './kitchen-layout';
 import { CuttingListPanel } from './cutting-list-panel';
@@ -11,6 +11,12 @@ import { CabinetEditor } from './cabinet-editor';
 export function KitchenBuilder() {
   const [placedCabinets, setPlacedCabinets] = useState<PlacedCabinet[]>([]);
   const [editingCabinet, setEditingCabinet] = useState<PlacedCabinet | null>(null);
+
+  const [appearance, setAppearance] = useState<Appearance>({
+    frontColor: '#f8f9fa',
+    carcassColor: '#e9ecef',
+    countertopColor: '#343a40',
+  });
 
   const addCabinet = (cabinetId: string) => {
     const cabinetInfo = cabinetData.find((c) => c.id === cabinetId);
@@ -94,8 +100,13 @@ export function KitchenBuilder() {
           onRemoveCabinet={removeCabinet}
           onSelectCabinet={handleSelectCabinet}
           selectedCabinetId={editingCabinet?.instanceId}
+          appearance={appearance}
         />
-        <CuttingListPanel placedCabinets={placedCabinets} />
+        <CuttingListPanel 
+            placedCabinets={placedCabinets}
+            appearance={appearance}
+            onAppearanceChange={setAppearance}
+        />
       </div>
       {editingCabinet && (
         <CabinetEditor

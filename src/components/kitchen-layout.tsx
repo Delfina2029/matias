@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Canvas, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Box, Grid as Grid3D, Text, Plane } from '@react-three/drei';
-import type { PlacedCabinet } from '@/lib/types';
+import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { cabinetData } from '@/lib/cabinets';
 import { Button } from './ui/button';
 import { Trash2, X, Cuboid } from 'lucide-react';
@@ -20,85 +20,152 @@ import { Label } from "@/components/ui/label"
 
 // --- 3D Components ---
 
-function Cabinet3D({ 
-  placedCabinet, 
+function Cabinet3D({
+  placedCabinet,
   isSelected,
-  onClick
-}: { 
-  placedCabinet: PlacedCabinet, 
-  isSelected: boolean,
-  onClick: (event: ThreeEvent<MouseEvent>) => void,
+  onClick,
+  appearance,
+}: {
+  placedCabinet: PlacedCabinet;
+  isSelected: boolean;
+  onClick: (event: ThreeEvent<MouseEvent>) => void;
+  appearance: Appearance;
 }) {
   const cabinetInfo = cabinetData.find(c => c.id === placedCabinet.cabinetId);
   if (!cabinetInfo) return null;
 
   const scale = 0.005;
-  const height = placedCabinet.height * scale;
-  
-  // Map 2D pixels to 3D world units
   const layoutScale = 0.04;
   const posX = placedCabinet.x * layoutScale;
   const posZ = placedCabinet.y * layoutScale;
+  
+  const height = placedCabinet.height * scale;
+  const selectionColor = '#fcc419';
+
+  const frontMaterial = <meshStandardMaterial color={isSelected ? selectionColor : appearance.frontColor} roughness={0.5} metalness={0.1} />;
+  const carcassMaterial = <meshStandardMaterial color={isSelected ? '#dddddd' : appearance.carcassColor} roughness={0.8} metalness={0.1} />;
+  const countertopMaterial = <meshStandardMaterial color={isSelected ? selectionColor : appearance.countertopColor} roughness={0.3} metalness={0.2} />;
+  const jProfileMaterial = <meshStandardMaterial color={isSelected ? selectionColor : appearance.frontColor} roughness={0.4} metalness={0.2} />;
+
 
   if (placedCabinet.cabinetId === 'base-corner-900') {
     const wallSpace = placedCabinet.width * scale;
-    const cabinetBodyDepth1 = placedCabinet.depth * scale; // Depth for leg along X axis
-    const cabinetBodyDepth2 = (placedCabinet.depth2 || placedCabinet.depth) * scale; // Depth for leg along Z axis
+    const cabinetBodyDepth1 = placedCabinet.depth * scale;
+    const cabinetBodyDepth2 = (placedCabinet.depth2 || placedCabinet.depth) * scale;
+    
+    // Per cutting-logic.ts: door width = wallSpace - opposite body depth - 20mm tolerance
+    const door1Width = (placedCabinet.width - (placedCabinet.depth2 || placedCabinet.depth) - 20) * scale;
+    const door2Width = (placedCabinet.width - placedCabinet.depth - 20) * scale;
+    const doorHeight = height - (2 * scale); // small gap
+    const doorThickness = 0.09;
 
     return (
       <group position={[posX, 0, posZ]} onClick={onClick}>
-        {/* Leg along X axis */}
-        <Box args={[wallSpace, height, cabinetBodyDepth1]} position={[wallSpace/2, height/2, cabinetBodyDepth1/2]} castShadow receiveShadow>
-          <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
+        {/* Carcass */}
+        <Box args={[wallSpace, height, cabinetBodyDepth1]} position={[wallSpace / 2, height / 2, cabinetBodyDepth1 / 2]} castShadow receiveShadow>
+          {carcassMaterial}
         </Box>
-        {/* Leg along Z axis */}
-        <Box args={[cabinetBodyDepth2, height, wallSpace - cabinetBodyDepth1]} position={[cabinetBodyDepth2/2, height/2, cabinetBodyDepth1 + (wallSpace - cabinetBodyDepth1)/2]} castShadow receiveShadow>
-          <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
+        <Box args={[cabinetBodyDepth2, height, wallSpace - cabinetBodyDepth1]} position={[cabinetBodyDepth2 / 2, height / 2, cabinetBodyDepth1 + (wallSpace - cabinetBodyDepth1) / 2]} castShadow receiveShadow>
+          {carcassMaterial}
         </Box>
 
-        {/* Countertop for the L-shape */}
+        {/* Doors (simplified bifocal) */}
+        <Box args={[door1Width, doorHeight, doorThickness]} position={[cabinetBodyDepth2 + door1Width / 2, height/2, cabinetBodyDepth1 - doorThickness/2]} castShadow>{frontMaterial}</Box>
+        <Box args={[doorThickness, doorHeight, door2Width]} position={[cabinetBodyDepth2 - doorThickness/2, height/2, cabinetBodyDepth1 + door2Width / 2]} castShadow>{frontMaterial}</Box>
+        
+        {/* Countertop */}
         <group>
             <Box args={[wallSpace, 0.05, cabinetBodyDepth1]} position={[wallSpace / 2, height + 0.025, cabinetBodyDepth1 / 2]} castShadow>
-                <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
+              {countertopMaterial}
             </Box>
             <Box args={[cabinetBodyDepth2, 0.05, wallSpace - cabinetBodyDepth1]} position={[cabinetBodyDepth2 / 2, height + 0.025, cabinetBodyDepth1 + (wallSpace - cabinetBodyDepth1) / 2]} castShadow>
-                <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
+              {countertopMaterial}
             </Box>
         </group>
       </group>
     );
   }
 
-  // Fallback for regular rectangular cabinets
   const width = placedCabinet.width * scale;
   const depth = placedCabinet.depth * scale;
+  const treatAsHorizontalDoors = placedCabinet.type !== 'tall' && placedCabinet.components.length > 1 && placedCabinet.components.every(c => c.type === 'door');
+  const doorThickness = 0.09;
 
   return (
-    <group position={[posX + width/2, height / 2, posZ + depth/2]} onClick={onClick}>
-      <Box args={[width, height, depth]} castShadow receiveShadow>
-        <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
+    <group position={[posX + width / 2, 0, posZ + depth / 2]} onClick={onClick}>
+      {/* Carcass */}
+      <Box args={[width, height, depth]} position={[0, height / 2, 0]} castShadow receiveShadow>
+        {carcassMaterial}
       </Box>
+
+      {/* Components (fronts) */}
+      <group position={[0, 0, depth / 2 + doorThickness/2]}>
+        {treatAsHorizontalDoors ? (
+          // Horizontal Doors
+          placedCabinet.components.map((comp, index) => {
+            const doorWidth = (width / placedCabinet.components.length) - (0.01 * (placedCabinet.components.length > 1 ? 1 : 0));
+            const doorHeight = (comp.height * scale) - 0.02;
+            const xOffset = (index * (doorWidth + 0.01)) - width/2 + doorWidth/2;
+
+            return (
+              <group key={comp.id} position={[xOffset, 0, 0]}>
+                <Box args={[doorWidth - 0.02, doorHeight, doorThickness]} position={[0, height / 2, 0]} castShadow>
+                  {frontMaterial}
+                </Box>
+                 {comp.handle === 'j-profile' && (
+                    <Box args={[doorWidth - 0.02, 0.13, 0.02]} position={[0, height - 0.065, (doorThickness/2)+0.01]}>
+                        {jProfileMaterial}
+                    </Box>
+                )}
+              </group>
+            )
+          })
+        ) : (
+          // Vertical Components
+          (() => {
+            let yOffset = 0;
+            const renderedComponents = [];
+            for (const comp of placedCabinet.components) {
+              const compHeight = comp.height * scale;
+              if (comp.type !== 'opening') {
+                renderedComponents.push(
+                  <group key={comp.id} position={[0, yOffset, 0]}>
+                    <Box args={[width - 0.02, compHeight - 0.02, doorThickness]} position={[0, compHeight / 2, 0]} castShadow>
+                      {frontMaterial}
+                    </Box>
+                    {comp.handle === 'j-profile' && (
+                      <Box args={[width - 0.02, 0.13, 0.02]} position={[0, compHeight - 0.065, (doorThickness/2)+0.01]}>
+                          {jProfileMaterial}
+                      </Box>
+                    )}
+                    {comp.type === 'door' && comp.hinge === 'top' && (
+                      <group position={[0, compHeight - 0.02, doorThickness/2]}>
+                          <Box args={[0.1, 0.02, 0.02]} position={[-0.2, 0, 0]} />
+                          <Box args={[0.1, 0.02, 0.02]} position={[0.2, 0, 0]} />
+                      </group>
+                    )}
+                  </group>
+                );
+              }
+              yOffset += compHeight + (placedCabinet.components.length > 1 ? 0.01 : 0);
+            }
+            return renderedComponents;
+          })()
+        )}
+      </group>
+
+      {/* Countertop */}
       {cabinetInfo.type === 'base' && (
-         <Box args={[width, 0.05, depth]} position={[0, height/2 + 0.025, 0]} castShadow>
-            <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
-         </Box>
+        <Box args={[width, 0.05, depth]} position={[0, height + 0.025, 0]} castShadow>
+          {countertopMaterial}
+        </Box>
       )}
-      <Text
-        position={[0, height / 2 + 0.3, 0]}
-        fontSize={0.2}
-        color="black"
-        anchorX="center"
-        anchorY="middle"
-        visible={false}
-      >
-        {cabinetInfo.name}
-      </Text>
     </group>
   );
 }
 
 
-function View3D({ placedCabinets, selectedCabinetId, onSelectCabinet }: { placedCabinets: PlacedCabinet[], selectedCabinetId?: string, onSelectCabinet: (id: string | null) => void }) {
+function View3D({ placedCabinets, selectedCabinetId, onSelectCabinet, appearance }: { placedCabinets: PlacedCabinet[], selectedCabinetId?: string, onSelectCabinet: (id: string | null) => void, appearance: Appearance }) {
     const layoutSize = 60; // Represents the size of the kitchen area in 3D units
     const wallHeight = 15;
 
@@ -156,6 +223,7 @@ function View3D({ placedCabinets, selectedCabinetId, onSelectCabinet }: { placed
                       e.stopPropagation();
                       onSelectCabinet(placed.instanceId);
                     }}
+                    appearance={appearance}
                   />
               ))}
               
@@ -366,7 +434,7 @@ function View2D({
 
 // --- Main Component ---
 export function KitchenLayout(props: KitchenLayoutProps) {
-  const [is3D, setIs3D] = useState(false);
+  const [is3D, setIs3D] = useState(true);
 
   const { onClearLayout } = props;
 
@@ -400,7 +468,9 @@ export function KitchenLayout(props: KitchenLayoutProps) {
         <View3D 
             placedCabinets={props.placedCabinets} 
             selectedCabinetId={props.selectedCabinetId} 
-            onSelectCabinet={props.onSelectCabinet} /> 
+            onSelectCabinet={props.onSelectCabinet} 
+            appearance={props.appearance}
+        /> 
       ) : (
         <View2D 
             placedCabinets={props.placedCabinets} 
@@ -422,4 +492,5 @@ interface KitchenLayoutProps {
   onRemoveCabinet: (instanceId: string) => void;
   onSelectCabinet: (instanceId: string | null) => void;
   selectedCabinetId?: string | null;
+  appearance: Appearance;
 }

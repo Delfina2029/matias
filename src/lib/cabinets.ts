@@ -38,7 +38,7 @@ export const cabinetData: Cabinet[] = [
     width: 770,
     height: 800,
     depth: 600,
-    depth2: 600,
+    depth2: 300,
     pieces: [],
   },
   {

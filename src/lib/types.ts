@@ -25,6 +25,7 @@ export interface Cabinet {
   width: number;
   height: number;
   depth: number;
+  depth2?: number;
   pieces: Piece[];
   defaultComponents?: Omit<CabinetComponent, 'id'>[];
 }
@@ -40,4 +41,10 @@ export interface PlacedCabinet {
   depth: number;
   depth2?: number;
   components: CabinetComponent[];
+}
+
+export interface Appearance {
+  frontColor: string;
+  carcassColor: string;
+  countertopColor: string;
 }

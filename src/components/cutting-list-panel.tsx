@@ -1,17 +1,20 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { PlacedCabinet } from '@/lib/types';
+import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { OptimizerForm } from './optimizer-form';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Palette } from 'lucide-react';
 import { generatePiecesForCabinet } from '@/lib/cutting-logic';
+import { AppearanceEditor } from './appearance-editor';
 
 type CuttingListPanelProps = {
   placedCabinets: PlacedCabinet[];
+  appearance: Appearance;
+  onAppearanceChange: (appearance: Appearance) => void;
 };
 
 type AggregatedPiece = {
@@ -22,7 +25,7 @@ type AggregatedPiece = {
   material: string;
 };
 
-export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
+export function CuttingListPanel({ placedCabinets, appearance, onAppearanceChange }: CuttingListPanelProps) {
   const { aggregatedPieces, cuttingListString } = useMemo(() => {
     const pieceMap = new Map<string, AggregatedPiece>();
 
@@ -54,12 +57,16 @@ export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
     <Card className="h-full flex flex-col">
       <Tabs defaultValue="list" className="flex-1 flex flex-col">
         <CardHeader className="flex-row justify-between items-center">
-            <CardTitle className="font-headline">Piezas del Proyecto</CardTitle>
+            <CardTitle className="font-headline">Piezas y Apariencia</CardTitle>
             <TabsList>
                 <TabsTrigger value="list">Lista de Corte</TabsTrigger>
                 <TabsTrigger value="optimizer" className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-accent" />
                   Optimizador
+                </TabsTrigger>
+                <TabsTrigger value="appearance" className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-accent" />
+                  Apariencia
                 </TabsTrigger>
             </TabsList>
         </CardHeader>
@@ -92,6 +99,11 @@ export function CuttingListPanel({ placedCabinets }: CuttingListPanelProps) {
           <TabsContent value="optimizer" className="h-full m-0">
             <ScrollArea className="h-full p-6 pt-0">
               <OptimizerForm cuttingListString={cuttingListString} hasCuts={aggregatedPieces.length > 0} />
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="appearance" className="h-full m-0">
+            <ScrollArea className="h-full p-6 pt-2">
+                <AppearanceEditor appearance={appearance} setAppearance={onAppearanceChange} />
             </ScrollArea>
           </TabsContent>
         </CardContent>
