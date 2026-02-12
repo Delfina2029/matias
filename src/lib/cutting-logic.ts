@@ -13,19 +13,22 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   // Handle special cases like corner cabinets first
   if (cabinet.cabinetId === 'base-corner-900') {
     const cornerPieces: Piece[] = [];
-    const { height } = cabinet;
+    const { width, height } = cabinet; // width and depth are the same
     const doorHeight = height - 4;
 
-    // Simplified but common piece list for a 900x900 corner cabinet with bifold doors
+    // Dynamic pieces for a corner cabinet of size 'width' x 'width'
+    // These are simplified calculations and might need adjustment for real-world scenarios.
     cornerPieces.push({ name: 'Lateral', width: 562, height: height, quantity: 2, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Piso', width: 882, height: 882, quantity: 1, material: MELAMINE_MATERIAL }); // To be cut in pentagon shape
+    cornerPieces.push({ name: 'Piso', width: width - MELAMINE_THICKNESS, height: width - MELAMINE_THICKNESS, quantity: 1, material: MELAMINE_MATERIAL }); // To be cut in pentagon shape
     cornerPieces.push({ name: 'Poste Trasero', width: 75, height: height, quantity: 1, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Amarre Superior', width: 500, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Estante', width: 850, height: 850, quantity: 1, material: MELAMINE_MATERIAL }); // To be cut
+    cornerPieces.push({ name: 'Amarre Superior', width: width - 400, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Estante', width: width - 50, height: width - 50, quantity: 1, material: MELAMINE_MATERIAL }); // To be cut
     
-    // Bifold doors
-    cornerPieces.push({ name: 'Puerta Esquinero A', width: 315, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Puerta Esquinero B', width: 315, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+    // Proportional scaling for bifold doors based on a 900mm cabinet having 315mm doors
+    const doorWidth = (width / 900) * 315;
+    
+    cornerPieces.push({ name: 'Puerta Esquinero A', width: doorWidth, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Puerta Esquinero B', width: doorWidth, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
     return cornerPieces;
   }

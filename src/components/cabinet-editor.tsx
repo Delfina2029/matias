@@ -59,7 +59,12 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
 
   const handleDimensionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setDimensions((prev) => ({ ...prev, [name]: Number(value) }));
+    const numValue = Number(value);
+    if (isCornerCabinet && (name === 'width' || name === 'depth')) {
+      setDimensions((prev) => ({ ...prev, width: numValue, depth: numValue }));
+    } else {
+      setDimensions((prev) => ({ ...prev, [name]: numValue }));
+    }
   };
 
   const handleSave = () => {
@@ -171,7 +176,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
               <div className="grid grid-cols-3 gap-4">
                   <div>
                       <Label htmlFor="width">Ancho (mm)</Label>
-                      <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} disabled={isCornerCabinet} />
+                      <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
                   </div>
                   <div>
                       <Label htmlFor="height">Alto (mm)</Label>
@@ -179,7 +184,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                   </div>
                   <div>
                       <Label htmlFor="depth">Profundidad (mm)</Label>
-                      <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} disabled={isCornerCabinet} />
+                      <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} />
                   </div>
               </div>
           </div>
