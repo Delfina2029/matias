@@ -13,12 +13,12 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   // Handle special cases like corner cabinets first
   if (cabinet.cabinetId === 'base-corner-900') {
     const cornerPieces: Piece[] = [];
-    const { width, height } = cabinet; // width is wall space, e.g., 770
-    const bodyDepth = 600; // standard body depth from user's drawing
+    const { width, height, depth } = cabinet; // width is wall space, e.g., 770. depth is body depth.
+    const bodyDepth = depth;
     const doorHeight = height - 4;
 
     // From the user's diagram: Door Width = Wall Space - Body Depth
-    const doorWidth = width - bodyDepth; // e.g., 770 - 600 = 170
+    const doorWidth = width - bodyDepth;
 
     // Doors for the corner opening
     cornerPieces.push({ name: 'Puerta Esquinero', width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });

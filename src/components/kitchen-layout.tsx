@@ -41,28 +41,27 @@ function Cabinet3D({
   const posZ = placedCabinet.y * layoutScale;
 
   if (placedCabinet.cabinetId === 'base-corner-900') {
-    const width = placedCabinet.width * scale;
-    const depth = placedCabinet.depth * scale;
-    const cabinetBodyDepth = 600 * scale; // Standard depth
+    const wallSpace = placedCabinet.width * scale;
+    const cabinetBodyDepth = placedCabinet.depth * scale;
 
     return (
       <group position={[posX, 0, posZ]} onClick={onClick}>
         {/* This creates the L-shape by combining two boxes. */}
         {/* Main box along one wall */}
-        <Box args={[width, height, cabinetBodyDepth]} position={[width/2, height/2, cabinetBodyDepth/2]} castShadow receiveShadow>
+        <Box args={[wallSpace, height, cabinetBodyDepth]} position={[wallSpace/2, height/2, cabinetBodyDepth/2]} castShadow receiveShadow>
           <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
         </Box>
         {/* Second box to complete the L */}
-        <Box args={[cabinetBodyDepth, height, depth - cabinetBodyDepth]} position={[cabinetBodyDepth/2, height/2, cabinetBodyDepth + (depth-cabinetBodyDepth)/2]} castShadow receiveShadow>
+        <Box args={[cabinetBodyDepth, height, wallSpace - cabinetBodyDepth]} position={[cabinetBodyDepth/2, height/2, cabinetBodyDepth + (wallSpace - cabinetBodyDepth)/2]} castShadow receiveShadow>
           <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
         </Box>
 
         {/* Countertop for the L-shape */}
         <group>
-            <Box args={[width, 0.05, cabinetBodyDepth]} position={[width / 2, height + 0.025, cabinetBodyDepth / 2]} castShadow>
+            <Box args={[wallSpace, 0.05, cabinetBodyDepth]} position={[wallSpace / 2, height + 0.025, cabinetBodyDepth / 2]} castShadow>
                 <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
             </Box>
-            <Box args={[cabinetBodyDepth, 0.05, depth - cabinetBodyDepth]} position={[cabinetBodyDepth / 2, height + 0.025, cabinetBodyDepth + (depth - cabinetBodyDepth) / 2]} castShadow>
+            <Box args={[cabinetBodyDepth, 0.05, wallSpace - cabinetBodyDepth]} position={[cabinetBodyDepth / 2, height + 0.025, cabinetBodyDepth + (wallSpace - cabinetBodyDepth) / 2]} castShadow>
                 <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
             </Box>
         </group>
@@ -268,9 +267,8 @@ function View2D({
                     const isCornerCabinet = placed.cabinetId === 'base-corner-900';
 
                     if (isCornerCabinet) {
-                        const cabinetWidth = placed.width / scaleFactor;
-                        const cabinetDepth = placed.depth / scaleFactor;
-                        const bodyDepth = 600; // Standard cabinet depth in mm
+                        const wallSpace = placed.width; // in mm
+                        const bodyDepth = placed.depth; // in mm
 
                         return (
                             <div
@@ -284,8 +282,8 @@ function View2D({
                                 style={{
                                     left: placed.x,
                                     top: placed.y,
-                                    width: cabinetWidth,
-                                    height: cabinetDepth,
+                                    width: wallSpace / scaleFactor,
+                                    height: wallSpace / scaleFactor,
                                 }}
                             >
                                 <div
@@ -294,7 +292,7 @@ function View2D({
                                         selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent'
                                     )}
                                     style={{
-                                        clipPath: `polygon(0% 0%, 100% 0%, 100% ${ (bodyDepth / placed.depth) * 100 }%, ${ (bodyDepth / placed.width) * 100 }% ${ (bodyDepth / placed.depth) * 100 }%, ${ (bodyDepth / placed.width) * 100 }% 100%, 0% 100%)`
+                                        clipPath: `polygon(0% 0%, 100% 0%, 100% ${ (bodyDepth / wallSpace) * 100 }%, ${ (bodyDepth / wallSpace) * 100 }% ${ (bodyDepth / wallSpace) * 100 }%, ${ (bodyDepth / wallSpace) * 100 }% 100%, 0% 100%)`
                                     }}
                                 >
                                     <div className="w-full h-full bg-card border-2 border-primary/50 group-hover:border-primary transition-colors rounded-md flex items-center justify-center text-xs font-mono text-muted-foreground/50">

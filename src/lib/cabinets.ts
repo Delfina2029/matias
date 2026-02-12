@@ -44,12 +44,12 @@ export const cabinetData: Cabinet[] = [
   },
   {
     id: 'base-corner-900',
-    name: 'Gabinete Esquinero 770mm',
+    name: 'Gabinete Esquinero',
     type: 'base',
     icon: Pentagon,
     width: 770,
     height: 800,
-    depth: 770,
+    depth: 600,
     pieces: [
       // These pieces are primarily for component generation.
       // The actual cutting list is generated in cutting-logic.ts
