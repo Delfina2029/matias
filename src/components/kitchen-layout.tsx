@@ -241,12 +241,13 @@ function View2D({
         >
              <div className="relative w-[3000px] h-[2000px]">
                  {placedCabinets.map((placed) => {
+                      const treatAsHorizontalDoors = placed.type !== 'tall' && placed.components.length > 1 && placed.components.every(c => c.type === 'door');
                       return (
                           <div
                               key={placed.instanceId}
                               onMouseDown={(e) => handleMouseDown(e, placed.instanceId)}
                               className={cn(
-                                'absolute bg-card border-2 border-primary/50 group cursor-grab active:cursor-grabbing hover:border-primary transition-colors flex flex-col-reverse p-1 gap-px rounded-md',
+                                'absolute bg-card border-2 border-primary/50 group cursor-grab active:cursor-grabbing hover:border-primary transition-colors flex rounded-md',
                                 selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent z-10',
                                 dragging === placed.instanceId && 'shadow-lg z-20'
                               )}
@@ -258,18 +259,23 @@ function View2D({
                               }}
                           >
                             {/* Render components inside */}
-                            {placed.components.map(comp => {
-                                const compHeightPercentage = (comp.height / placed.height) * 100;
-                                return (
-                                    <div 
-                                        key={comp.id}
-                                        className="relative w-full bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center"
-                                        style={{ height: `${compHeightPercentage}%` }}
-                                    >
-                                        <span className="text-[9px] font-medium text-primary-foreground/70 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
-                                    </div>
-                                )
-                            })}
+                            <div className={`h-full w-full flex p-1 gap-px ${treatAsHorizontalDoors ? 'flex-row' : 'flex-col-reverse'}`}>
+                              {placed.components.map(comp => {
+                                  const compStyle = treatAsHorizontalDoors 
+                                      ? { width: `${100 / placed.components.length}%` }
+                                      : { height: `${(comp.height / placed.height) * 100}%` };
+
+                                  return (
+                                      <div 
+                                          key={comp.id}
+                                          className={`relative bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center ${treatAsHorizontalDoors ? 'h-full' : 'w-full'}`}
+                                          style={compStyle}
+                                      >
+                                          <span className="text-[9px] font-medium text-primary-foreground/70 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
+                                      </div>
+                                  )
+                              })}
+                            </div>
 
                             <Button
                               size="icon"

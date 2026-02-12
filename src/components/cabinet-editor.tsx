@@ -107,6 +107,9 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
 
   const selectedComponent = components.find(c => c.id === selectedComponentId);
 
+  const treatAsHorizontalDoors = cabinet.type !== 'tall' && components.length > 1 && components.every(c => c.type === 'door');
+  const numDoors = treatAsHorizontalDoors ? components.length : 1;
+
   const selectedDrawerPieces = useMemo(() => {
     if (!selectedComponent || selectedComponent.type !== 'drawer') {
       return [];
@@ -187,16 +190,18 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
               <h4 className="font-medium text-center">Personalizar Componentes</h4>
               <div className="grid grid-cols-2 gap-6">
                   {/* Visual Preview */}
-                  <div className="relative bg-secondary/30 rounded-md p-1 border-2 border-dashed flex flex-col justify-end" style={{ height: 400 }}>
-                      <div className="w-full h-full flex flex-col-reverse gap-1">
+                  <div className="relative bg-secondary/30 rounded-md p-1 border-2 border-dashed flex items-end" style={{ height: 400 }}>
+                      <div className={`w-full h-full flex gap-1 ${treatAsHorizontalDoors ? 'flex-row' : 'flex-col-reverse'}`}>
                           {components.map(comp => {
-                              const compHeightPercentage = (comp.height / dimensions.height) * 100;
+                              const compStyle = treatAsHorizontalDoors
+                                  ? { width: `${100 / numDoors}%` }
+                                  : { height: `${(comp.height / dimensions.height) * 100}%` };
                               return (
                                   <div 
                                       key={comp.id}
                                       onClick={() => setSelectedComponentId(comp.id)}
-                                      className={`relative w-full bg-primary/20 border border-primary rounded-sm flex items-center justify-center cursor-pointer hover:bg-primary/30 transition-all ${selectedComponentId === comp.id ? 'ring-2 ring-accent z-10' : ''}`}
-                                      style={{ height: `${compHeightPercentage}%` }}
+                                      className={`relative w-full bg-primary/20 border border-primary rounded-sm flex items-center justify-center cursor-pointer hover:bg-primary/30 transition-all ${selectedComponentId === comp.id ? 'ring-2 ring-accent z-10' : ''} ${treatAsHorizontalDoors ? 'h-full' : ''}`}
+                                      style={compStyle}
                                   >
                                       <span className="text-xs font-medium text-primary-foreground/80 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
                                       {comp.handle === 'j-profile' && (
@@ -212,14 +217,22 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                   <div className="space-y-4">
                       <div>
                           <h5 className="font-semibold mb-2">Configuración Rápida</h5>
-                          <div className="grid grid-cols-2 gap-2">
-                              <Button variant="outline" onClick={() => { setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: dimensions.height }]); setSelectedComponentId(null);}}>
-                                  <Plus className="mr-2 h-4 w-4" /> 1 Puerta
-                              </Button>
-                              <Button variant="outline" onClick={() => { setComponents([{ id: `comp_${Date.now()}`, type: 'drawer', height: 180 }]); setSelectedComponentId(null);}}>
-                                  <Plus className="mr-2 h-4 w-4" /> Cajones
-                              </Button>
-                          </div>
+                           <div className="space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button variant="outline" onClick={() => { setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: dimensions.height }]); setSelectedComponentId(null);}}>
+                                        1 Puerta
+                                    </Button>
+                                    <Button variant="outline" disabled={cabinet.type === 'tall'} onClick={() => { setComponents([
+                                        { id: `comp_${Date.now()}_1`, type: 'door', height: dimensions.height },
+                                        { id: `comp_${Date.now()}_2`, type: 'door', height: dimensions.height }
+                                    ]); setSelectedComponentId(null);}}>
+                                        2 Puertas
+                                    </Button>
+                                </div>
+                                <Button variant="outline" className="w-full" onClick={() => { setComponents([{ id: `comp_${Date.now()}`, type: 'drawer', height: 180 }]); setSelectedComponentId(null);}}>
+                                    <Plus className="mr-2 h-4 w-4" /> Empezar con Cajones
+                                </Button>
+                            </div>
                       </div>
 
                       {components.length > 0 && components.every(c => c.type === 'drawer') && (
@@ -301,7 +314,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                             <TableRow>
                                                 <TableCell className="font-medium py-1 px-2">1</TableCell>
                                                 <TableCell className="py-1 px-2">{selectedComponent.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta'}</TableCell>
-                                                <TableCell className="text-right py-1 px-2">{`${(dimensions.width - 4).toFixed(1)} x ${(selectedComponent.height - 4 - (selectedComponent.handle === 'j-profile' ? 26.8 : 0)).toFixed(1)} mm`}</TableCell>
+                                                <TableCell className="text-right py-1 px-2">{`${(numDoors > 1 ? ((dimensions.width - 2 * (numDoors + 1)) / numDoors) : (dimensions.width-4)).toFixed(1)} x ${(selectedComponent.height - 4 - (selectedComponent.handle === 'j-profile' ? 26.8 : 0)).toFixed(1)} mm`}</TableCell>
                                             </TableRow>
                                         </TableBody>
                                     </Table>

@@ -45,6 +45,9 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
 
   // --- Components (Doors & Drawers) ---
+  const treatAsHorizontalDoors = type !== 'tall' && components.length > 1 && components.every(c => c.type === 'door');
+  const numHorizontalDoors = treatAsHorizontalDoors ? components.length : 1;
+  
   components.forEach(component => {
     if (component.type === 'door') {
       let doorHeight = component.height - 4;
@@ -53,10 +56,14 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
       if (component.handle === 'j-profile') {
         doorHeight -= 26.8;
       }
+
+      const doorWidth = treatAsHorizontalDoors
+        ? (width - 2 * numHorizontalDoors - 2) / numHorizontalDoors
+        : width - 4;
       
       pieces.push({
         name: doorName,
-        width: width - 4, // 2mm gap on each side
+        width: doorWidth,
         height: doorHeight,
         quantity: 1,
         material: MELAMINE_MATERIAL
