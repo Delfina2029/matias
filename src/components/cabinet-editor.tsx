@@ -198,7 +198,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                     style={{ height: `${compHeightPercentage}%` }}
                                 >
                                     <span className="text-xs font-medium text-primary-foreground/80 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
-                                    {comp.type === 'drawer' && comp.handle === 'j-profile' && (
+                                    {comp.handle === 'j-profile' && (
                                         <div className="absolute top-0.5 left-0 right-0 h-1 bg-primary/50 rounded-t-sm" title="Perfil J"></div>
                                     )}
                                 </div>
@@ -245,21 +245,21 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                 />
                             </div>
 
-                            {selectedComponent.type === 'drawer' && (
-                                <div className="flex items-center justify-between space-x-2 pt-2 border-t mt-2">
-                                    <Label htmlFor="j-profile-switch" className="flex flex-col space-y-1">
-                                        <span>Perfil J</span>
-                                        <span className="font-normal leading-snug text-muted-foreground text-xs">
-                                            Añade un tirador integrado en el borde superior.
-                                        </span>
-                                    </Label>
-                                    <Switch
-                                        id="j-profile-switch"
-                                        checked={selectedComponent.handle === 'j-profile'}
-                                        onCheckedChange={(checked) => handleToggleJProfile(selectedComponent.id, checked)}
-                                    />
-                                </div>
-                            )}
+                            
+                            <div className="flex items-center justify-between space-x-2 pt-2 border-t mt-2">
+                                <Label htmlFor="j-profile-switch" className="flex flex-col space-y-1">
+                                    <span>Perfil J</span>
+                                    <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                        Añade un tirador integrado en el borde superior.
+                                    </span>
+                                </Label>
+                                <Switch
+                                    id="j-profile-switch"
+                                    checked={selectedComponent.handle === 'j-profile'}
+                                    onCheckedChange={(checked) => handleToggleJProfile(selectedComponent.id, checked)}
+                                />
+                            </div>
+                            
 
                             {selectedComponent.type === 'drawer' && selectedDrawerPieces.length > 0 && (
                               <div className="space-y-2 pt-2">

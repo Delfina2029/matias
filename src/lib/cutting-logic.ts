@@ -47,11 +47,17 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   // --- Components (Doors & Drawers) ---
   components.forEach(component => {
     if (component.type === 'door') {
-      // Single door piece
+      let doorHeight = component.height - 4;
+      const doorName = component.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta';
+      
+      if (component.handle === 'j-profile') {
+        doorHeight -= 26.8;
+      }
+      
       pieces.push({
-        name: 'Puerta',
+        name: doorName,
         width: width - 4, // 2mm gap on each side
-        height: component.height - 4, // 2mm gap top/bottom
+        height: doorHeight,
         quantity: 1,
         material: MELAMINE_MATERIAL
       });
