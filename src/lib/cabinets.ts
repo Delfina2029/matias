@@ -44,17 +44,17 @@ export const cabinetData: Cabinet[] = [
   },
   {
     id: 'base-corner-900',
-    name: 'Gabinete Esquinero 900mm',
+    name: 'Gabinete Esquinero 770mm',
     type: 'base',
     icon: Pentagon,
-    width: 900,
-    height: 720,
-    depth: 900,
+    width: 770,
+    height: 800,
+    depth: 770,
     pieces: [
       // These pieces are primarily for component generation.
       // The actual cutting list is generated in cutting-logic.ts
-      { name: 'Puerta Esquinero A', width: 315, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Puerta Esquinero B', width: 315, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
+      { name: 'Puerta Esquinero A', width: 170, height: 796, quantity: 1, material: MELAMINE_MATERIAL },
+      { name: 'Puerta Esquinero B', width: 170, height: 796, quantity: 1, material: MELAMINE_MATERIAL },
     ],
   },
   {
