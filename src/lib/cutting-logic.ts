@@ -17,27 +17,54 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     const wallSpace = width;
     const bodyDepth1 = depth;
     const bodyDepth2 = depth2 || depth;
-    const doorHeight = height - 4;
+    
+    // Using the logic: door width = wallSpace - opposite body depth
+    const door1Width = wallSpace - bodyDepth2 - 20; // 20mm tolerance/gap
+    const door2Width = wallSpace - bodyDepth1 - 20;
 
-    // Doors for the corner opening. The door on one leg depends on the depth of the other leg.
-    const door1Width = wallSpace - bodyDepth2;
-    const door2Width = wallSpace - bodyDepth1;
-    cornerPieces.push({ name: 'Puerta Esquinero 1', width: door1Width, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Puerta Esquinero 2', width: door2Width, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+    // Doors for the corner opening.
+    cornerPieces.push({ name: 'Puerta Esquinero 1', width: door1Width, height: height - 4, quantity: 1, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Puerta Esquinero 2', width: door2Width, height: height - 4, quantity: 1, material: MELAMINE_MATERIAL });
 
-
-    // Carcass Pieces - providing rectangular blanks for the user to make L-shaped cuts.
-    const floorBlankWidth = wallSpace - MELAMINE_THICKNESS * 2;
+    // Carcass Pieces
+    const floorBlankWidth = wallSpace - MELAMINE_THICKNESS;
     
     cornerPieces.push({ name: 'Lateral 1', width: bodyDepth1, height: height, quantity: 1, material: MELAMINE_MATERIAL });
     cornerPieces.push({ name: 'Lateral 2', width: bodyDepth2, height: height, quantity: 1, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Piso (Cortar en L)', width: floorBlankWidth, height: floorBlankWidth, quantity: 1, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Estante (Cortar en L)', width: floorBlankWidth - 25, height: floorBlankWidth - 25, quantity: 1, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Amarre Superior', width: floorBlankWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Panel Trasero', width: wallSpace - MELAMINE_THICKNESS, height: height - MELAMINE_THICKNESS, quantity: 2, material: BACK_PANEL_MATERIAL });
+    cornerPieces.push({ name: 'Piso (Cortar en L)', width: floorBlankWidth, height: floorBlankWidth, quantity: 1, material: MELAMINE_MATERIAL, notes: 'Requiere corte en L' });
+    cornerPieces.push({ name: 'Estante (Cortar en L)', width: floorBlankWidth - 25, height: floorBlankWidth - 25, quantity: 1, material: MELAMINE_MATERIAL, notes: 'Requiere corte en L' });
+    cornerPieces.push({ name: 'Amarre Superior (x2)', width: 100, height: wallSpace - bodyDepth1 - bodyDepth2, quantity: 2, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Panel Trasero (x2)', width: wallSpace, height: height - MELAMINE_THICKNESS, quantity: 2, material: BACK_PANEL_MATERIAL });
     
     return cornerPieces;
+  } else if (cabinet.cabinetId === 'wall-microwave-600') {
+    const pieces: Piece[] = [];
+    const { width, height, depth } = cabinet;
+    const interiorWidth = width - (2 * MELAMINE_THICKNESS);
+    
+    // Fixed clear opening height for the microwave
+    const microwaveClearOpeningHeight = 400;
+    
+    // Carcass
+    pieces.push({ name: 'Lateral', width: depth, height: height, quantity: 2, material: MELAMINE_MATERIAL });
+    pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
+    pieces.push({ name: 'Tapa', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
+    
+    // The shelf that the microwave sits on
+    pieces.push({ name: 'Estante Microondas', width: interiorWidth, height: depth - 20, quantity: 1, material: MELAMINE_MATERIAL });
+    
+    pieces.push({ name: 'Panel Trasero', width: width - 5, height: height - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
+
+    // Door for the top cabinet
+    // It's the total height minus the opening, minus the 3 horizontal panels (piso, estante, tapa)
+    const topCabinetClearOpeningHeight = height - microwaveClearOpeningHeight - (3 * MELAMINE_THICKNESS);
+    const doorHeight = topCabinetClearOpeningHeight - 4; // Standard 4mm gap
+    const doorWidth = width - 4; // Standard 4mm gap
+    pieces.push({ name: 'Puerta Superior', width: doorWidth, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+
+    return pieces;
   }
+
 
   // --- Regular rectangular cabinet logic ---
   const { width, height, depth, components, type } = cabinet;
@@ -121,4 +148,13 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   });
 
   return pieces;
+}
+
+interface Piece {
+    name: string;
+    width: number;
+    height: number;
+    quantity: number;
+    material: string;
+    notes?: string;
 }

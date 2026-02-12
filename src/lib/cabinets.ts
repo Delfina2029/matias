@@ -1,5 +1,5 @@
 import type { Cabinet } from './types';
-import { Box, Archive, Container, Pentagon } from 'lucide-react';
+import { Box, Archive, Container, Pentagon, Microwave } from 'lucide-react';
 
 const MELAMINE_THICKNESS = 18;
 const MELAMINE_MATERIAL = 'Melamina 18mm';
@@ -72,6 +72,18 @@ export const cabinetData: Cabinet[] = [
       { name: 'Panel Trasero', width: 582, height: 582, quantity: 1, material: BACK_PANEL_MATERIAL },
       { name: 'Puerta', width: 596, height: 596, quantity: 1, material: MELAMINE_MATERIAL },
       { name: 'Estante', width: 564, height: 280, quantity: 1, material: MELAMINE_MATERIAL },
+    ],
+  },
+  {
+    id: 'wall-microwave-600',
+    name: 'Gabinete Porta Microondas',
+    type: 'wall',
+    icon: Microwave,
+    width: 600,
+    height: 800,
+    depth: 400,
+    pieces: [
+      { name: 'Puerta Superior', width: 596, height: 342, quantity: 1, material: MELAMINE_MATERIAL },
     ],
   },
   {
