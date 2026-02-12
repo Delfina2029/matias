@@ -1,5 +1,5 @@
 import type { Cabinet } from './types';
-import { Box, Archive, Container } from 'lucide-react';
+import { Box, Archive, Container, Pentagon } from 'lucide-react';
 
 const MELAMINE_THICKNESS = 18;
 const MELAMINE_MATERIAL = 'Melamina 18mm';
@@ -40,6 +40,21 @@ export const cabinetData: Cabinet[] = [
       { name: 'Panel Trasero', width: 432, height: 702, quantity: 1, material: BACK_PANEL_MATERIAL },
       { name: 'Puerta', width: 446, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
       { name: 'Estante', width: 414, height: 540, quantity: 1, material: MELAMINE_MATERIAL },
+    ],
+  },
+  {
+    id: 'base-corner-900',
+    name: 'Gabinete Esquinero 900mm',
+    type: 'base',
+    icon: Pentagon,
+    width: 900,
+    height: 720,
+    depth: 900,
+    pieces: [
+      // These pieces are primarily for component generation.
+      // The actual cutting list is generated in cutting-logic.ts
+      { name: 'Puerta Esquinero A', width: 315, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
+      { name: 'Puerta Esquinero B', width: 315, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
     ],
   },
   {

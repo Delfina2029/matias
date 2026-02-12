@@ -10,31 +10,48 @@ const BACK_PANEL_MATERIAL = 'MDF 3mm';
  * @returns An array of pieces for the cutting list.
  */
 export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
+  // Handle special cases like corner cabinets first
+  if (cabinet.cabinetId === 'base-corner-900') {
+    const cornerPieces: Piece[] = [];
+    const { height } = cabinet;
+    const doorHeight = height - 4;
+
+    // Simplified but common piece list for a 900x900 corner cabinet with bifold doors
+    cornerPieces.push({ name: 'Lateral', width: 562, height: height, quantity: 2, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Piso', width: 882, height: 882, quantity: 1, material: MELAMINE_MATERIAL }); // To be cut in pentagon shape
+    cornerPieces.push({ name: 'Poste Trasero', width: 75, height: height, quantity: 1, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Amarre Superior', width: 500, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Estante', width: 850, height: 850, quantity: 1, material: MELAMINE_MATERIAL }); // To be cut
+    
+    // Bifold doors
+    cornerPieces.push({ name: 'Puerta Esquinero A', width: 315, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Puerta Esquinero B', width: 315, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+
+    return cornerPieces;
+  }
+
+  // --- Regular rectangular cabinet logic ---
   const { width, height, depth, components, type } = cabinet;
   const pieces: Piece[] = [];
 
-  // --- Cabinet Box ---
   const interiorWidth = width - (2 * MELAMINE_THICKNESS);
 
-  // 1. Sides (Laterales)
+  // 1. Sides
   pieces.push({ name: 'Lateral', width: depth, height: height, quantity: 2, material: MELAMINE_MATERIAL });
   
   // 2. Bottom and Top
   if (type === 'base') {
-    // Base cabinets have a bottom panel and top stretchers (amarres)
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Amarre Superior', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
   } else {
-    // Wall and Tall cabinets have a bottom and a top panel
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Tapa', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
   }
 
   // 3. Back Panel
-  // A small tolerance is subtracted for fitting
   pieces.push({ name: 'Panel Trasero', width: width - 5, height: height - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
   
-  // 4. Shelves (Estantes) - Add one adjustable shelf by default for now.
+  // 4. Shelves
   if (components.every(c => c.type === 'door')) {
     if (type !== 'tall') {
         pieces.push({ name: 'Estante', width: interiorWidth - 2, height: depth - 25, quantity: 1, material: MELAMINE_MATERIAL });
@@ -42,7 +59,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         pieces.push({ name: 'Estante', width: interiorWidth - 2, height: depth - 25, quantity: 4, material: MELAMINE_MATERIAL });
     }
   }
-
 
   // --- Components (Doors & Drawers) ---
   const treatAsHorizontalDoors = type !== 'tall' && components.length > 1 && components.every(c => c.type === 'door');
@@ -69,8 +85,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         material: MELAMINE_MATERIAL
       });
     } else if (component.type === 'drawer') {
-      // A drawer is made of a front and a box
-      // 1. Drawer Front (Frente de Cajón)
       let frontHeight = component.height - 4;
       const frontName = component.handle === 'j-profile' ? 'Frente de Cajón (Perfil J)' : 'Frente de Cajón';
       
@@ -86,18 +100,13 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         material: MELAMINE_MATERIAL
       });
 
-      // 2. Drawer Box (Cajón Interior)
-      const drawerBoxHeight = Math.min(component.height - 40, 200); // Box is shorter than the front
-      const drawerBoxWidth = interiorWidth - 26; // Space for slides (13mm each side)
-      const drawerBoxDepth = depth - 30; // Shorter than cabinet depth
-      
+      const drawerBoxHeight = Math.min(component.height - 40, 200);
+      const drawerBoxWidth = interiorWidth - 26;
+      const drawerBoxDepth = depth - 30;
       const drawerSizeLabel = drawerBoxHeight <= 150 ? 'Chico' : 'Grande';
 
-      // Drawer box sides (2)
       pieces.push({ name: `Lateral de Cajón ${drawerSizeLabel}`, width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-      // Drawer box front & back (2)
       pieces.push({ name: `Frente/Trasero de Cajón ${drawerSizeLabel}`, width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-      // Drawer box bottom (1)
       pieces.push({ name: `Fondo de Cajón ${drawerSizeLabel}`, width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
     }
   });

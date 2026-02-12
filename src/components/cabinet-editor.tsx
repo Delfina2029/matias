@@ -45,6 +45,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
 
   const { toast } = useToast();
+  const isCornerCabinet = cabinet.cabinetId === 'base-corner-900';
 
   useEffect(() => {
     setDimensions({
@@ -116,7 +117,6 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     }
 
     const component = selectedComponent;
-    // Use the dimensions from the state, as they might be edited
     const { width, depth } = dimensions;
     const pieces: {name: string, dimensions: string, quantity: number}[] = [];
 
@@ -171,7 +171,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
               <div className="grid grid-cols-3 gap-4">
                   <div>
                       <Label htmlFor="width">Ancho (mm)</Label>
-                      <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
+                      <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} disabled={isCornerCabinet} />
                   </div>
                   <div>
                       <Label htmlFor="height">Alto (mm)</Label>
@@ -179,7 +179,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                   </div>
                   <div>
                       <Label htmlFor="depth">Profundidad (mm)</Label>
-                      <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} />
+                      <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} disabled={isCornerCabinet} />
                   </div>
               </div>
           </div>
@@ -222,7 +222,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                     <Button variant="outline" onClick={() => { setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: dimensions.height }]); setSelectedComponentId(null);}}>
                                         1 Puerta
                                     </Button>
-                                    <Button variant="outline" disabled={cabinet.type === 'tall'} onClick={() => { setComponents([
+                                    <Button variant="outline" disabled={cabinet.type === 'tall' || isCornerCabinet} onClick={() => { setComponents([
                                         { id: `comp_${Date.now()}_1`, type: 'door', height: dimensions.height },
                                         { id: `comp_${Date.now()}_2`, type: 'door', height: dimensions.height }
                                     ]); setSelectedComponentId(null);}}>
@@ -328,7 +328,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                           </div>
                       )}
 
-                      {components.length > 0 && (
+                      {components.length > 0 && !isCornerCabinet && (
                           <div className="text-xs text-muted-foreground space-y-1 pt-2">
                               <div className="flex justify-between"><span>Suma de alturas:</span> <span>{totalComponentsHeight}mm</span></div>
                               <div className={`flex justify-between font-medium ${remainingHeight < 0 ? 'text-destructive' : ''}`}><span>Espacio restante:</span> <span>{remainingHeight}mm</span></div>
