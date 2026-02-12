@@ -6,6 +6,15 @@ export interface Piece {
   height: number;
   quantity: number;
   material: string;
+  notes?: string;
+}
+
+export interface CabinetComponent {
+  id: string;
+  type: 'drawer' | 'door' | 'opening';
+  height: number;
+  handle?: 'j-profile';
+  hinge?: 'side' | 'top';
 }
 
 export interface Cabinet {
@@ -17,13 +26,7 @@ export interface Cabinet {
   height: number;
   depth: number;
   pieces: Piece[];
-}
-
-export interface CabinetComponent {
-  id: string;
-  type: 'drawer' | 'door';
-  height: number;
-  handle?: 'j-profile';
+  defaultComponents?: Omit<CabinetComponent, 'id'>[];
 }
 
 export interface PlacedCabinet {

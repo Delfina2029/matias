@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Table,
@@ -25,6 +25,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Switch } from './ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 
 type CabinetEditorProps = {
@@ -64,6 +71,28 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     const numValue = Number(value);
     setDimensions((prev) => ({ ...prev, [name]: numValue }));
   };
+  
+  const handleUpdateComponent = (id: string, newProps: Partial<CabinetComponent>) => {
+    setComponents(prev => prev.map(c => c.id === id ? { ...c, ...newProps } : c));
+  };
+  
+  const moveComponent = (id: string, direction: 'up' | 'down') => {
+    setComponents(prev => {
+        const index = prev.findIndex(c => c.id === id);
+        if (index === -1) return prev;
+
+        const newComponents = [...prev];
+        // In flex-col-reverse, UP means a higher index. DOWN means a lower index.
+        const toIndex = direction === 'up' ? index + 1 : index - 1;
+
+        if (toIndex < 0 || toIndex >= newComponents.length) return prev;
+        
+        const element = newComponents.splice(index, 1)[0];
+        newComponents.splice(toIndex, 0, element);
+
+        return newComponents;
+    });
+  };
 
   const handleSave = () => {
     onUpdate({ ...cabinet, ...dimensions, components });
@@ -83,7 +112,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
   }
 
   const handleUpdateComponentHeight = (id: string, newHeight: number) => {
-    setComponents(prev => prev.map(c => c.id === id ? { ...c, height: newHeight } : c));
+    handleUpdateComponent(id, { height: newHeight });
   };
 
   const handleToggleJProfile = (id: string, enabled: boolean) => {
@@ -224,12 +253,19 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                   <div 
                                       key={comp.id}
                                       onClick={() => setSelectedComponentId(comp.id)}
-                                      className={`relative w-full bg-primary/20 border border-primary rounded-sm flex items-center justify-center cursor-pointer hover:bg-primary/30 transition-all ${selectedComponentId === comp.id ? 'ring-2 ring-accent z-10' : ''} ${treatAsHorizontalDoors ? 'h-full' : ''}`}
+                                      className={`relative w-full border rounded-sm flex items-center justify-center cursor-pointer transition-all ${selectedComponentId === comp.id ? 'ring-2 ring-accent z-10' : ''} ${treatAsHorizontalDoors ? 'h-full' : ''}
+                                        ${comp.type === 'opening' ? 'bg-secondary/20 border-dashed border-muted-foreground/50' : 'bg-primary/20 border-primary hover:bg-primary/30'}`
+                                      }
                                       style={compStyle}
                                   >
-                                      <span className="text-xs font-medium text-primary-foreground/80 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
-                                      {comp.handle === 'j-profile' && (
+                                      <span className={`text-xs font-medium select-none ${comp.type === 'opening' ? 'text-muted-foreground' : 'text-primary-foreground/80'}`}>
+                                        {comp.type === 'drawer' ? 'Cajón' : comp.type === 'door' ? 'Puerta' : 'Espacio Abierto'}
+                                      </span>
+                                      {comp.type !== 'opening' && comp.handle === 'j-profile' && (
                                           <div className="absolute top-0.5 left-0 right-0 h-1 bg-primary/50 rounded-t-sm" title="Perfil J"></div>
+                                      )}
+                                      {comp.type === 'door' && comp.hinge === 'top' && (
+                                        <div className="absolute top-1 left-1/2 -translate-x-1/2 w-3 h-0.5 bg-primary-foreground/50 rounded-full" title="Apertura hacia arriba"></div>
                                       )}
                                   </div>
                               )
@@ -269,9 +305,17 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                           <div className="space-y-3 p-3 border rounded-md bg-background animate-in fade-in-50">
                               <div className="flex justify-between items-center">
                                   <h5 className="font-medium">Editar Componente</h5>
-                                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveComponent(selectedComponent.id)}>
-                                      <X className="h-4 w-4" />
-                                  </Button>
+                                   <div className="flex items-center -mr-2">
+                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveComponent(selectedComponent.id, 'up')} disabled={components.findIndex(c => c.id === selectedComponent.id) === components.length - 1}>
+                                      <ArrowUp className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveComponent(selectedComponent.id, 'down')} disabled={components.findIndex(c => c.id === selectedComponent.id) === 0}>
+                                      <ArrowDown className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveComponent(selectedComponent.id)}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                               </div>
                               <div className="space-y-1">
                                   <Label htmlFor="comp-height">Alto del Frente (mm)</Label>
@@ -283,20 +327,41 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                   />
                               </div>
 
-                              
-                              <div className="flex items-center justify-between space-x-2 pt-2 border-t mt-2">
-                                  <Label htmlFor="j-profile-switch" className="flex flex-col space-y-1">
-                                      <span>Perfil J</span>
+                              {selectedComponent.type === 'door' && (
+                                <div className="flex items-center justify-between space-x-2 pt-2 border-t mt-2">
+                                  <Label htmlFor="hinge-type" className="flex flex-col space-y-1">
+                                      <span>Tipo de Apertura</span>
                                       <span className="font-normal leading-snug text-muted-foreground text-xs">
-                                          Añade un tirador integrado en el borde superior.
+                                          Define cómo se abre la puerta.
                                       </span>
                                   </Label>
-                                  <Switch
-                                      id="j-profile-switch"
-                                      checked={selectedComponent.handle === 'j-profile'}
-                                      onCheckedChange={(checked) => handleToggleJProfile(selectedComponent.id, checked)}
-                                  />
-                              </div>
+                                  <Select onValueChange={(value: 'side' | 'top') => handleUpdateComponent(selectedComponent.id, { hinge: value as 'side' | 'top' })} value={selectedComponent.hinge || 'side'}>
+                                      <SelectTrigger id="hinge-type" className="w-[140px]">
+                                          <SelectValue placeholder="Seleccionar" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="side">Apertura Lateral</SelectItem>
+                                          <SelectItem value="top">Hacia Arriba</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+                              
+                              {selectedComponent.type !== 'opening' && (
+                                <div className="flex items-center justify-between space-x-2 pt-2 border-t mt-2">
+                                    <Label htmlFor="j-profile-switch" className="flex flex-col space-y-1">
+                                        <span>Perfil J</span>
+                                        <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                            Añade un tirador integrado en el borde superior.
+                                        </span>
+                                    </Label>
+                                    <Switch
+                                        id="j-profile-switch"
+                                        checked={selectedComponent.handle === 'j-profile'}
+                                        onCheckedChange={(checked) => handleToggleJProfile(selectedComponent.id, checked)}
+                                    />
+                                </div>
+                              )}
                               
 
                               {selectedComponent.type === 'drawer' && selectedDrawerPieces.length > 0 && (

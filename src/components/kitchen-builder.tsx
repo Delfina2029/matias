@@ -16,14 +16,31 @@ export function KitchenBuilder() {
     const cabinetInfo = cabinetData.find((c) => c.id === cabinetId);
     if (!cabinetInfo) return;
 
-    // Infer default components from pieces
-    const defaultComponents: CabinetComponent[] = cabinetInfo.pieces
-      .filter(p => p.name.toLowerCase().includes('puerta'))
-      .map((p, i) => ({
-        id: `comp_${Date.now()}_${Math.random()}_${i}`,
-        type: 'door',
-        height: p.height
+    let defaultComponents: CabinetComponent[];
+
+    if (cabinetInfo.defaultComponents) {
+      defaultComponents = cabinetInfo.defaultComponents.map((comp, i) => ({
+        ...comp,
+        id: `comp_${Date.now()}_${i}_${Math.random()}`,
       }));
+    } else {
+      // Infer default components from pieces
+      defaultComponents = cabinetInfo.pieces
+        .filter(p => p.name.toLowerCase().includes('puerta'))
+        .map((p, i) => ({
+          id: `comp_${Date.now()}_${i}_${Math.random()}`,
+          type: 'door',
+          height: p.height
+        }));
+    }
+    
+    if (defaultComponents.length === 0 && cabinetId !== 'base-corner-900') {
+        defaultComponents.push({
+            id: `comp_${Date.now()}_${Math.random()}`,
+            type: 'door',
+            height: cabinetInfo.height
+        });
+    }
 
     const newCabinet: PlacedCabinet = {
       cabinetId,
@@ -34,6 +51,7 @@ export function KitchenBuilder() {
       width: cabinetInfo.width,
       height: cabinetInfo.height,
       depth: cabinetInfo.depth,
+      depth2: cabinetInfo.depth2,
       components: defaultComponents,
     };
     setPlacedCabinets((prev) => [...prev, newCabinet]);

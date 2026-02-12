@@ -37,31 +37,35 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     cornerPieces.push({ name: 'Panel Trasero (x2)', width: wallSpace, height: height - MELAMINE_THICKNESS, quantity: 2, material: BACK_PANEL_MATERIAL });
     
     return cornerPieces;
-  } else if (cabinet.cabinetId === 'wall-microwave-600') {
+  } else if (cabinet.cabinetId.includes('microwave')) {
     const pieces: Piece[] = [];
-    const { width, height, depth } = cabinet;
+    const { width, height, depth, components } = cabinet;
     const interiorWidth = width - (2 * MELAMINE_THICKNESS);
-    
-    // Fixed clear opening height for the microwave
-    const microwaveClearOpeningHeight = 400;
     
     // Carcass
     pieces.push({ name: 'Lateral', width: depth, height: height, quantity: 2, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Tapa', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
-    
-    // The shelf that the microwave sits on
-    pieces.push({ name: 'Estante Microondas', width: interiorWidth, height: depth - 20, quantity: 1, material: MELAMINE_MATERIAL });
-    
     pieces.push({ name: 'Panel Trasero', width: width - 5, height: height - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
 
-    // Door for the top cabinet
-    // It's the total height minus the opening, minus the 3 horizontal panels (piso, estante, tapa)
-    const topCabinetClearOpeningHeight = height - microwaveClearOpeningHeight - (3 * MELAMINE_THICKNESS);
-    const doorHeight = topCabinetClearOpeningHeight - 4; // Standard 4mm gap
-    const doorWidth = width - 4; // Standard 4mm gap
-    pieces.push({ name: 'Puerta Superior', width: doorWidth, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+    const doorComp = components.find(c => c.type === 'door');
 
+    // Add shelf between components
+    if (components.length > 1) {
+      pieces.push({ name: 'Estante Microondas', width: interiorWidth, height: depth - 20, quantity: 1, material: MELAMINE_MATERIAL });
+    }
+
+    if(doorComp) {
+        let doorHeight = doorComp.height - 4;
+        let doorName = doorComp.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta';
+        if (doorComp.handle === 'j-profile') { doorHeight -= 26.8; }
+        if (doorComp.hinge === 'top') {
+            doorName = `${doorName} (Apertura Arriba)`;
+        }
+        
+        pieces.push({ name: doorName, width: width - 4, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+    }
+    
     return pieces;
   }
 
@@ -103,10 +107,13 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   components.forEach(component => {
     if (component.type === 'door') {
       let doorHeight = component.height - 4;
-      const doorName = component.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta';
+      let doorName = component.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta';
       
       if (component.handle === 'j-profile') {
         doorHeight -= 26.8;
+      }
+      if (component.hinge === 'top') {
+        doorName = `${doorName} (Apertura Arriba)`;
       }
 
       const doorWidth = treatAsHorizontalDoors
@@ -148,13 +155,4 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   });
 
   return pieces;
-}
-
-interface Piece {
-    name: string;
-    width: number;
-    height: number;
-    quantity: number;
-    material: string;
-    notes?: string;
 }

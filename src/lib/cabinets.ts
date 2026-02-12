@@ -15,13 +15,7 @@ export const cabinetData: Cabinet[] = [
     height: 720,
     depth: 580,
     pieces: [
-      { name: 'Lateral', width: 562, height: 720, quantity: 2, material: MELAMINE_MATERIAL },
-      { name: 'Base', width: 564, height: 562, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Amarre Superior (Frontal)', width: 564, height: 100, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Amarre Superior (Trasero)', width: 564, height: 100, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Panel Trasero', width: 582, height: 702, quantity: 1, material: BACK_PANEL_MATERIAL },
       { name: 'Puerta', width: 596, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Estante', width: 564, height: 540, quantity: 1, material: MELAMINE_MATERIAL },
     ],
   },
   {
@@ -33,13 +27,7 @@ export const cabinetData: Cabinet[] = [
     height: 720,
     depth: 580,
     pieces: [
-      { name: 'Lateral', width: 562, height: 720, quantity: 2, material: MELAMINE_MATERIAL },
-      { name: 'Base', width: 414, height: 562, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Amarre Superior (Frontal)', width: 414, height: 100, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Amarre Superior (Trasero)', width: 414, height: 100, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Panel Trasero', width: 432, height: 702, quantity: 1, material: BACK_PANEL_MATERIAL },
       { name: 'Puerta', width: 446, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Estante', width: 414, height: 540, quantity: 1, material: MELAMINE_MATERIAL },
     ],
   },
   {
@@ -50,12 +38,8 @@ export const cabinetData: Cabinet[] = [
     width: 770,
     height: 800,
     depth: 600,
-    pieces: [
-      // These pieces are primarily for component generation.
-      // The actual cutting list is generated in cutting-logic.ts
-      { name: 'Puerta Esquinero A', width: 170, height: 796, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Puerta Esquinero B', width: 170, height: 796, quantity: 1, material: MELAMINE_MATERIAL },
-    ],
+    depth2: 600,
+    pieces: [],
   },
   {
     id: 'wall-600',
@@ -66,12 +50,7 @@ export const cabinetData: Cabinet[] = [
     height: 600,
     depth: 320,
     pieces: [
-      { name: 'Lateral', width: 302, height: 600, quantity: 2, material: MELAMINE_MATERIAL },
-      { name: 'Tapa', width: 564, height: 302, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Base', width: 564, height: 302, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Panel Trasero', width: 582, height: 582, quantity: 1, material: BACK_PANEL_MATERIAL },
       { name: 'Puerta', width: 596, height: 596, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Estante', width: 564, height: 280, quantity: 1, material: MELAMINE_MATERIAL },
     ],
   },
   {
@@ -82,9 +61,11 @@ export const cabinetData: Cabinet[] = [
     width: 600,
     height: 800,
     depth: 400,
-    pieces: [
-      { name: 'Puerta Superior', width: 596, height: 342, quantity: 1, material: MELAMINE_MATERIAL },
-    ],
+    pieces: [],
+    defaultComponents: [
+      { type: 'opening', height: 400 },
+      { type: 'door', height: 400, hinge: 'top' },
+    ]
   },
   {
     id: 'tall-600',
@@ -95,14 +76,8 @@ export const cabinetData: Cabinet[] = [
     height: 2000,
     depth: 580,
     pieces: [
-      { name: 'Lateral', width: 562, height: 2000, quantity: 2, material: MELAMINE_MATERIAL },
-      { name: 'Tapa', width: 564, height: 562, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Base', width: 564, height: 562, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Estante Fijo', width: 564, height: 562, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Panel Trasero', width: 582, height: 1982, quantity: 1, material: BACK_PANEL_MATERIAL },
       { name: 'Puerta Superior', width: 596, height: 1246, quantity: 1, material: MELAMINE_MATERIAL },
       { name: 'Puerta Inferior', width: 596, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Estante', width: 564, height: 540, quantity: 3, material: MELAMINE_MATERIAL },
     ],
   },
 ];
