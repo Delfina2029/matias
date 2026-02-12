@@ -13,24 +13,28 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   // Handle special cases like corner cabinets first
   if (cabinet.cabinetId === 'base-corner-900') {
     const cornerPieces: Piece[] = [];
-    const { width, height, depth } = cabinet; // width is wall space, e.g., 770. depth is body depth.
-    const bodyDepth = depth;
+    const { width, height, depth, depth2 } = cabinet; // width is wall space
+    const wallSpace = width;
+    const bodyDepth1 = depth;
+    const bodyDepth2 = depth2 || depth;
     const doorHeight = height - 4;
 
-    // From the user's diagram: Door Width = Wall Space - Body Depth
-    const doorWidth = width - bodyDepth;
+    // Doors for the corner opening. The door on one leg depends on the depth of the other leg.
+    const door1Width = wallSpace - bodyDepth2;
+    const door2Width = wallSpace - bodyDepth1;
+    cornerPieces.push({ name: 'Puerta Esquinero 1', width: door1Width, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Puerta Esquinero 2', width: door2Width, height: doorHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
-    // Doors for the corner opening
-    cornerPieces.push({ name: 'Puerta Esquinero', width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });
 
     // Carcass Pieces - providing rectangular blanks for the user to make L-shaped cuts.
-    const carcassWidth = width - MELAMINE_THICKNESS * 2;
+    const floorBlankWidth = wallSpace - MELAMINE_THICKNESS * 2;
     
-    cornerPieces.push({ name: 'Lateral', width: bodyDepth, height: height, quantity: 2, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Piso (Cortar en L)', width: carcassWidth, height: carcassWidth, quantity: 1, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Estante (Cortar en L)', width: carcassWidth - 25, height: carcassWidth - 25, quantity: 1, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Amarre Superior', width: carcassWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
-    cornerPieces.push({ name: 'Panel Trasero', width: width - MELAMINE_THICKNESS, height: height - MELAMINE_THICKNESS, quantity: 2, material: BACK_PANEL_MATERIAL });
+    cornerPieces.push({ name: 'Lateral 1', width: bodyDepth1, height: height, quantity: 1, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Lateral 2', width: bodyDepth2, height: height, quantity: 1, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Piso (Cortar en L)', width: floorBlankWidth, height: floorBlankWidth, quantity: 1, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Estante (Cortar en L)', width: floorBlankWidth - 25, height: floorBlankWidth - 25, quantity: 1, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Amarre Superior', width: floorBlankWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
+    cornerPieces.push({ name: 'Panel Trasero', width: wallSpace - MELAMINE_THICKNESS, height: height - MELAMINE_THICKNESS, quantity: 2, material: BACK_PANEL_MATERIAL });
     
     return cornerPieces;
   }

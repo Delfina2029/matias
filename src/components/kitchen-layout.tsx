@@ -42,26 +42,26 @@ function Cabinet3D({
 
   if (placedCabinet.cabinetId === 'base-corner-900') {
     const wallSpace = placedCabinet.width * scale;
-    const cabinetBodyDepth = placedCabinet.depth * scale;
+    const cabinetBodyDepth1 = placedCabinet.depth * scale; // Depth for leg along X axis
+    const cabinetBodyDepth2 = (placedCabinet.depth2 || placedCabinet.depth) * scale; // Depth for leg along Z axis
 
     return (
       <group position={[posX, 0, posZ]} onClick={onClick}>
-        {/* This creates the L-shape by combining two boxes. */}
-        {/* Main box along one wall */}
-        <Box args={[wallSpace, height, cabinetBodyDepth]} position={[wallSpace/2, height/2, cabinetBodyDepth/2]} castShadow receiveShadow>
+        {/* Leg along X axis */}
+        <Box args={[wallSpace, height, cabinetBodyDepth1]} position={[wallSpace/2, height/2, cabinetBodyDepth1/2]} castShadow receiveShadow>
           <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
         </Box>
-        {/* Second box to complete the L */}
-        <Box args={[cabinetBodyDepth, height, wallSpace - cabinetBodyDepth]} position={[cabinetBodyDepth/2, height/2, cabinetBodyDepth + (wallSpace - cabinetBodyDepth)/2]} castShadow receiveShadow>
+        {/* Leg along Z axis */}
+        <Box args={[cabinetBodyDepth2, height, wallSpace - cabinetBodyDepth1]} position={[cabinetBodyDepth2/2, height/2, cabinetBodyDepth1 + (wallSpace - cabinetBodyDepth1)/2]} castShadow receiveShadow>
           <meshStandardMaterial color={isSelected ? '#fcc419' : '#f8f9fa'} roughness={0.5} metalness={0.1} />
         </Box>
 
         {/* Countertop for the L-shape */}
         <group>
-            <Box args={[wallSpace, 0.05, cabinetBodyDepth]} position={[wallSpace / 2, height + 0.025, cabinetBodyDepth / 2]} castShadow>
+            <Box args={[wallSpace, 0.05, cabinetBodyDepth1]} position={[wallSpace / 2, height + 0.025, cabinetBodyDepth1 / 2]} castShadow>
                 <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
             </Box>
-            <Box args={[cabinetBodyDepth, 0.05, wallSpace - cabinetBodyDepth]} position={[cabinetBodyDepth / 2, height + 0.025, cabinetBodyDepth + (wallSpace - cabinetBodyDepth) / 2]} castShadow>
+            <Box args={[cabinetBodyDepth2, 0.05, wallSpace - cabinetBodyDepth1]} position={[cabinetBodyDepth2 / 2, height + 0.025, cabinetBodyDepth1 + (wallSpace - cabinetBodyDepth1) / 2]} castShadow>
                 <meshStandardMaterial color="#343a40" roughness={0.3} metalness={0.2} />
             </Box>
         </group>
@@ -268,7 +268,8 @@ function View2D({
 
                     if (isCornerCabinet) {
                         const wallSpace = placed.width; // in mm
-                        const bodyDepth = placed.depth; // in mm
+                        const bodyDepth1 = placed.depth; // in mm
+                        const bodyDepth2 = placed.depth2 || placed.depth;
 
                         return (
                             <div
@@ -292,7 +293,7 @@ function View2D({
                                         selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent'
                                     )}
                                     style={{
-                                        clipPath: `polygon(0% 0%, 100% 0%, 100% ${ (bodyDepth / wallSpace) * 100 }%, ${ (bodyDepth / wallSpace) * 100 }% ${ (bodyDepth / wallSpace) * 100 }%, ${ (bodyDepth / wallSpace) * 100 }% 100%, 0% 100%)`
+                                        clipPath: `polygon(0% 0%, 100% 0%, 100% ${ (bodyDepth2 / wallSpace) * 100 }%, ${ (bodyDepth1 / wallSpace) * 100 }% ${ (bodyDepth2 / wallSpace) * 100 }%, ${ (bodyDepth1 / wallSpace) * 100 }% 100%, 0% 100%)`
                                     }}
                                 >
                                     <div className="w-full h-full bg-card border-2 border-primary/50 group-hover:border-primary transition-colors rounded-md flex items-center justify-center text-xs font-mono text-muted-foreground/50">

@@ -35,5 +35,6 @@ export interface PlacedCabinet {
   width: number;
   height: number;
   depth: number;
+  depth2?: number;
   components: CabinetComponent[];
 }

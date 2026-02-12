@@ -40,6 +40,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     width: cabinet.width,
     height: cabinet.height,
     depth: cabinet.depth,
+    depth2: cabinet.depth2 || cabinet.depth,
   });
   const [components, setComponents] = useState<CabinetComponent[]>(cabinet.components || []);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
@@ -52,6 +53,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
         width: cabinet.width,
         height: cabinet.height,
         depth: cabinet.depth,
+        depth2: cabinet.depth2 || cabinet.depth,
     });
     setComponents(cabinet.components || []);
     setSelectedComponentId(null);
@@ -170,19 +172,23 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
         <div className="overflow-y-auto -mr-6 pr-6 max-h-[calc(80vh-150px)]">
           <div className="grid gap-4 py-4">
             {isCornerCabinet ? (
-              <div className="grid grid-cols-3 gap-4">
-                  <div>
-                      <Label htmlFor="width">Espacio en Pared (mm)</Label>
-                      <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
-                  </div>
-                  <div>
-                      <Label htmlFor="height">Alto (mm)</Label>
-                      <Input id="height" name="height" type="number" value={dimensions.height} onChange={handleDimensionChange} />
-                  </div>
-                  <div>
-                      <Label htmlFor="depth">Profundidad Cuerpo (mm)</Label>
-                      <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} />
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <Label htmlFor="width">Espacio en Pared (mm)</Label>
+                    <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
+                </div>
+                <div>
+                    <Label htmlFor="height">Alto (mm)</Label>
+                    <Input id="height" name="height" type="number" value={dimensions.height} onChange={handleDimensionChange} />
+                </div>
+                <div>
+                    <Label htmlFor="depth">Profundidad Cuerpo 1 (mm)</Label>
+                    <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} />
+                </div>
+                 <div>
+                    <Label htmlFor="depth2">Profundidad Cuerpo 2 (mm)</Label>
+                    <Input id="depth2" name="depth2" type="number" value={dimensions.depth2} onChange={handleDimensionChange} />
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-4">
