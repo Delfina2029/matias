@@ -91,7 +91,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     pieces.push({ name: 'Lateral', width: depth, height: height, quantity: 2, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Amarre Superior', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
-    pieces.push({ name: 'Panel Trasero', width: width - 5, height: height - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
 
     // Legs - as a hardware note
     pieces.push({ name: 'Patas de Mueble', width: 0, height: 150, quantity: 4, material: 'Hardware', notes: 'Altura de pata recomendada 150mm' });
@@ -135,14 +134,14 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         });
 
         // Specific drawer box for pipes
-        const drawerBoxHeight = 100; // smaller drawer for vanitory
+        const drawerBoxHeight = 100;
         const drawerBoxWidth = interiorWidth - 26;
         const drawerBoxDepth = 350; // Special depth as requested
         const drawerBottomWidth = drawerBoxWidth - (2 * MELAMINE_THICKNESS);
         const drawerBottomPartDepth = (drawerBoxDepth - 100) / 2; // 100mm gap for drain
 
-        pieces.push({ name: 'Lateral de Cajón Vanitory', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-        pieces.push({ name: 'Frente/Trasero de Cajón Vanitory', width: drawerBottomWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+        pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+        pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBottomWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
         pieces.push({
             name: 'Fondo de Cajón Vanitory',
             width: drawerBottomWidth,
