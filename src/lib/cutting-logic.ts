@@ -86,9 +86,10 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     const { width, height, depth, components } = cabinet;
     const pieces: Piece[] = [];
     const interiorWidth = width - (2 * MELAMINE_THICKNESS);
+    const cabinetBodyHeight = height - 100; // Account for 100mm legs
 
     // Carcass
-    pieces.push({ name: 'Lateral', width: depth, height: height, quantity: 2, material: MELAMINE_MATERIAL });
+    pieces.push({ name: 'Lateral', width: depth, height: cabinetBodyHeight, quantity: 2, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Amarre Superior', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
 
