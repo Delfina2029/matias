@@ -111,6 +111,47 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
       setComponents(prev => [...prev, newDrawer]);
   }
 
+  const handleDoorConfig = (doorCount: number) => {
+    setSelectedComponentId(null);
+
+    if (cabinet.cabinetId === 'vanity-600-patas') {
+        const drawer = components.find(c => c.type === 'drawer');
+        // If drawer exists, keep it, otherwise create a default one.
+        const drawerComponent = drawer ? {...drawer} : { id: `comp_${Date.now()}_drawer`, type: 'drawer' as const, height: 200 };
+        
+        const doorHeight = dimensions.height - drawerComponent.height;
+        const doorComponent = { id: `comp_${Date.now()}_door`, type: 'door' as const, height: doorHeight };
+        
+        // For vanitory, drawer is last to be on top due to flex-col-reverse
+        setComponents([doorComponent, drawerComponent]);
+        return;
+    }
+
+    // Generic logic for other cabinets
+    if (doorCount === 1) {
+        setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: dimensions.height }]);
+    } else if (doorCount === 2) {
+        if (cabinet.type === 'tall' || isCornerCabinet) return;
+        setComponents([
+            { id: `comp_${Date.now()}_1`, type: 'door', height: dimensions.height },
+            { id: `comp_${Date.now()}_2`, type: 'door', height: dimensions.height }
+        ]);
+    }
+  };
+
+  const handleStartWithDrawers = () => {
+      setSelectedComponentId(null);
+      if (cabinet.cabinetId === 'vanity-600-patas') {
+          // This action is destructive and doesn't make sense for a vanitory.
+          // Let's reset to the default configuration.
+          const drawerComponent = { id: `comp_${Date.now()}_drawer`, type: 'drawer' as const, height: 200 };
+          const doorComponent = { id: `comp_${Date.now()}_door`, type: 'door' as const, height: dimensions.height - 200 };
+          setComponents([doorComponent, drawerComponent]);
+      } else {
+          setComponents([{ id: `comp_${Date.now()}`, type: 'drawer', height: 180 }]);
+      }
+  };
+
   const handleUpdateComponentHeight = (id: string, newHeight: number) => {
     handleUpdateComponent(id, { height: newHeight });
   };
@@ -279,17 +320,14 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                           <h5 className="font-semibold mb-2">Configuración Rápida</h5>
                            <div className="space-y-2">
                                 <div className="grid grid-cols-2 gap-2">
-                                    <Button variant="outline" onClick={() => { setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: dimensions.height }]); setSelectedComponentId(null);}}>
+                                    <Button variant="outline" onClick={() => handleDoorConfig(1)}>
                                         1 Puerta
                                     </Button>
-                                    <Button variant="outline" disabled={cabinet.type === 'tall' || isCornerCabinet} onClick={() => { setComponents([
-                                        { id: `comp_${Date.now()}_1`, type: 'door', height: dimensions.height },
-                                        { id: `comp_${Date.now()}_2`, type: 'door', height: dimensions.height }
-                                    ]); setSelectedComponentId(null);}}>
+                                    <Button variant="outline" disabled={cabinet.type === 'tall' || isCornerCabinet} onClick={() => handleDoorConfig(2)}>
                                         2 Puertas
                                     </Button>
                                 </div>
-                                <Button variant="outline" className="w-full" onClick={() => { setComponents([{ id: `comp_${Date.now()}`, type: 'drawer', height: 180 }]); setSelectedComponentId(null);}}>
+                                <Button variant="outline" className="w-full" onClick={handleStartWithDrawers}>
                                     <Plus className="mr-2 h-4 w-4" /> Empezar con Cajones
                                 </Button>
                             </div>
