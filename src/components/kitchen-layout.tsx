@@ -127,25 +127,44 @@ function Cabinet3D({
             const renderedComponents = [];
             for (const comp of placedCabinet.components) {
               const compHeight = comp.height * scale;
+              const isVanityTwoDoor = comp.type === 'door' && placedCabinet.cabinetId === 'vanity-600-patas';
+
               if (comp.type !== 'opening') {
-                renderedComponents.push(
-                  <group key={comp.id} position={[0, yOffset, 0]}>
-                    <Box args={[width - 0.02, compHeight - 0.02, doorThickness]} position={[0, compHeight / 2, 0]} castShadow>
-                      {frontMaterial}
-                    </Box>
-                    {comp.handle === 'j-profile' && (
-                      <Box args={[width - 0.02, 0.13, 0.02]} position={[0, compHeight - 0.065, (doorThickness/2)+0.01]}>
-                          {jProfileMaterial}
+                if (isVanityTwoDoor) {
+                  const doorWidth = (width / 2) - 0.01;
+                  const doorHeight = compHeight - 0.02;
+                  const xOffset = (doorWidth / 2) + 0.005;
+
+                  renderedComponents.push(
+                    <group key={comp.id} position={[0, yOffset, 0]}>
+                      <Box args={[doorWidth, doorHeight, doorThickness]} position={[-xOffset, doorHeight / 2, 0]} castShadow>
+                          {frontMaterial}
                       </Box>
-                    )}
-                    {comp.type === 'door' && comp.hinge === 'top' && (
-                      <group position={[0, compHeight - 0.02, doorThickness/2]}>
-                          <Box args={[0.1, 0.02, 0.02]} position={[-0.2, 0, 0]} />
-                          <Box args={[0.1, 0.02, 0.02]} position={[0.2, 0, 0]} />
-                      </group>
-                    )}
-                  </group>
-                );
+                      <Box args={[doorWidth, doorHeight, doorThickness]} position={[xOffset, doorHeight / 2, 0]} castShadow>
+                          {frontMaterial}
+                      </Box>
+                    </group>
+                  );
+                } else {
+                  renderedComponents.push(
+                    <group key={comp.id} position={[0, yOffset, 0]}>
+                      <Box args={[width - 0.02, compHeight - 0.02, doorThickness]} position={[0, compHeight / 2, 0]} castShadow>
+                        {frontMaterial}
+                      </Box>
+                      {comp.handle === 'j-profile' && (
+                        <Box args={[width - 0.02, 0.13, 0.02]} position={[0, compHeight - 0.065, (doorThickness/2)+0.01]}>
+                            {jProfileMaterial}
+                        </Box>
+                      )}
+                      {comp.type === 'door' && comp.hinge === 'top' && (
+                        <group position={[0, compHeight - 0.02, doorThickness/2]}>
+                            <Box args={[0.1, 0.02, 0.02]} position={[-0.2, 0, 0]} />
+                            <Box args={[0.1, 0.02, 0.02]} position={[0.2, 0, 0]} />
+                        </group>
+                      )}
+                    </group>
+                  );
+                }
               }
               yOffset += compHeight + (placedCabinet.components.length > 1 ? 0.01 : 0);
             }
@@ -404,13 +423,30 @@ function View2D({
                                     ? { width: `${100 / placed.components.length}%` }
                                     : { height: `${(comp.height / placed.height) * 100}%` };
 
+                                const isVanityTwoDoor = comp.type === 'door' && placed.cabinetId === 'vanity-600-patas';
+
                                 return (
                                     <div 
                                         key={comp.id}
-                                        className={`relative bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center ${treatAsHorizontalDoors ? 'h-full' : 'w-full'}`}
+                                        className={cn(
+                                            'relative flex items-center justify-center', 
+                                            isVanityTwoDoor ? '' : 'bg-primary/20 border border-primary/30 rounded-sm',
+                                            treatAsHorizontalDoors ? 'h-full' : 'w-full'
+                                        )}
                                         style={compStyle}
                                     >
-                                        <span className="text-[9px] font-medium text-primary-foreground/70 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
+                                      {isVanityTwoDoor ? (
+                                          <div className="h-full w-full flex gap-px">
+                                              <div className="w-1/2 h-full bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center">
+                                                  <span className="text-[9px] font-medium text-primary-foreground/70 select-none">Puerta</span>
+                                              </div>
+                                              <div className="w-1/2 h-full bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center">
+                                                  <span className="text-[9px] font-medium text-primary-foreground/70 select-none">Puerta</span>
+                                              </div>
+                                          </div>
+                                      ) : (
+                                          <span className="text-[9px] font-medium text-primary-foreground/70 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
+                                      )}
                                     </div>
                                 )
                             })}
