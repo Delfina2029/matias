@@ -53,9 +53,8 @@ function Cabinet3D({
     const cabinetBodyDepth1 = placedCabinet.depth * scale;
     const cabinetBodyDepth2 = (placedCabinet.depth2 || placedCabinet.depth) * scale;
     
-    // Per cutting-logic.ts: door width = wallSpace - opposite body depth - 20mm tolerance
-    const door1Width = (placedCabinet.width - (placedCabinet.depth2 || placedCabinet.depth) - 20) * scale;
-    const door2Width = (placedCabinet.width - placedCabinet.depth - 20) * scale;
+    const door1Width = (placedCabinet.width - (placedCabinet.depth2 || placedCabinet.depth)) * scale;
+    const door2Width = (placedCabinet.width - placedCabinet.depth) * scale;
     const doorHeight = height - (2 * scale); // small gap
     const doorThickness = 0.09;
 
@@ -264,7 +263,7 @@ function View2D({
     selectedCabinetId 
 }: Pick<KitchenLayoutProps, 'placedCabinets' | 'onUpdateLayout' | 'onSelectCabinet' | 'onRemoveCabinet' | 'selectedCabinetId'>) {
     const layoutRef = useRef<HTMLDivElement>(null);
-    const scaleFactor = 8;
+    const scaleFactor = 4;
     const [dragging, setDragging] = useState<string | null>(null);
     const dragOffset = useRef({ x: 0, y: 0 });
 
