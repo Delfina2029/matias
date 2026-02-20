@@ -452,27 +452,44 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                 </div>
                               )}
                               
-                              {selectedComponent.type === 'door' && (
-                                <div className="space-y-2 pt-2">
-                                    <h6 className="text-sm font-medium">Despiece de la Puerta</h6>
-                                    <Table className="text-xs">
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="h-8 px-2">Cant.</TableHead>
-                                                <TableHead className="h-8 px-2">Pieza</TableHead>
-                                                <TableHead className="h-8 px-2 text-right">Dimensiones (AnxAl)</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            <TableRow>
-                                                <TableCell className="font-medium py-1 px-2">1</TableCell>
-                                                <TableCell className="py-1 px-2">{selectedComponent.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta'}</TableCell>
-                                                <TableCell className="text-right py-1 px-2">{`${(numDoors > 1 ? ((dimensions.width - 2 * (numDoors + 1)) / numDoors) : (dimensions.width-4)).toFixed(1)} x ${(selectedComponent.height - 4 - (selectedComponent.handle === 'j-profile' ? 26.8 : 0)).toFixed(1)} mm`}</TableCell>
-                                            </TableRow>
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                              )}
+                              {selectedComponent.type === 'door' && (() => {
+                                const isVanityTwoDoor = cabinet.cabinetId === 'vanity-600-patas';
+                                const treatAsHorizontalDoors = cabinet.type !== 'tall' && components.length > 1 && components.every(c => c.type === 'door');
+                                
+                                let doorQuantity = 1;
+                                let doorWidth = dimensions.width - 4;
+                                const doorHeight = selectedComponent.height - 4 - (selectedComponent.handle === 'j-profile' ? 26.8 : 0);
+
+                                if (isVanityTwoDoor) {
+                                    doorQuantity = 2;
+                                    doorWidth = (dimensions.width - 6) / 2;
+                                } else if (treatAsHorizontalDoors) {
+                                    const numHorizontalDoors = components.length;
+                                    doorWidth = (dimensions.width - (2 * (numHorizontalDoors + 1))) / numHorizontalDoors;
+                                }
+
+                                return (
+                                    <div className="space-y-2 pt-2">
+                                        <h6 className="text-sm font-medium">Despiece de la Puerta</h6>
+                                        <Table className="text-xs">
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="h-8 px-2">Cant.</TableHead>
+                                                    <TableHead className="h-8 px-2">Pieza</TableHead>
+                                                    <TableHead className="h-8 px-2 text-right">Dimensiones (AnxAl)</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    <TableCell className="font-medium py-1 px-2">{doorQuantity}</TableCell>
+                                                    <TableCell className="py-1 px-2">{selectedComponent.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta'}</TableCell>
+                                                    <TableCell className="text-right py-1 px-2">{`${doorWidth.toFixed(1)} x ${doorHeight.toFixed(1)} mm`}</TableCell>
+                                                </TableRow>
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                );
+                              })()}
 
                           </div>
                       ) : (
