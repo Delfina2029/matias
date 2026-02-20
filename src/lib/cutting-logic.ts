@@ -82,7 +82,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     return pieces;
   }
 
-  if (cabinet.cabinetId === 'vanity-600-patas') {
+  if (cabinet.cabinetId.startsWith('vanity')) {
     const { width, height, depth, components } = cabinet;
     const pieces: Piece[] = [];
     const interiorWidth = width - (2 * MELAMINE_THICKNESS);
@@ -136,7 +136,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         // Specific drawer box for pipes
         const drawerBoxHeight = 100;
         const drawerBoxWidth = interiorWidth - 26;
-        const drawerBoxDepth = 350; // Special depth as requested
+        const drawerBoxDepth = 350; // Special depth as requested by user
         const drawerBottomWidth = drawerBoxWidth - (2 * MELAMINE_THICKNESS);
 
         pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
@@ -174,9 +174,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   }
 
   // 3. Back Panel
-  if (!cabinet.cabinetId.startsWith('vanity')) {
-    pieces.push({ name: 'Panel Trasero', width: width - 5, height: height - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
-  }
+  pieces.push({ name: 'Panel Trasero', width: width - 5, height: height - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
   
   // 4. Shelves
   if (components.every(c => c.type === 'door')) {
