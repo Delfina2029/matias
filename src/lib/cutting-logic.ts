@@ -133,21 +133,37 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             material: MELAMINE_MATERIAL
         });
 
-        // Specific drawer box for pipes
+        // Specific drawer box for vanitory pipes (two-box system)
+        const DRAWER_GAP_FOR_PLUMBING = 120; // Assumed gap for plumbing
         const drawerBoxHeight = 100;
-        const drawerBoxWidth = interiorWidth - 26;
-        const drawerBoxDepth = 350; // Special depth as requested by user
-        const drawerBottomWidth = drawerBoxWidth - (2 * MELAMINE_THICKNESS);
+        const drawerBoxDepth = 350;
+        
+        // Calculate the internal width of each of the two small boxes
+        const singleBoxInternalWidth = (interiorWidth - DRAWER_GAP_FOR_PLUMBING - (4 * MELAMINE_THICKNESS)) / 2;
 
-        pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-        pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBottomWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+        pieces.push({
+            name: 'Lateral de Cajón Vanitory',
+            width: drawerBoxDepth,
+            height: drawerBoxHeight,
+            quantity: 4,
+            material: MELAMINE_MATERIAL
+        });
+        
+        pieces.push({
+            name: 'Trasero de Cajón Vanitory',
+            width: singleBoxInternalWidth,
+            height: drawerBoxHeight,
+            quantity: 2,
+            material: MELAMINE_MATERIAL
+        });
+        
+        // Bottoms for the two boxes. Assuming they are placed inside the 4 sides and back.
         pieces.push({
             name: 'Fondo de Cajón Vanitory',
-            width: drawerBottomWidth,
-            height: drawerBoxDepth,
-            quantity: 1,
-            material: BACK_PANEL_MATERIAL,
-            notes: 'Hacer corte central en H para desagüe.'
+            width: singleBoxInternalWidth,
+            height: drawerBoxDepth - MELAMINE_THICKNESS, // Bottom sits between back and drawer front
+            quantity: 2,
+            material: BACK_PANEL_MATERIAL
         });
     }
 

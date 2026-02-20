@@ -115,8 +115,10 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     setSelectedComponentId(null);
 
     // Special logic for the vanitory to preserve the drawer(s)
-    if (cabinet.cabinetId === 'vanity-600-patas') {
+    if (cabinet.cabinetId.startsWith('vanity')) {
         const drawers = components.filter(c => c.type === 'drawer');
+        const existingDoors = components.filter(c => c.type === 'door');
+        
         let drawersToKeep = [...drawers];
         
         // If there are no drawers for some reason, add a default one.
@@ -128,26 +130,16 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
         const doorSectionHeight = dimensions.height - totalDrawersHeight;
         
         // Create a single door component to represent the door section below the drawer(s).
-        // The rendering logic for `vanity-600-patas` will interpret this single 'door' component as two doors.
+        // The rendering logic will interpret this single 'door' component as two doors.
         const doorComponent = { 
-            id: `comp_${Date.now()}_door`, 
+            id: existingDoors[0]?.id || `comp_${Date.now()}_door`, 
             type: 'door' as const, 
             height: doorSectionHeight > 0 ? doorSectionHeight : 0,
         };
         
         // Re-assemble the components, placing the door section first (renders at bottom due to flex-col-reverse)
         // and then all the drawers.
-        const existingDoors = components.filter(c => c.type === 'door');
-        if (existingDoors.length > 0) {
-            // If doors already exist, don't add new ones, just ensure the drawers are kept.
-            // This case is tricky, maybe it's better to just ensure drawers are not deleted.
-            const nonDoorComponents = components.filter(c => c.type !== 'door');
-            const newDoorComponent = { ...existingDoors[0], height: doorSectionHeight };
-            setComponents([newDoorComponent, ...nonDoorComponents]);
-
-        } else {
-             setComponents([doorComponent, ...drawersToKeep]);
-        }
+        setComponents([doorComponent, ...drawersToKeep]);
         return;
     }
 
@@ -165,7 +157,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
 
   const handleStartWithDrawers = () => {
       setSelectedComponentId(null);
-      if (cabinet.cabinetId === 'vanity-600-patas') {
+      if (cabinet.cabinetId.startsWith('vanity')) {
           // This action is destructive and doesn't make sense for a vanitory.
           // Let's reset to the default configuration.
           const drawerComponent = { id: `comp_${Date.now()}_drawer`, type: 'drawer' as const, height: 200 };
@@ -213,6 +205,52 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
       return [];
     }
 
+    if (cabinet.cabinetId.startsWith('vanity')) {
+        const component = selectedComponent;
+        const { width } = dimensions;
+        const pieces: {name: string, dimensions: string, quantity: number}[] = [];
+
+        const interiorWidth = width - (2 * MELAMINE_THICKNESS);
+        const DRAWER_GAP_FOR_PLUMBING = 120;
+        const drawerBoxHeight = 100;
+        const drawerBoxDepth = 350;
+        const singleBoxInternalWidth = (interiorWidth - DRAWER_GAP_FOR_PLUMBING - (4 * MELAMINE_THICKNESS)) / 2;
+        
+        let frontHeight = component.height - 4;
+        let frontName;
+        if (component.handle === 'j-profile') {
+            frontHeight -= 26.8;
+            frontName = 'Frente de Cajón (Perfil J)';
+        } else {
+            frontHeight -= 30;
+            frontName = 'Frente de Cajón (Tirar)';
+        }
+
+        pieces.push({
+          name: frontName,
+          dimensions: `${(width - 4).toFixed(1)} x ${frontHeight.toFixed(1)} mm`,
+          quantity: 1,
+        });
+
+        pieces.push({
+            name: 'Lateral de Cajón Vanitory',
+            dimensions: `${drawerBoxDepth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+            quantity: 4,
+        });
+        pieces.push({
+            name: 'Trasero de Cajón Vanitory',
+            dimensions: `${singleBoxInternalWidth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+            quantity: 2,
+        });
+        pieces.push({
+            name: 'Fondo de Cajón Vanitory',
+            dimensions: `${singleBoxInternalWidth.toFixed(1)} x ${(drawerBoxDepth - MELAMINE_THICKNESS).toFixed(1)} mm`,
+            quantity: 2,
+        });
+        return pieces;
+    }
+
+    // Original logic for standard drawers
     const component = selectedComponent;
     const { width, depth } = dimensions;
     const pieces: {name: string, dimensions: string, quantity: number}[] = [];
@@ -254,7 +292,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     });
 
     return pieces;
-  }, [selectedComponent, dimensions.width, dimensions.depth]);
+  }, [selectedComponent, dimensions, cabinet.cabinetId]);
 
 
   return (
@@ -317,7 +355,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                               const compStyle = treatAsHorizontalDoors
                                   ? { width: `${100 / numDoors}%` }
                                   : { height: `${(comp.height / dimensions.height) * 100}%` };
-                              const isVanityTwoDoor = comp.type === 'door' && cabinet.cabinetId === 'vanity-600-patas';
+                              const isVanityTwoDoor = comp.type === 'door' && cabinet.cabinetId.startsWith('vanity');
                               
                               return (
                                   <div 
@@ -466,7 +504,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                               )}
                               
                               {selectedComponent.type === 'door' && (() => {
-                                const isVanityTwoDoor = cabinet.cabinetId === 'vanity-600-patas';
+                                const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity');
                                 const treatAsHorizontalDoors = cabinet.type !== 'tall' && components.length > 1 && components.every(c => c.type === 'door');
                                 
                                 let doorQuantity = 1;
