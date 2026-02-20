@@ -132,14 +132,13 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             quantity: 1,
             material: MELAMINE_MATERIAL
         });
-
-        // Specific drawer box for vanitory pipes (two-box system)
-        const DRAWER_GAP_FOR_PLUMBING = 120; // Assumed gap for plumbing
+        
         const drawerBoxHeight = 100;
         const drawerBoxDepth = 350;
-        
-        // Calculate the internal width of each of the two small boxes
-        const singleBoxInternalWidth = (interiorWidth - DRAWER_GAP_FOR_PLUMBING - (4 * MELAMINE_THICKNESS)) / 2;
+        const drawerBoxWidth = interiorWidth - 24; // To get 540 for a 600 cab
+        const plumbingGap = 160;
+        const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
+
 
         pieces.push({
             name: 'Lateral de Cajón Vanitory',
@@ -148,20 +147,37 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             quantity: 4,
             material: MELAMINE_MATERIAL
         });
-        
+
         pieces.push({
-            name: 'Trasero de Cajón Vanitory',
-            width: singleBoxInternalWidth,
+            name: 'Frente Interno Cajón Vanitory',
+            width: drawerBoxWidth,
+            height: drawerBoxHeight,
+            quantity: 1,
+            material: MELAMINE_MATERIAL,
+            notes: 'Pieza de refuerzo detrás del frente principal'
+        });
+
+        pieces.push({
+            name: 'Trasero de Cajón Vanitory (Lado)',
+            width: sideBoxInnerWidth,
             height: drawerBoxHeight,
             quantity: 2,
             material: MELAMINE_MATERIAL
         });
         
-        // Bottoms for the two boxes. Assuming they are placed inside the 4 sides and back.
+        pieces.push({
+            name: 'Trasero de Cajón Vanitory (Centro)',
+            width: plumbingGap,
+            height: drawerBoxHeight,
+            quantity: 1,
+            material: MELAMINE_MATERIAL,
+            notes: 'Pieza central que une las dos cajas'
+        });
+        
         pieces.push({
             name: 'Fondo de Cajón Vanitory',
-            width: singleBoxInternalWidth,
-            height: drawerBoxDepth - MELAMINE_THICKNESS, // Bottom sits between back and drawer front
+            width: sideBoxInnerWidth,
+            height: drawerBoxDepth - MELAMINE_THICKNESS,
             quantity: 2,
             material: BACK_PANEL_MATERIAL
         });

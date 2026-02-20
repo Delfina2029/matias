@@ -211,10 +211,11 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
         const pieces: {name: string, dimensions: string, quantity: number}[] = [];
 
         const interiorWidth = width - (2 * MELAMINE_THICKNESS);
-        const DRAWER_GAP_FOR_PLUMBING = 120;
         const drawerBoxHeight = 100;
         const drawerBoxDepth = 350;
-        const singleBoxInternalWidth = (interiorWidth - DRAWER_GAP_FOR_PLUMBING - (4 * MELAMINE_THICKNESS)) / 2;
+        const drawerBoxWidth = interiorWidth - 24;
+        const plumbingGap = 160;
+        const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
         
         let frontHeight = component.height - 4;
         let frontName;
@@ -237,14 +238,28 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
             dimensions: `${drawerBoxDepth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
             quantity: 4,
         });
+
         pieces.push({
-            name: 'Trasero de Cajón Vanitory',
-            dimensions: `${singleBoxInternalWidth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+            name: 'Frente Interno Cajón Vanitory',
+            dimensions: `${drawerBoxWidth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+            quantity: 1,
+        });
+
+        pieces.push({
+            name: 'Trasero de Cajón Vanitory (Lado)',
+            dimensions: `${sideBoxInnerWidth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
             quantity: 2,
         });
+
+        pieces.push({
+            name: 'Trasero de Cajón Vanitory (Centro)',
+            dimensions: `${plumbingGap.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+            quantity: 1,
+        });
+
         pieces.push({
             name: 'Fondo de Cajón Vanitory',
-            dimensions: `${singleBoxInternalWidth.toFixed(1)} x ${(drawerBoxDepth - MELAMINE_THICKNESS).toFixed(1)} mm`,
+            dimensions: `${sideBoxInnerWidth.toFixed(1)} x ${(drawerBoxDepth - MELAMINE_THICKNESS).toFixed(1)} mm`,
             quantity: 2,
         });
         return pieces;
