@@ -92,8 +92,25 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Amarre Superior', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
 
+    // Add reinforcement between drawer and door sections
+    if (components.length > 1) {
+        const reinforcementCount = components.length - 1;
+        if (reinforcementCount > 0) {
+            pieces.push({ 
+                name: 'Refuerzo Horizontal', 
+                width: interiorWidth, 
+                height: 100, 
+                quantity: reinforcementCount, 
+                material: MELAMINE_MATERIAL,
+                notes: 'Separación entre componentes'
+            });
+        }
+    }
+
     // Legs - as a hardware note
     pieces.push({ name: 'Patas de Mueble', width: 0, height: 100, quantity: 4, material: 'Hardware', notes: 'Altura de pata recomendada 100mm' });
+    
+    // No back panel for vanities
 
     // Components
     const drawerComp = components.find(c => c.type === 'drawer');
@@ -135,7 +152,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         
         const drawerBoxHeight = 100;
         const drawerBoxDepth = 350;
-        const drawerBoxWidth = interiorWidth - 24; // To get 540 for a 600 cab
+        const drawerBoxWidth = interiorWidth - 24;
         const plumbingGap = 160;
         const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
 
@@ -200,6 +217,22 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   if (type === 'base') {
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Amarre Superior', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
+
+    // Add reinforcements between vertically stacked components
+    const treatAsHorizontalDoors = components.length > 1 && components.every(c => c.type === 'door');
+    if (!treatAsHorizontalDoors && components.length > 1) {
+        const reinforcementCount = components.length - 1;
+        if (reinforcementCount > 0) {
+            pieces.push({ 
+                name: 'Refuerzo Horizontal', 
+                width: interiorWidth, 
+                height: 100, 
+                quantity: reinforcementCount, 
+                material: MELAMINE_MATERIAL,
+                notes: 'Separación entre componentes'
+            });
+        }
+    }
   } else {
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Tapa', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
