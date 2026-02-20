@@ -214,9 +214,13 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     const drawerSizeLabel = drawerBoxHeight <= 150 ? 'Chico' : 'Grande';
     
     let frontHeight = component.height - 4;
-    const frontName = component.handle === 'j-profile' ? 'Frente de Cajón (Perfil J)' : 'Frente de Cajón';
+    let frontName;
     if (component.handle === 'j-profile') {
         frontHeight -= 26.8;
+        frontName = 'Frente de Cajón (Perfil J)';
+    } else {
+        frontHeight -= 30;
+        frontName = 'Frente de Cajón (Tirar)';
     }
 
     pieces.push({
@@ -458,7 +462,17 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                 
                                 let doorQuantity = 1;
                                 let doorWidth = dimensions.width - 4;
-                                const doorHeight = selectedComponent.height - 4 - (selectedComponent.handle === 'j-profile' ? 26.8 : 0);
+
+                                let doorHeight = selectedComponent.height - 4;
+                                let doorName;
+
+                                if (selectedComponent.handle === 'j-profile') {
+                                    doorHeight -= 26.8;
+                                    doorName = 'Puerta (Perfil J)';
+                                } else {
+                                    doorHeight -= 30;
+                                    doorName = 'Puerta (Tirar)';
+                                }
 
                                 if (isVanityTwoDoor) {
                                     doorQuantity = 2;
@@ -482,7 +496,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                             <TableBody>
                                                 <TableRow>
                                                     <TableCell className="font-medium py-1 px-2">{doorQuantity}</TableCell>
-                                                    <TableCell className="py-1 px-2">{selectedComponent.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta'}</TableCell>
+                                                    <TableCell className="py-1 px-2">{doorName}</TableCell>
                                                     <TableCell className="text-right py-1 px-2">{`${doorWidth.toFixed(1)} x ${doorHeight.toFixed(1)} mm`}</TableCell>
                                                 </TableRow>
                                             </TableBody>

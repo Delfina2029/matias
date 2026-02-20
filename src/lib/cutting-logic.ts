@@ -63,8 +63,15 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
     if(doorComp) {
         let doorHeight = doorComp.height - 4;
-        let doorName = doorComp.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta';
-        if (doorComp.handle === 'j-profile') { doorHeight -= 26.8; }
+        let doorName: string;
+        if (doorComp.handle === 'j-profile') { 
+            doorHeight -= 26.8; 
+            doorName = 'Puerta (Perfil J)';
+        } else {
+            doorHeight -= 30;
+            doorName = 'Puerta (Tirar)';
+        }
+
         if (doorComp.hinge === 'top') {
             doorName = `${doorName} (Apertura Arriba)`;
         }
@@ -95,16 +102,28 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
     if (doorComp) {
         const doorWidth = (width - 6) / 2; // Two doors with 2mm gap between and on sides
-        const doorHeight = doorComp.height - 4;
-        pieces.push({ name: 'Puerta de Vanitory', width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });
+        let doorHeight = doorComp.height - 4;
+        let doorName;
+        if (doorComp.handle === 'j-profile') {
+            doorHeight -= 26.8;
+            doorName = 'Puerta de Vanitory (Perfil J)';
+        } else {
+            doorHeight -= 30;
+            doorName = 'Puerta de Vanitory (Tirar)';
+        }
+        pieces.push({ name: doorName, width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });
     }
 
     if (drawerComp) {
         let frontHeight = drawerComp.height - 4;
-        const frontName = drawerComp.handle === 'j-profile' ? 'Frente de Cajón (Perfil J)' : 'Frente de Cajón';
+        let frontName;
         
         if (drawerComp.handle === 'j-profile') {
             frontHeight -= 26.8;
+            frontName = 'Frente de Cajón (Perfil J)';
+        } else {
+            frontHeight -= 30;
+            frontName = 'Frente de Cajón (Tirar)';
         }
         
         pieces.push({
@@ -175,11 +194,16 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   components.forEach(component => {
     if (component.type === 'door') {
       let doorHeight = component.height - 4;
-      let doorName = component.handle === 'j-profile' ? 'Puerta (Perfil J)' : 'Puerta';
+      let doorName;
       
       if (component.handle === 'j-profile') {
         doorHeight -= 26.8;
+        doorName = 'Puerta (Perfil J)';
+      } else {
+        doorHeight -= 30;
+        doorName = 'Puerta (Tirar)';
       }
+
       if (component.hinge === 'top') {
         doorName = `${doorName} (Apertura Arriba)`;
       }
@@ -197,10 +221,14 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
       });
     } else if (component.type === 'drawer') {
       let frontHeight = component.height - 4;
-      const frontName = component.handle === 'j-profile' ? 'Frente de Cajón (Perfil J)' : 'Frente de Cajón';
+      let frontName;
       
       if (component.handle === 'j-profile') {
         frontHeight -= 26.8;
+        frontName = 'Frente de Cajón (Perfil J)';
+      } else {
+        frontHeight -= 30;
+        frontName = 'Frente de Cajón (Tirar)';
       }
       
       pieces.push({
