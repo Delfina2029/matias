@@ -383,7 +383,7 @@ function View2D({
                                         clipPath: `polygon(0% 0%, 100% 0%, 100% ${ (bodyDepth2 / wallSpace) * 100 }%, ${ (bodyDepth1 / wallSpace) * 100 }% ${ (bodyDepth2 / wallSpace) * 100 }%, ${ (bodyDepth1 / wallSpace) * 100 }% 100%, 0% 100%)`
                                     }}
                                 >
-                                    <div className="w-full h-full bg-card border-2 border-primary/50 group-hover:border-primary transition-colors rounded-md flex items-center justify-center text-xs font-mono text-muted-foreground/50">
+                                    <div className="w-full h-full bg-white border-2 border-slate-400 group-hover:border-slate-600 transition-colors rounded-md flex items-center justify-center text-xs font-mono text-slate-400">
                                         {/* Visual representation of L-shape, no internal components */}
                                     </div>
                                 </div>
@@ -405,9 +405,9 @@ function View2D({
                             key={placed.instanceId}
                             onMouseDown={(e) => handleMouseDown(e, placed.instanceId)}
                             className={cn(
-                            'absolute bg-card border-2 border-primary/50 group cursor-grab active:cursor-grabbing hover:border-primary transition-colors flex rounded-md',
+                            'absolute bg-white border-2 border-slate-400 group cursor-grab active:cursor-grabbing hover:border-slate-600 transition-colors flex rounded-md shadow',
                             selectedCabinetId === placed.instanceId && 'ring-2 ring-offset-2 ring-accent z-10',
-                            dragging === placed.instanceId && 'shadow-lg z-20'
+                            dragging === placed.instanceId && 'z-20'
                             )}
                             style={{
                                 left: placed.x,
@@ -430,22 +430,22 @@ function View2D({
                                         key={comp.id}
                                         className={cn(
                                             'relative flex items-center justify-center', 
-                                            isVanityTwoDoor ? '' : 'bg-primary/20 border border-primary/30 rounded-sm',
+                                            isVanityTwoDoor ? '' : 'bg-slate-100 border border-slate-300 rounded-sm',
                                             treatAsHorizontalDoors ? 'h-full' : 'w-full'
                                         )}
                                         style={compStyle}
                                     >
                                       {isVanityTwoDoor ? (
                                           <div className="h-full w-full flex gap-px">
-                                              <div className="w-1/2 h-full bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center">
-                                                  <span className="text-[9px] font-medium text-primary-foreground/70 select-none">Puerta</span>
+                                              <div className="w-1/2 h-full bg-slate-100 border border-slate-300 rounded-sm flex items-center justify-center">
+                                                  <span className="text-[9px] font-semibold text-slate-600 select-none">Puerta</span>
                                               </div>
-                                              <div className="w-1/2 h-full bg-primary/20 border border-primary/30 rounded-sm flex items-center justify-center">
-                                                  <span className="text-[9px] font-medium text-primary-foreground/70 select-none">Puerta</span>
+                                              <div className="w-1/2 h-full bg-slate-100 border border-slate-300 rounded-sm flex items-center justify-center">
+                                                  <span className="text-[9px] font-semibold text-slate-600 select-none">Puerta</span>
                                               </div>
                                           </div>
                                       ) : (
-                                          <span className="text-[9px] font-medium text-primary-foreground/70 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
+                                          <span className="text-[9px] font-semibold text-slate-600 select-none">{comp.type === 'drawer' ? 'Cajón' : 'Puerta'}</span>
                                       )}
                                     </div>
                                 )
