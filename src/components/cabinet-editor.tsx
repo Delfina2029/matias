@@ -114,16 +114,30 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
   const handleDoorConfig = (doorCount: number) => {
     setSelectedComponentId(null);
 
+    // Special logic for the vanitory to preserve the drawer(s)
     if (cabinet.cabinetId === 'vanity-600-patas') {
-        const drawer = components.find(c => c.type === 'drawer');
-        // If drawer exists, keep it, otherwise create a default one.
-        const drawerComponent = drawer ? {...drawer} : { id: `comp_${Date.now()}_drawer`, type: 'drawer' as const, height: 200 };
+        const drawers = components.filter(c => c.type === 'drawer');
+        let drawersToKeep = [...drawers];
         
-        const doorHeight = dimensions.height - drawerComponent.height;
-        const doorComponent = { id: `comp_${Date.now()}_door`, type: 'door' as const, height: doorHeight };
+        // If there are no drawers for some reason, add a default one.
+        if (drawersToKeep.length === 0) {
+          drawersToKeep.push({ id: `comp_${Date.now()}_drawer`, type: 'drawer' as const, height: 200 });
+        }
+
+        const totalDrawersHeight = drawersToKeep.reduce((sum, d) => sum + d.height, 0);
+        const doorSectionHeight = dimensions.height - totalDrawersHeight;
         
-        // For vanitory, drawer is last to be on top due to flex-col-reverse
-        setComponents([doorComponent, drawerComponent]);
+        // Create a single door component to represent the door section below the drawer(s).
+        // The rendering logic for `vanity-600-patas` will interpret this single 'door' component as two doors.
+        const doorComponent = { 
+            id: `comp_${Date.now()}_door`, 
+            type: 'door' as const, 
+            height: doorSectionHeight > 0 ? doorSectionHeight : 0,
+        };
+        
+        // Re-assemble the components, placing the door section first (renders at bottom due to flex-col-reverse)
+        // and then all the drawers.
+        setComponents([doorComponent, ...drawersToKeep]);
         return;
     }
 
