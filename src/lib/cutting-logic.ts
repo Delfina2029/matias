@@ -93,7 +93,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     pieces.push({ name: 'Amarre Superior', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
 
     // Legs - as a hardware note
-    pieces.push({ name: 'Patas de Mueble', width: 0, height: 150, quantity: 4, material: 'Hardware', notes: 'Altura de pata recomendada 150mm' });
+    pieces.push({ name: 'Patas de Mueble', width: 0, height: 100, quantity: 4, material: 'Hardware', notes: 'Altura de pata recomendada 100mm' });
 
     // Components
     const drawerComp = components.find(c => c.type === 'drawer');
@@ -138,17 +138,16 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         const drawerBoxWidth = interiorWidth - 26;
         const drawerBoxDepth = 350; // Special depth as requested
         const drawerBottomWidth = drawerBoxWidth - (2 * MELAMINE_THICKNESS);
-        const drawerBottomPartDepth = (drawerBoxDepth - 100) / 2; // 100mm gap for drain
 
         pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
         pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBottomWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
         pieces.push({
             name: 'Fondo de Cajón Vanitory',
             width: drawerBottomWidth,
-            height: drawerBottomPartDepth,
-            quantity: 2,
+            height: drawerBoxDepth,
+            quantity: 1,
             material: BACK_PANEL_MATERIAL,
-            notes: '2 piezas, dejar 100mm de espacio en el centro para desagüe'
+            notes: 'Hacer corte central en H para desagüe.'
         });
     }
 
@@ -175,7 +174,9 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   }
 
   // 3. Back Panel
-  pieces.push({ name: 'Panel Trasero', width: width - 5, height: height - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
+  if (!cabinet.cabinetId.startsWith('vanity')) {
+    pieces.push({ name: 'Panel Trasero', width: width - 5, height: height - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
+  }
   
   // 4. Shelves
   if (components.every(c => c.type === 'door')) {
