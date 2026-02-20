@@ -135,7 +135,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         });
 
         // Specific drawer box for pipes
-        const drawerBoxHeight = Math.min(drawerComp.height - 40, 150); // smaller drawer for vanitory
+        const drawerBoxHeight = 100; // smaller drawer for vanitory
         const drawerBoxWidth = interiorWidth - 26;
         const drawerBoxDepth = 350; // Special depth as requested
         const drawerBottomWidth = drawerBoxWidth - (2 * MELAMINE_THICKNESS);
@@ -239,14 +239,13 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         material: MELAMINE_MATERIAL
       });
 
-      const drawerBoxHeight = Math.min(component.height - 40, 200);
+      const drawerBoxHeight = 100;
       const drawerBoxWidth = interiorWidth - 26;
       const drawerBoxDepth = depth - 30;
-      const drawerSizeLabel = drawerBoxHeight <= 150 ? 'Chico' : 'Grande';
 
-      pieces.push({ name: `Lateral de Cajón ${drawerSizeLabel}`, width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-      pieces.push({ name: `Frente/Trasero de Cajón ${drawerSizeLabel}`, width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-      pieces.push({ name: `Fondo de Cajón ${drawerSizeLabel}`, width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
+      pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+      pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+      pieces.push({ name: 'Fondo de Cajón', width: drawerBoxWidth - (2*MELAMINE_THICKNESS), height: drawerBoxDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
     }
   });
 

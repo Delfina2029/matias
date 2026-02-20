@@ -137,7 +137,17 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
         
         // Re-assemble the components, placing the door section first (renders at bottom due to flex-col-reverse)
         // and then all the drawers.
-        setComponents([doorComponent, ...drawersToKeep]);
+        const existingDoors = components.filter(c => c.type === 'door');
+        if (existingDoors.length > 0) {
+            // If doors already exist, don't add new ones, just ensure the drawers are kept.
+            // This case is tricky, maybe it's better to just ensure drawers are not deleted.
+            const nonDoorComponents = components.filter(c => c.type !== 'door');
+            const newDoorComponent = { ...existingDoors[0], height: doorSectionHeight };
+            setComponents([newDoorComponent, ...nonDoorComponents]);
+
+        } else {
+             setComponents([doorComponent, ...drawersToKeep]);
+        }
         return;
     }
 
@@ -208,10 +218,9 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
     const pieces: {name: string, dimensions: string, quantity: number}[] = [];
 
     const interiorWidth = width - (2 * MELAMINE_THICKNESS);
-    const drawerBoxHeight = Math.min(component.height - 40, 200);
+    const drawerBoxHeight = 100;
     const drawerBoxWidth = interiorWidth - 26;
     const drawerBoxDepth = depth - 30;
-    const drawerSizeLabel = drawerBoxHeight <= 150 ? 'Chico' : 'Grande';
     
     let frontHeight = component.height - 4;
     let frontName;
@@ -229,17 +238,17 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
       quantity: 1,
     });
     pieces.push({
-      name: `Lateral de Cajón ${drawerSizeLabel}`,
+      name: 'Lateral de Cajón',
       dimensions: `${drawerBoxDepth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
       quantity: 2,
     });
     pieces.push({
-      name: `Frente/Trasero de Cajón ${drawerSizeLabel}`,
+      name: 'Frente/Trasero de Cajón',
       dimensions: `${(drawerBoxWidth - (2*MELAMINE_THICKNESS)).toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
       quantity: 2,
     });
     pieces.push({
-      name: `Fondo de Cajón ${drawerSizeLabel}`,
+      name: 'Fondo de Cajón',
       dimensions: `${(drawerBoxWidth - (2*MELAMINE_THICKNESS)).toFixed(1)} x ${drawerBoxDepth.toFixed(1)} mm`,
       quantity: 1,
     });
