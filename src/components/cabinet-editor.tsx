@@ -304,6 +304,8 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                               const compStyle = treatAsHorizontalDoors
                                   ? { width: `${100 / numDoors}%` }
                                   : { height: `${(comp.height / dimensions.height) * 100}%` };
+                              const isVanityTwoDoor = comp.type === 'door' && cabinet.cabinetId === 'vanity-600-patas';
+                              
                               return (
                                   <div 
                                       key={comp.id}
@@ -313,9 +315,19 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                       }
                                       style={compStyle}
                                   >
-                                      <span className={`text-xs font-medium select-none ${comp.type === 'opening' ? 'text-muted-foreground' : 'text-primary-foreground/80'}`}>
-                                        {comp.type === 'drawer' ? 'Cajón' : comp.type === 'door' ? 'Puerta' : 'Espacio Abierto'}
-                                      </span>
+                                      {isVanityTwoDoor ? (
+                                        <div className="flex h-full w-full items-center justify-center gap-px">
+                                            <div className="h-full w-1/2 bg-primary/20 border-r border-primary/50" />
+                                            <div className="h-full w-1/2 bg-primary/20" />
+                                            <span className="pointer-events-none absolute text-xs font-medium select-none text-primary-foreground/80">
+                                                Puertas
+                                            </span>
+                                        </div>
+                                      ) : (
+                                        <span className={`text-xs font-medium select-none ${comp.type === 'opening' ? 'text-muted-foreground' : 'text-primary-foreground/80'}`}>
+                                            {comp.type === 'drawer' ? 'Cajón' : comp.type === 'door' ? 'Puerta' : 'Espacio Abierto'}
+                                        </span>
+                                      )}
                                       {comp.type !== 'opening' && comp.handle === 'j-profile' && (
                                           <div className="absolute top-0.5 left-0 right-0 h-1 bg-primary/50 rounded-t-sm" title="Perfil J"></div>
                                       )}
