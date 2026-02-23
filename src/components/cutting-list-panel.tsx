@@ -10,6 +10,7 @@ import { OptimizerForm } from './optimizer-form';
 import { Sparkles, Palette } from 'lucide-react';
 import { generatePiecesForCabinet } from '@/lib/cutting-logic';
 import { AppearanceEditor } from './appearance-editor';
+import { cn } from '@/lib/utils';
 
 type CuttingListPanelProps = {
   placedCabinets: PlacedCabinet[];
@@ -24,6 +25,8 @@ type AggregatedPiece = {
   quantity: number;
   material: string;
 };
+
+const BACK_PANEL_MATERIAL = 'MDF 3mm';
 
 export function CuttingListPanel({ placedCabinets, appearance, onAppearanceChange }: CuttingListPanelProps) {
   const { aggregatedPieces, cuttingListString } = useMemo(() => {
@@ -48,6 +51,24 @@ export function CuttingListPanel({ placedCabinets, appearance, onAppearanceChang
     });
 
     const piecesArray = Array.from(pieceMap.values());
+
+    piecesArray.sort((a, b) => {
+      const isABackPanel = a.material === BACK_PANEL_MATERIAL;
+      const isBBackPanel = b.material === BACK_PANEL_MATERIAL;
+
+      if (isABackPanel && !isBBackPanel) {
+        return 1; // a comes after b
+      }
+      if (!isABackPanel && isBBackPanel) {
+        return -1; // a comes before b
+      }
+      // For pieces of the same type, sort by name then width
+      if (a.name === b.name) {
+        return a.width - b.width;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
     const listString = piecesArray.map(p => `${p.quantity}x ${p.name} @ ${p.width}mm x ${p.height}mm (${p.material})`).join('\n');
 
     return { aggregatedPieces: piecesArray, cuttingListString: listString };
@@ -85,7 +106,12 @@ export function CuttingListPanel({ placedCabinets, appearance, onAppearanceChang
                 </TableHeader>
                 <TableBody>
                   {aggregatedPieces.map((piece, index) => (
-                    <TableRow key={index}>
+                    <TableRow 
+                      key={index}
+                      className={cn(
+                        piece.material === BACK_PANEL_MATERIAL && 'text-orange-600 dark:text-orange-400'
+                      )}
+                    >
                       <TableCell className="font-medium">{piece.quantity}</TableCell>
                       <TableCell>{piece.name}</TableCell>
                       <TableCell>{`${piece.width} x ${piece.height} mm`}</TableCell>
