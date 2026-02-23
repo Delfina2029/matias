@@ -111,10 +111,8 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     // Legs - as a hardware note
     pieces.push({ name: 'Patas de Mueble', width: 0, height: 100, quantity: 4, material: 'Hardware', notes: 'Altura de pata recomendada 100mm' });
     
-    // No back panel for vanities
-
     // Components
-    const topDrawerIndex = components.length - 1;
+    const topDrawerIndex = components.length > 0 ? components.findIndex((c, i, arr) => c.type === 'drawer' && i === arr.length - 1) : -1;
 
     components.forEach((component, index) => {
         if (component.type === 'door') {
@@ -171,7 +169,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
                 const drawerBoxHeight = 100;
                 const drawerBoxWidth = interiorWidth - 26;
-                const drawerBoxDepth = depth - 30; // Standard depth
+                const drawerBoxDepth = 350; // Standardized depth for all vanitory drawers
 
                 pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
                 pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
