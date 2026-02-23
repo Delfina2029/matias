@@ -86,12 +86,20 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     const { width, height, depth, components } = cabinet;
     const pieces: Piece[] = [];
     const interiorWidth = width - (2 * MELAMINE_THICKNESS);
-    const cabinetBodyHeight = height - 100; // Account for 100mm legs
+    
+    const isHanging = cabinet.cabinetId.includes('hanging');
+    const cabinetBodyHeight = isHanging ? height : height - 100; // Account for 100mm legs or not
 
     // Carcass
     pieces.push({ name: 'Lateral', width: depth, height: cabinetBodyHeight, quantity: 2, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
-    pieces.push({ name: 'Refuerzo', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
+
+    if (isHanging) {
+      pieces.push({ name: 'Tapa', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
+    } else {
+       pieces.push({ name: 'Refuerzo', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
+    }
+
 
     // Add reinforcements between vertically stacked components
     if (components.length > 1) {
@@ -108,8 +116,10 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         }
     }
 
-    // Legs - as a hardware note
-    pieces.push({ name: 'Patas de Mueble', width: 0, height: 100, quantity: 4, material: 'Hardware', notes: 'Altura de pata recomendada 100mm' });
+    if (!isHanging) {
+        // Legs - as a hardware note
+        pieces.push({ name: 'Patas de Mueble', width: 0, height: 100, quantity: 4, material: 'Hardware', notes: 'Altura de pata recomendada 100mm' });
+    }
     
     // Components
     const topDrawerIndex = components.length > 0 ? components.findIndex((c, i, arr) => c.type === 'drawer' && i === arr.length - 1) : -1;
@@ -130,6 +140,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         } else if (component.type === 'drawer') {
             const drawerBoxHeight = 100;
             const drawerBoxDepth = 350; // Standardized depth for ALL vanitory drawers
+            const isTopDrawer = index === topDrawerIndex;
 
             // --- Front piece ---
             let frontHeight = component.height - 4;
@@ -144,7 +155,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             pieces.push({ name: frontName, width: width - 4, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
             // Check if it's the top drawer, which needs space for plumbing
-            if (index === topDrawerIndex) {
+            if (isTopDrawer) {
                 // U-shaped drawer box for plumbing
                 const drawerBoxWidth = interiorWidth - 24;
                 const plumbingGap = 160;
