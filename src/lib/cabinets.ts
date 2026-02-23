@@ -1,5 +1,41 @@
+import React from 'react';
 import type { Cabinet } from './types';
+import type { LucideIcon } from 'lucide-react';
 import { Box, Archive, Container, Pentagon, Microwave } from 'lucide-react';
+
+const VanitoryPatasIcon: LucideIcon = (props) => {
+  return React.createElement('svg', {
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "1.5",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      ...props
+    },
+    React.createElement('rect', { x: "3", y: "3", width: "18", height: "18", rx: "1" }),
+    React.createElement('rect', { x: "4", y: "4", width: "16", height: "6", rx: "0.5" }),
+    React.createElement('path', { d: "M4 10.5h16" }),
+    React.createElement('path', { d: "M12 10.5v9.5" })
+  );
+};
+
+const Vanitory3DrawersIcon: LucideIcon = (props) => {
+    return React.createElement('svg', {
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "1.5",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      ...props
+    },
+      React.createElement('rect', { x: "3", y: "3", width: "18", height: "18", rx: "1" }),
+      React.createElement('path', { d: "M4 8.5h16" }),
+      React.createElement('path', { d: "M4 14.5h16" })
+    );
+};
+
 
 const MELAMINE_THICKNESS = 18;
 const MELAMINE_MATERIAL = 'Melamina 18mm';
@@ -94,7 +130,7 @@ const vanitoryCabinets: Cabinet[] = [
       id: 'vanity-600-patas',
       name: 'Vanitory 600mm Patas',
       type: 'base',
-      icon: Box,
+      icon: VanitoryPatasIcon,
       width: 600,
       height: 840,
       depth: 460,
@@ -108,7 +144,7 @@ const vanitoryCabinets: Cabinet[] = [
       id: 'vanity-600-3-drawers',
       name: 'Vanitory 600mm 3 Cajones',
       type: 'base',
-      icon: Box,
+      icon: Vanitory3DrawersIcon,
       width: 600,
       height: 840,
       depth: 460,
