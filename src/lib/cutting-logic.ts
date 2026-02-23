@@ -93,7 +93,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Amarre Superior', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
 
-    // Add reinforcement between drawer and door sections
+    // Add reinforcements between vertically stacked components
     if (components.length > 1) {
         const reinforcementCount = components.length - 1;
         if (reinforcementCount > 0) {
@@ -114,92 +114,71 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     // No back panel for vanities
 
     // Components
-    const drawerComp = components.find(c => c.type === 'drawer');
-    const doorComp = components.find(c => c.type === 'door');
+    const topDrawerIndex = components.length - 1;
 
-    if (doorComp) {
-        const doorWidth = (width - 6) / 2; // Two doors with 2mm gap between and on sides
-        let doorHeight = doorComp.height - 4;
-        let doorName;
-        if (doorComp.handle === 'j-profile') {
-            doorHeight -= 26.8;
-            doorName = 'Puerta de Vanitory (Perfil J)';
-        } else {
-            doorHeight -= 30;
-            doorName = 'Puerta de Vanitory (Tirar)';
+    components.forEach((component, index) => {
+        if (component.type === 'door') {
+            const doorWidth = (width - 6) / 2; // Two doors with 2mm gap between and on sides
+            let doorHeight = component.height - 4;
+            let doorName;
+            if (component.handle === 'j-profile') {
+                doorHeight -= 26.8;
+                doorName = 'Puerta de Vanitory (Perfil J)';
+            } else {
+                doorHeight -= 30;
+                doorName = 'Puerta de Vanitory (Tirar)';
+            }
+            pieces.push({ name: doorName, width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });
+        } else if (component.type === 'drawer') {
+            // Check if it's the top drawer, which needs space for plumbing
+            if (index === topDrawerIndex) {
+                let frontHeight = component.height - 4;
+                let frontName;
+                if (component.handle === 'j-profile') {
+                    frontHeight -= 26.8;
+                    frontName = 'Frente de Cajón (Perfil J)';
+                } else {
+                    frontHeight -= 30;
+                    frontName = 'Frente de Cajón (Tirar)';
+                }
+                pieces.push({ name: frontName, width: width - 4, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
+                
+                // U-shaped drawer box for plumbing
+                const drawerBoxHeight = 100;
+                const drawerBoxDepth = 350; // Special depth for vanitory top drawer
+                const drawerBoxWidth = interiorWidth - 24;
+                const plumbingGap = 160;
+                const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
+
+                pieces.push({ name: 'Lateral de Cajón Vanitory', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 4, material: MELAMINE_MATERIAL });
+                pieces.push({ name: 'Frente Interno Cajón Vanitory', width: drawerBoxWidth, height: drawerBoxHeight, quantity: 1, material: MELAMINE_MATERIAL, notes: 'Pieza de refuerzo detrás del frente principal' });
+                pieces.push({ name: 'Trasero de Cajón Vanitory (Lado)', width: sideBoxInnerWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                pieces.push({ name: 'Trasero de Cajón Vanitory (Centro)', width: plumbingGap, height: drawerBoxHeight, quantity: 1, material: MELAMINE_MATERIAL, notes: 'Pieza central que une las dos cajas' });
+                pieces.push({ name: 'Fondo de Cajón Vanitory', width: sideBoxInnerWidth, height: drawerBoxDepth - MELAMINE_THICKNESS, quantity: 2, material: BACK_PANEL_MATERIAL });
+
+            } else {
+                // Standard full-depth drawer for lower positions
+                let frontHeight = component.height - 4;
+                let frontName;
+                if (component.handle === 'j-profile') {
+                    frontHeight -= 26.8;
+                    frontName = 'Frente de Cajón (Perfil J)';
+                } else {
+                    frontHeight -= 30;
+                    frontName = 'Frente de Cajón (Tirar)';
+                }
+                pieces.push({ name: frontName, width: width - 4, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
+
+                const drawerBoxHeight = 100;
+                const drawerBoxWidth = interiorWidth - 26;
+                const drawerBoxDepth = depth - 30; // Standard depth
+
+                pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                pieces.push({ name: 'Fondo de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
+            }
         }
-        pieces.push({ name: doorName, width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });
-    }
-
-    if (drawerComp) {
-        let frontHeight = drawerComp.height - 4;
-        let frontName;
-        
-        if (drawerComp.handle === 'j-profile') {
-            frontHeight -= 26.8;
-            frontName = 'Frente de Cajón (Perfil J)';
-        } else {
-            frontHeight -= 30;
-            frontName = 'Frente de Cajón (Tirar)';
-        }
-        
-        pieces.push({
-            name: frontName,
-            width: width - 4,
-            height: frontHeight,
-            quantity: 1,
-            material: MELAMINE_MATERIAL
-        });
-        
-        const drawerBoxHeight = 100;
-        const drawerBoxDepth = 350;
-        const drawerBoxWidth = interiorWidth - 24;
-        const plumbingGap = 160;
-        const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
-
-
-        pieces.push({
-            name: 'Lateral de Cajón Vanitory',
-            width: drawerBoxDepth,
-            height: drawerBoxHeight,
-            quantity: 4,
-            material: MELAMINE_MATERIAL
-        });
-
-        pieces.push({
-            name: 'Frente Interno Cajón Vanitory',
-            width: drawerBoxWidth,
-            height: drawerBoxHeight,
-            quantity: 1,
-            material: MELAMINE_MATERIAL,
-            notes: 'Pieza de refuerzo detrás del frente principal'
-        });
-
-        pieces.push({
-            name: 'Trasero de Cajón Vanitory (Lado)',
-            width: sideBoxInnerWidth,
-            height: drawerBoxHeight,
-            quantity: 2,
-            material: MELAMINE_MATERIAL
-        });
-        
-        pieces.push({
-            name: 'Trasero de Cajón Vanitory (Centro)',
-            width: plumbingGap,
-            height: drawerBoxHeight,
-            quantity: 1,
-            material: MELAMINE_MATERIAL,
-            notes: 'Pieza central que une las dos cajas'
-        });
-        
-        pieces.push({
-            name: 'Fondo de Cajón Vanitory',
-            width: sideBoxInnerWidth,
-            height: drawerBoxDepth - MELAMINE_THICKNESS,
-            quantity: 2,
-            material: BACK_PANEL_MATERIAL
-        });
-    }
+    });
 
     return pieces;
   }
