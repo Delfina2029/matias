@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useRef, useEffect, useCallback } from 'react';
+import React, { Suspense, useRef, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, TransformControls, useCursor, Box, Plane } from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
