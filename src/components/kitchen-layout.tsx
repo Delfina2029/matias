@@ -12,13 +12,9 @@ import * as THREE from 'three';
 const Cabinet = memo(({ 
     cabinet, 
     appearance,
-    onClick,
-    onDoubleClick,
 }: { 
     cabinet: PlacedCabinet, 
     appearance: Appearance,
-    onClick: (id: string) => void,
-    onDoubleClick: (id: string) => void
 }) => {
   const [hovered, setHovered] = React.useState(false);
   useCursor(hovered);
@@ -36,14 +32,6 @@ const Cabinet = memo(({
     e.stopPropagation();
     setHovered(false);
   }, []);
-
-  const handleClick = useCallback(() => {
-    onClick(cabinet.instanceId);
-  }, [onClick, cabinet.instanceId]);
-
-  const handleDoubleClick = useCallback(() => {
-    onDoubleClick(cabinet.instanceId);
-  }, [onDoubleClick, cabinet.instanceId]);
   
   return (
     <group 
@@ -52,8 +40,6 @@ const Cabinet = memo(({
       rotation={cabinet.rotation}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
     >
         {/* Main carcass */}
         <Box args={[cabinetWidth, cabinetHeight, cabinetDepth]}>
@@ -100,6 +86,7 @@ function Scene({
 }: SceneProps) {
     
     const controlRef = useRef<any>(null);
+    const orbitControlsRef = useRef<any>(null); // For camera targeting
     const sceneRef = useRef<THREE.Scene>(null);
 
     const selectedObject = React.useMemo(() => {
@@ -108,6 +95,19 @@ function Scene({
       }
       return undefined;
     }, [selectedInstanceId]);
+
+    React.useEffect(() => {
+        if (orbitControlsRef.current) {
+            if (selectedObject) {
+                const box = new THREE.Box3().setFromObject(selectedObject);
+                const center = box.getCenter(new THREE.Vector3());
+                orbitControlsRef.current.target.copy(center);
+            } else {
+                orbitControlsRef.current.target.set(0, 1, 0);
+            }
+            orbitControlsRef.current.update();
+        }
+    }, [selectedObject]);
 
 
     const handleTransformEnd = useCallback(() => {
@@ -152,18 +152,20 @@ function Scene({
     return (
         <scene 
             ref={sceneRef}
+            onClick={handleSceneClick}
+            onDoubleClick={handleSceneDoubleClick}
         >
             <ambientLight intensity={1.5} />
             <directionalLight position={[5, 5, 5]} intensity={1} />
             <hemisphereLight groundColor="white" intensity={0.5} />
             
-            <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} onClick={handleSceneClick}>
+            <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
                 <meshStandardMaterial color="#A0785A" />
             </Plane>
-            <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]} onClick={handleSceneClick}>
+            <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]}>
                 <meshStandardMaterial color="#F5F5DC" />
             </Plane>
-            <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]} onClick={handleSceneClick}>
+            <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]}>
                 <meshStandardMaterial color="#F5F5DC" />
             </Plane>
             
@@ -173,8 +175,6 @@ function Scene({
                         key={cabinet.instanceId}
                         cabinet={cabinet}
                         appearance={appearance}
-                        onClick={onSelectInstance}
-                        onDoubleClick={onOpenEditor}
                     />
                 ))}
             </Suspense>
@@ -196,7 +196,7 @@ function Scene({
                 />
             )}
 
-            <OrbitControls makeDefault maxPolarAngle={Math.PI / 2} />
+            <OrbitControls ref={orbitControlsRef} makeDefault maxPolarAngle={Math.PI / 2} />
         </scene>
     );
 }
@@ -216,7 +216,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
             <Button variant={transformMode === 'rotate' ? 'secondary' : 'ghost'} size="icon" onClick={() => setTransformMode('rotate')} disabled={!selectedInstanceId} title="Rotar">
                 <RotateCcw className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => onOpenEditor(selectedInstanceId)} disabled={!selectedInstanceId}>
+            <Button variant="ghost" size="sm" onClick={() => selectedInstanceId && onOpenEditor(selectedInstanceId)} disabled={!selectedInstanceId}>
               <Edit className="w-4 h-4 mr-2" />
               Editar Medidas
             </Button>
@@ -236,7 +236,10 @@ export function KitchenLayout(props: KitchenLayoutProps) {
   );
 }
 
-type SceneProps = KitchenLayoutProps;
+type SceneProps = Omit<KitchenLayoutProps, 'onClearLayout'> & {
+    transformMode: 'translate' | 'rotate';
+};
+
 
 interface KitchenLayoutProps {
   placedCabinets: PlacedCabinet[];
@@ -245,5 +248,5 @@ interface KitchenLayoutProps {
   selectedInstanceId: string | null;
   onSelectInstance: (id: string | null) => void;
   onUpdateTransform: (id: string, transform: { position: [number, number, number], rotation: [number, number, number] }) => void;
-  onOpenEditor: (id: string | null) => void;
+  onOpenEditor: (id: string) => void;
 }
