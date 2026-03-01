@@ -7,15 +7,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { OptimizerForm } from './optimizer-form';
-import { Sparkles, Palette } from 'lucide-react';
+import { Sparkles, Palette, LayoutGrid, List } from 'lucide-react';
 import { generatePiecesForCabinet } from '@/lib/cutting-logic';
 import { AppearanceEditor } from './appearance-editor';
 import { cn } from '@/lib/utils';
+import { cabinetData } from '@/lib/cabinets';
+import { Button } from './ui/button';
+import { X } from 'lucide-react';
+
 
 type CuttingListPanelProps = {
   placedCabinets: PlacedCabinet[];
   appearance: Appearance;
   onAppearanceChange: (appearance: Appearance) => void;
+  onRemoveCabinet: (instanceId: string) => void;
+  onSelectCabinet: (instanceId: string | null) => void;
+  selectedCabinetId?: string | null;
 };
 
 type AggregatedPiece = {
@@ -28,7 +35,14 @@ type AggregatedPiece = {
 
 const BACK_PANEL_MATERIAL = 'MDF 3mm';
 
-export function CuttingListPanel({ placedCabinets, appearance, onAppearanceChange }: CuttingListPanelProps) {
+export function CuttingListPanel({ 
+    placedCabinets, 
+    appearance, 
+    onAppearanceChange,
+    onRemoveCabinet,
+    onSelectCabinet,
+    selectedCabinetId 
+}: CuttingListPanelProps) {
   const { aggregatedPieces, cuttingListString } = useMemo(() => {
     const pieceMap = new Map<string, AggregatedPiece>();
 
@@ -76,11 +90,18 @@ export function CuttingListPanel({ placedCabinets, appearance, onAppearanceChang
 
   return (
     <Card className="h-full flex flex-col">
-      <Tabs defaultValue="list" className="flex-1 flex flex-col">
+      <Tabs defaultValue="design" className="flex-1 flex flex-col">
         <CardHeader className="flex-row justify-between items-center">
-            <CardTitle className="font-headline">Piezas y Apariencia</CardTitle>
+            <CardTitle className="font-headline">Controles</CardTitle>
             <TabsList>
-                <TabsTrigger value="list">Lista de Corte</TabsTrigger>
+                <TabsTrigger value="design" className="flex items-center gap-2">
+                    <LayoutGrid className="w-4 h-4 text-primary" />
+                    Diseño
+                </TabsTrigger>
+                <TabsTrigger value="list" className="flex items-center gap-2">
+                    <List className="w-4 h-4 text-primary" />
+                    Lista de Corte
+                </TabsTrigger>
                 <TabsTrigger value="optimizer" className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-accent" />
                   Optimizador
@@ -92,6 +113,47 @@ export function CuttingListPanel({ placedCabinets, appearance, onAppearanceChang
             </TabsList>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0">
+          <TabsContent value="design" className="h-full m-0">
+            <ScrollArea className="h-full p-6 pt-0">
+                 <div className="space-y-3">
+                    {placedCabinets.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-8">Añade gabinetes desde el panel de la izquierda para empezar.</p>
+                    ) : (
+                        placedCabinets.map(placed => {
+                            const cabinetInfo = cabinetData.find(c => c.id === placed.cabinetId);
+                            return (
+                                <Card 
+                                    key={placed.instanceId}
+                                    className={cn(
+                                        "hover:shadow-md transition-shadow",
+                                        selectedCabinetId === placed.instanceId && 'ring-2 ring-primary'
+                                    )}
+                                >
+                                    <CardContent className="p-3 flex items-center justify-between gap-2">
+                                        {cabinetInfo && <cabinetInfo.icon className="w-8 h-8 text-primary shrink-0" />}
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="font-medium truncate">{cabinetInfo?.name || placed.cabinetId}</p>
+                                            <p className="text-xs text-muted-foreground">{placed.width}x{placed.height}x{placed.depth}mm</p>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <Button variant="ghost" size="sm" onClick={() => onSelectCabinet(placed.instanceId)}>Editar</Button>
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="w-8 h-8 text-destructive/80 hover:text-destructive"
+                                                onClick={() => onRemoveCabinet(placed.instanceId)}
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })
+                    )}
+                </div>
+            </ScrollArea>
+          </TabsContent>
           <TabsContent value="list" className="h-full m-0">
             <ScrollArea className="h-full p-6 pt-0">
               <Table>

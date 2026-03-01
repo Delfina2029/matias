@@ -4,23 +4,6 @@ import type { LucideIcon } from 'lucide-react';
 import { Box, Archive, Container, Pentagon, Microwave } from 'lucide-react';
 
 const VanitoryPatasIcon: LucideIcon = (props) => {
-  return React.createElement('svg', {
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      strokeWidth: "1.5",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      ...props
-    },
-    React.createElement('rect', { x: "3", y: "3", width: "18", height: "18", rx: "1" }),
-    React.createElement('rect', { x: "4", y: "4", width: "16", height: "6", rx: "0.5" }),
-    React.createElement('path', { d: "M4 10.5h16" }),
-    React.createElement('path', { d: "M12 10.5v9.5" })
-  );
-};
-
-const Vanitory3DrawersIcon: LucideIcon = (props) => {
     return React.createElement('svg', {
       viewBox: "0 0 24 24",
       fill: "none",
@@ -30,26 +13,52 @@ const Vanitory3DrawersIcon: LucideIcon = (props) => {
       strokeLinejoin: "round",
       ...props
     },
-      React.createElement('rect', { x: "3", y: "3", width: "18", height: "18", rx: "1" }),
-      React.createElement('path', { d: "M4 8.5h16" }),
-      React.createElement('path', { d: "M4 14.5h16" })
+      React.createElement('path', { d: "M4 21V9a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12" }),
+      React.createElement('path', { d: "M4 21v-2" }),
+      React.createElement('path', { d: "M20 21v-2" }),
+      React.createElement('path', { d: "M4 13h16" }),
+      React.createElement('path', { d: "M12.5 13v-5" }),
+      React.createElement('rect', { x: "5", y: "4", width: "14", height: "4", rx: "1" })
     );
 };
-
-const VanitoryHangingIcon: LucideIcon = (props) => {
-  return React.createElement('svg', {
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      strokeWidth: "1.5",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      ...props
+  
+const Vanitory3DrawersIcon: LucideIcon = (props) => {
+    return React.createElement('svg', {
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "1.5",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        ...props
     },
-    React.createElement('rect', { x: "3", y: "3", width: "18", height: "18", rx: "1" }),
-    React.createElement('rect', { x: "4", y: "13", width: "16", height: "7", rx: "0.5" }),
-    React.createElement('path', { d: "M4 12.5h16" })
-  );
+        React.createElement('path', { d: "M4 21V9a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12" }),
+        React.createElement('path', { d: "M4 21v-2" }),
+        React.createElement('path', { d: "M20 21v-2" }),
+        React.createElement('path', { d: "M4 14h16" }),
+        React.createElement('path', { d: "M4 8h16" }),
+        React.createElement('path', { d: "M12.5 8V4" }),
+        React.createElement('path', { d: "M12.5 14v-6" }),
+        React.createElement('path', { d: "M12.5 21v-7" })
+    );
+};
+  
+const VanitoryHangingIcon: LucideIcon = (props) => {
+    return React.createElement('svg', {
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "1.5",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        ...props
+    },
+        React.createElement('rect', { x: "3", y: "3", width: "18", height: "12", rx: "1" }),
+        React.createElement('path', { d: "M4 10h16" }),
+        React.createElement('path', { d: "M9 10v-6" }),
+        React.createElement('path', { d: "M15 10v-6" }),
+        React.createElement('rect', { x: "4", y: "4", width: "16", height: "6", rx: "0.5" })
+    );
 };
 
 

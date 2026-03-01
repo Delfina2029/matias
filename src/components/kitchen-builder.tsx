@@ -91,23 +91,35 @@ export function KitchenBuilder() {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] lg:grid-cols-[320px_1fr_420px] gap-4 p-4 h-[calc(100vh-4rem)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 p-6 h-[calc(100vh-4rem)]">
+        {/* Columna Izquierda: Selector de Gabinetes */}
         <CabinetSelector onSelectCabinet={addCabinet} />
-        <KitchenLayout
-          placedCabinets={placedCabinets}
-          onUpdateLayout={setPlacedCabinets}
-          onClearLayout={clearLayout}
-          onRemoveCabinet={removeCabinet}
-          onSelectCabinet={handleSelectCabinet}
-          selectedCabinetId={editingCabinet?.instanceId}
-          appearance={appearance}
-        />
-        <CuttingListPanel 
-            placedCabinets={placedCabinets}
-            appearance={appearance}
-            onAppearanceChange={setAppearance}
-        />
+
+        {/* Columna Derecha: Vista Previa y Controles */}
+        <div className="flex flex-col gap-6 h-full min-h-0">
+            {/* Sección Superior: Vista Previa */}
+            <div className="flex-[3] min-h-0">
+                <KitchenLayout
+                    placedCabinets={placedCabinets}
+                    onClearLayout={clearLayout}
+                    appearance={appearance}
+                />
+            </div>
+            {/* Sección Inferior: Paneles de Control (Lista de corte, etc.) */}
+            <div className="flex-[2] min-h-0">
+                <CuttingListPanel 
+                    placedCabinets={placedCabinets}
+                    appearance={appearance}
+                    onAppearanceChange={setAppearance}
+                    onRemoveCabinet={removeCabinet}
+                    onSelectCabinet={handleSelectCabinet}
+                    selectedCabinetId={editingCabinet?.instanceId}
+                />
+            </div>
+        </div>
       </div>
+      
+      {/* Editor Modal */}
       {editingCabinet && (
         <CabinetEditor
           cabinet={editingCabinet}
