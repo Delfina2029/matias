@@ -12,9 +12,17 @@ import * as THREE from 'three';
 const Cabinet = memo(({ 
     cabinet, 
     appearance,
+    onPointerOver,
+    onPointerOut,
+    onClick,
+    onDoubleClick,
 }: { 
     cabinet: PlacedCabinet, 
     appearance: Appearance,
+    onPointerOver: (e: any) => void;
+    onPointerOut: (e: any) => void;
+    onClick: (e: any) => void;
+    onDoubleClick: (e: any) => void;
 }) => {
   const [hovered, setHovered] = React.useState(false);
   useCursor(hovered);
@@ -26,12 +34,14 @@ const Cabinet = memo(({
   const handlePointerOver = useCallback((e: any) => {
     e.stopPropagation();
     setHovered(true);
-  }, []);
+    onPointerOver(e);
+  }, [onPointerOver]);
 
   const handlePointerOut = useCallback((e: any) => {
     e.stopPropagation();
     setHovered(false);
-  }, []);
+    onPointerOut(e);
+  }, [onPointerOut]);
   
   return (
     <group 
@@ -40,6 +50,8 @@ const Cabinet = memo(({
       rotation={cabinet.rotation}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
     >
         {/* Main carcass */}
         <Box args={[cabinetWidth, cabinetHeight, cabinetDepth]}>
@@ -175,6 +187,10 @@ function Scene({
                         key={cabinet.instanceId}
                         cabinet={cabinet}
                         appearance={appearance}
+                        onPointerOver={() => {}}
+                        onPointerOut={() => {}}
+                        onClick={handleSceneClick}
+                        onDoubleClick={handleSceneDoubleClick}
                     />
                 ))}
             </Suspense>
@@ -196,7 +212,12 @@ function Scene({
                 />
             )}
 
-            <OrbitControls ref={orbitControlsRef} makeDefault maxPolarAngle={Math.PI / 2} />
+            <OrbitControls 
+                ref={orbitControlsRef} 
+                makeDefault 
+                maxPolarAngle={Math.PI / 2} 
+                minDistance={0.5}
+            />
         </scene>
     );
 }
