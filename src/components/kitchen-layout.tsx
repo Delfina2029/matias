@@ -9,6 +9,7 @@ import { Trash2, Edit, RotateCcw, Move } from 'lucide-react';
 import * as THREE from 'three';
 
 // Helper component to render a single cabinet
+// MOVED to top-level to prevent re-definition on every render.
 function Cabinet({ 
     cabinet, 
     appearance,
@@ -73,20 +74,24 @@ function Cabinet({
 }
 
 // The main scene component
-function Scene(props: SceneProps) {
-    const { 
-        placedCabinets, 
-        appearance, 
-        selectedInstanceId, 
-        onSelectInstance, 
-        onUpdateTransform,
-        onOpenEditor,
-        transformMode,
-    } = props;
+// MOVED to top-level to prevent re-definition on every render.
+function Scene({ 
+    placedCabinets, 
+    appearance, 
+    selectedInstanceId, 
+    onSelectInstance, 
+    onUpdateTransform,
+    onOpenEditor,
+    transformMode,
+}: SceneProps) {
     
     const controlRef = useRef<any>(null);
     const sceneRef = useRef<THREE.Scene>(null);
-    const selectedObject = sceneRef.current?.getObjectByName(selectedInstanceId || '');
+
+    const selectedObject = React.useMemo(() => 
+        sceneRef.current?.getObjectByName(selectedInstanceId || ''), 
+    [selectedInstanceId]);
+
 
     const handleTransformEnd = useCallback(() => {
         if (onUpdateTransform && controlRef.current?.object && selectedInstanceId) {
@@ -98,12 +103,7 @@ function Scene(props: SceneProps) {
         }
     }, [onUpdateTransform, selectedInstanceId]);
 
-    const handleDeselect = useCallback((e: any) => {
-        e.stopPropagation();
-        onSelectInstance(null);
-    }, [onSelectInstance]);
-
-    const findCabinetGroup = (object: THREE.Object3D): THREE.Object3D | null => {
+    const findCabinetGroup = useCallback((object: THREE.Object3D): THREE.Object3D | null => {
         if (!object) return null;
         if (object.name && object.name.startsWith('cab_')) {
             return object;
@@ -112,7 +112,7 @@ function Scene(props: SceneProps) {
             return findCabinetGroup(object.parent);
         }
         return null;
-    }
+    }, []);
 
     const handleSceneClick = useCallback((e: any) => {
         e.stopPropagation();
@@ -122,16 +122,16 @@ function Scene(props: SceneProps) {
         } else {
             onSelectInstance(null);
         }
-    }, [onSelectInstance]);
-
+    }, [findCabinetGroup, onSelectInstance]);
+    
     const handleSceneDoubleClick = useCallback((e: any) => {
         e.stopPropagation();
         const group = findCabinetGroup(e.object);
         if (group) {
             onOpenEditor(group.name);
         }
-    }, [onOpenEditor]);
-
+    }, [findCabinetGroup, onOpenEditor]);
+    
     return (
         <scene 
             ref={sceneRef}
@@ -142,14 +142,13 @@ function Scene(props: SceneProps) {
             <directionalLight position={[5, 5, 5]} intensity={1} />
             <hemisphereLight groundColor="white" intensity={0.5} />
             
-            {/* Floor and Walls */}
-            <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} onClick={handleDeselect}>
+            <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
                 <meshStandardMaterial color="#f0f0f0" />
             </Plane>
-            <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]} onClick={handleDeselect}>
+            <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]}>
                 <meshStandardMaterial color="#e0e0e0" />
             </Plane>
-            <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]} onClick={handleDeselect}>
+            <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]}>
                 <meshStandardMaterial color="#d0d0d0" />
             </Plane>
             
@@ -182,6 +181,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
   const [transformMode, setTransformMode] = React.useState<'translate' | 'rotate'>('translate');
 
   const handlePointerMissed = useCallback((e: any) => {
+      // Check if the click was directly on the canvas, not on an object
       if (e.target === e.currentTarget) {
         onSelectInstance(null);
       }
@@ -198,7 +198,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
             <Button variant={transformMode === 'rotate' ? 'secondary' : 'ghost'} size="icon" onClick={() => setTransformMode('rotate')} disabled={!selectedInstanceId} title="Rotar">
                 <RotateCcw className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => onOpenEditor(selectedInstanceId!)} disabled={!selectedInstanceId}>
+            <Button variant="ghost" size="sm" onClick={() => onOpenEditor(selectedInstanceId)} disabled={!selectedInstanceId}>
               <Edit className="w-4 h-4 mr-2" />
               Editar Medidas
             </Button>
