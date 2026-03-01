@@ -12,9 +12,13 @@ import * as THREE from 'three';
 const Cabinet = memo(({ 
     cabinet, 
     appearance,
+    onClick,
+    onDoubleClick,
 }: { 
     cabinet: PlacedCabinet, 
-    appearance: Appearance, 
+    appearance: Appearance,
+    onClick: (id: string) => void,
+    onDoubleClick: (id: string) => void
 }) => {
   const [hovered, setHovered] = React.useState(false);
   useCursor(hovered);
@@ -32,6 +36,14 @@ const Cabinet = memo(({
     e.stopPropagation();
     setHovered(false);
   }, []);
+
+  const handleClick = useCallback(() => {
+    onClick(cabinet.instanceId);
+  }, [onClick, cabinet.instanceId]);
+
+  const handleDoubleClick = useCallback(() => {
+    onDoubleClick(cabinet.instanceId);
+  }, [onDoubleClick, cabinet.instanceId]);
   
   return (
     <group 
@@ -40,6 +52,8 @@ const Cabinet = memo(({
       rotation={cabinet.rotation}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
     >
         {/* Main carcass */}
         <Box args={[cabinetWidth, cabinetHeight, cabinetDepth]}>
@@ -138,20 +152,18 @@ function Scene({
     return (
         <scene 
             ref={sceneRef}
-            onClick={handleSceneClick}
-            onDoubleClick={handleSceneDoubleClick}
         >
             <ambientLight intensity={1.5} />
             <directionalLight position={[5, 5, 5]} intensity={1} />
             <hemisphereLight groundColor="white" intensity={0.5} />
             
-            <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+            <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} onClick={handleSceneClick}>
                 <meshStandardMaterial color="#A0785A" />
             </Plane>
-            <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]}>
+            <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]} onClick={handleSceneClick}>
                 <meshStandardMaterial color="#F5F5DC" />
             </Plane>
-            <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]}>
+            <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]} onClick={handleSceneClick}>
                 <meshStandardMaterial color="#F5F5DC" />
             </Plane>
             
@@ -161,6 +173,8 @@ function Scene({
                         key={cabinet.instanceId}
                         cabinet={cabinet}
                         appearance={appearance}
+                        onClick={onSelectInstance}
+                        onDoubleClick={onOpenEditor}
                     />
                 ))}
             </Suspense>
@@ -182,7 +196,7 @@ function Scene({
                 />
             )}
 
-            <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI / 1.9} />
+            <OrbitControls makeDefault maxPolarAngle={Math.PI / 2} />
         </scene>
     );
 }
@@ -222,7 +236,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
   );
 }
 
-type SceneProps = KitchenLayoutProps & { transformMode: 'translate' | 'rotate' };
+type SceneProps = KitchenLayoutProps;
 
 interface KitchenLayoutProps {
   placedCabinets: PlacedCabinet[];
