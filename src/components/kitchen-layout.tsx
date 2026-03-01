@@ -9,7 +9,6 @@ import { Trash2, Edit, RotateCcw, Move } from 'lucide-react';
 import * as THREE from 'three';
 
 // Helper component to render a single cabinet
-// MOVED to top-level to prevent re-definition on every render.
 function Cabinet({ 
     cabinet, 
     appearance,
@@ -74,7 +73,6 @@ function Cabinet({
 }
 
 // The main scene component
-// MOVED to top-level to prevent re-definition on every render.
 function Scene({ 
     placedCabinets, 
     appearance, 
@@ -88,9 +86,12 @@ function Scene({
     const controlRef = useRef<any>(null);
     const sceneRef = useRef<THREE.Scene>(null);
 
-    const selectedObject = React.useMemo(() => 
-        sceneRef.current?.getObjectByName(selectedInstanceId || ''), 
-    [selectedInstanceId]);
+    const selectedObject = React.useMemo(() => {
+      if (selectedInstanceId) {
+        return sceneRef.current?.getObjectByName(selectedInstanceId);
+      }
+      return undefined;
+    }, [selectedInstanceId]);
 
 
     const handleTransformEnd = useCallback(() => {
@@ -143,13 +144,13 @@ function Scene({
             <hemisphereLight groundColor="white" intensity={0.5} />
             
             <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-                <meshStandardMaterial color="#f0f0f0" />
+                <meshStandardMaterial color="#DEB887" />
             </Plane>
             <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]}>
-                <meshStandardMaterial color="#e0e0e0" />
+                <meshStandardMaterial color="#F5F5DC" />
             </Plane>
             <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]}>
-                <meshStandardMaterial color="#d0d0d0" />
+                <meshStandardMaterial color="#F5F5DC" />
             </Plane>
             
             <Suspense fallback={null}>
@@ -165,7 +166,7 @@ function Scene({
             {selectedObject && (
                 <TransformControls 
                     ref={controlRef} 
-                    object={selectedObject} 
+                    object={selectedObject as THREE.Object3D} 
                     mode={transformMode}
                     onMouseUp={handleTransformEnd}
                 />
