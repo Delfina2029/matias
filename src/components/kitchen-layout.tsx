@@ -1,249 +1,260 @@
 'use client';
 
-import React, { Suspense, useRef, useCallback, memo } from 'react';
+import React, { Suspense, useRef, useCallback, memo, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, TransformControls, useCursor, Box, Plane } from '@react-three/drei';
+import {
+  OrbitControls,
+  TransformControls,
+  useCursor,
+  Box,
+  Plane,
+} from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Button } from './ui/button';
 import { Trash2, Edit, RotateCcw, Move } from 'lucide-react';
 import * as THREE from 'three';
 
-// Helper component to render a single cabinet
-const Cabinet = memo(({ 
-    cabinet, 
-    appearance,
-    onPointerOver,
-    onPointerOut,
-    onClick,
-    onDoubleClick,
-}: { 
-    cabinet: PlacedCabinet, 
-    appearance: Appearance,
-    onPointerOver: (e: any) => void;
-    onPointerOut: (e: any) => void;
-    onClick: (e: any) => void;
-    onDoubleClick: (e: any) => void;
-}) => {
-  const [hovered, setHovered] = React.useState(false);
-  useCursor(hovered);
-
+const Cabinet = memo(function Cabinet({
+  cabinet,
+  appearance,
+}: {
+  cabinet: PlacedCabinet;
+  appearance: Appearance;
+}) {
   const cabinetWidth = cabinet.width / 1000;
   const cabinetHeight = cabinet.height / 1000;
   const cabinetDepth = cabinet.depth / 1000;
 
-  const handlePointerOver = useCallback((e: any) => {
-    e.stopPropagation();
-    setHovered(true);
-    onPointerOver(e);
-  }, [onPointerOver]);
-
-  const handlePointerOut = useCallback((e: any) => {
-    e.stopPropagation();
-    setHovered(false);
-    onPointerOut(e);
-  }, [onPointerOut]);
-  
   return (
-    <group 
-      name={cabinet.instanceId} // Use instanceId as name to find it in the scene
-      position={cabinet.position} 
+    <group
+      name={cabinet.instanceId}
+      position={cabinet.position}
       rotation={cabinet.rotation}
-      onPointerOver={handlePointerOver}
-      onPointerOut={handlePointerOut}
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
     >
-        {/* Main carcass */}
-        <Box args={[cabinetWidth, cabinetHeight, cabinetDepth]}>
-            <meshStandardMaterial color={appearance.carcassColor} transparent opacity={hovered ? 0.9 : 1.0} />
+      <Box args={[cabinetWidth, cabinetHeight, cabinetDepth]}>
+        <meshStandardMaterial color={appearance.carcassColor} />
+      </Box>
+
+      {cabinet.type === 'base' && (
+        <Box
+          args={[cabinetWidth, 0.03, cabinetDepth]}
+          position={[0, cabinetHeight / 2 + 0.015, 0]}
+        >
+          <meshStandardMaterial color={appearance.countertopColor} />
         </Box>
-        
-        {/* Countertop for base cabinets */}
-        {cabinet.type === 'base' && (
-            <Box args={[cabinetWidth, 0.03, cabinetDepth]} position={[0, cabinetHeight / 2 + 0.015, 0]}>
-                <meshStandardMaterial color={appearance.countertopColor} />
-            </Box>
-        )}
-         
-        {cabinet.components.map((comp) => {
-            const totalHeightSoFar = cabinet.components
-                .slice(0, cabinet.components.findIndex(c => c.id === comp.id))
-                .reduce((acc, c) => acc + c.height / 1000, 0);
+      )}
 
-            const compHeight = comp.height / 1000;
-            const yPos = -cabinetHeight / 2 + totalHeightSoFar + compHeight / 2;
+      {cabinet.components.map((comp) => {
+        const totalHeightSoFar = cabinet.components
+          .slice(0, cabinet.components.findIndex((c) => c.id === comp.id))
+          .reduce((acc, c) => acc + c.height / 1000, 0);
 
-            return (
-                 <Box key={comp.id} args={[cabinetWidth - 0.01, compHeight - 0.01, 0.018]} position={[0, yPos, cabinetDepth/2 + 0.009]}>
-                    <meshStandardMaterial color={appearance.frontColor} />
-                </Box>
-            )
-        })}
+        const compHeight = comp.height / 1000;
+        const yPos = -cabinetHeight / 2 + totalHeightSoFar + compHeight / 2;
 
+        return (
+          <Box
+            key={comp.id}
+            args={[cabinetWidth - 0.01, compHeight - 0.01, 0.018]}
+            position={[0, yPos, cabinetDepth / 2 + 0.009]}
+          >
+            <meshStandardMaterial color={appearance.frontColor} />
+          </Box>
+        );
+      })}
     </group>
   );
 });
-Cabinet.displayName = 'Cabinet';
 
-
-// The main scene component
-function Scene({ 
-    placedCabinets, 
-    appearance, 
-    selectedInstanceId, 
-    onSelectInstance, 
-    onUpdateTransform,
-    onOpenEditor,
-    transformMode,
+function Scene({
+  placedCabinets,
+  appearance,
+  selectedInstanceId,
+  onSelectInstance,
+  onUpdateTransform,
+  onOpenEditor,
+  transformMode,
 }: SceneProps) {
-    
-    const controlRef = useRef<any>(null);
-    const orbitControlsRef = useRef<any>(null); // For camera targeting
-    const sceneRef = useRef<THREE.Scene>(null);
+  const controlRef = useRef<any>(null);
+  const orbitControlsRef = useRef<any>(null);
+  const sceneRef = useRef<THREE.Scene>(null);
 
-    const selectedObject = React.useMemo(() => {
-      if (selectedInstanceId && sceneRef.current) {
-        return sceneRef.current.getObjectByName(selectedInstanceId);
+  const selectedObject = React.useMemo(() => {
+    if (selectedInstanceId && sceneRef.current) {
+      return sceneRef.current.getObjectByName(selectedInstanceId);
+    }
+    return undefined;
+  }, [selectedInstanceId]);
+
+  useEffect(() => {
+    if (orbitControlsRef.current) {
+      if (selectedObject) {
+        const box = new THREE.Box3().setFromObject(selectedObject);
+        const center = box.getCenter(new THREE.Vector3());
+        orbitControlsRef.current.target.copy(center);
+      } else {
+        orbitControlsRef.current.target.set(0, 1, 0);
       }
-      return undefined;
-    }, [selectedInstanceId]);
+      orbitControlsRef.current.update();
+    }
+  }, [selectedObject]);
 
-    React.useEffect(() => {
-        if (orbitControlsRef.current) {
-            if (selectedObject) {
-                const box = new THREE.Box3().setFromObject(selectedObject);
-                const center = box.getCenter(new THREE.Vector3());
-                orbitControlsRef.current.target.copy(center);
-            } else {
-                orbitControlsRef.current.target.set(0, 1, 0);
+  const handleTransformEnd = useCallback(() => {
+    if (controlRef.current?.object) {
+      const object = controlRef.current.object;
+      onUpdateTransform(object.name, {
+        position: [object.position.x, object.position.y, object.position.z],
+        rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
+      });
+    }
+  }, [onUpdateTransform]);
+
+  const findCabinetGroup = useCallback(
+    (object: THREE.Object3D): THREE.Object3D | null => {
+      if (!object) return null;
+      if (object.name && object.name.startsWith('cab_')) {
+        return object;
+      }
+      if (object.parent) {
+        return findCabinetGroup(object.parent);
+      }
+      return null;
+    },
+    []
+  );
+
+  const handleSceneClick = useCallback(
+    (e: any) => {
+      e.stopPropagation();
+      const group = findCabinetGroup(e.object);
+      if (group) {
+        onSelectInstance(group.name);
+      } else {
+        onSelectInstance(null);
+      }
+    },
+    [findCabinetGroup, onSelectInstance]
+  );
+
+  const handleSceneDoubleClick = useCallback(
+    (e: any) => {
+      e.stopPropagation();
+      const group = findCabinetGroup(e.object);
+      if (group) {
+        onOpenEditor(group.name);
+      }
+    },
+    [findCabinetGroup, onOpenEditor]
+  );
+
+  const cabinets = placedCabinets;
+
+  return (
+    <scene
+      ref={sceneRef}
+      onClick={handleSceneClick}
+      onDoubleClick={handleSceneDoubleClick}
+    >
+      <ambientLight intensity={1.5} />
+      <directionalLight position={[5, 5, 5]} intensity={1} />
+      <hemisphereLight groundColor="white" intensity={0.5} />
+
+      <Plane
+        args={[10, 10]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0, 0]}
+      >
+        <meshStandardMaterial color="#A0785A" />
+      </Plane>
+      <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]}>
+        <meshStandardMaterial color="#F5F5DC" />
+      </Plane>
+      <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]}>
+        <meshStandardMaterial color="#F5F5DC" />
+      </Plane>
+
+      <Suspense fallback={null}>
+        {cabinets.map((cabinet) => (
+          <Cabinet
+            key={cabinet.instanceId}
+            cabinet={cabinet}
+            appearance={appearance}
+          />
+        ))}
+      </Suspense>
+
+      {selectedObject && (
+        <TransformControls
+          ref={controlRef}
+          object={selectedObject as THREE.Object3D}
+          mode={transformMode}
+          onMouseUp={handleTransformEnd}
+          onObjectChange={() => {
+            if (controlRef.current) {
+              const object = controlRef.current.object;
+              if (object.position.y < 0) {
+                object.position.y = 0;
+              }
             }
-            orbitControlsRef.current.update();
-        }
-    }, [selectedObject]);
+          }}
+        />
+      )}
 
-
-    const handleTransformEnd = useCallback(() => {
-        if (controlRef.current?.object) {
-            const object = controlRef.current.object;
-            onUpdateTransform(object.name, {
-                position: [object.position.x, object.position.y, object.position.z],
-                rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
-            });
-        }
-    }, [onUpdateTransform]);
-
-    const findCabinetGroup = useCallback((object: THREE.Object3D): THREE.Object3D | null => {
-        if (!object) return null;
-        if (object.name && object.name.startsWith('cab_')) {
-            return object;
-        }
-        if (object.parent) {
-            return findCabinetGroup(object.parent);
-        }
-        return null;
-    }, []);
-
-    const handleSceneClick = useCallback((e: any) => {
-        e.stopPropagation();
-        const group = findCabinetGroup(e.object);
-        if (group) {
-            onSelectInstance(group.name);
-        } else {
-            onSelectInstance(null);
-        }
-    }, [findCabinetGroup, onSelectInstance]);
-    
-    const handleSceneDoubleClick = useCallback((e: any) => {
-        e.stopPropagation();
-        const group = findCabinetGroup(e.object);
-        if (group) {
-            onOpenEditor(group.name);
-        }
-    }, [findCabinetGroup, onOpenEditor]);
-    
-    return (
-        <scene 
-            ref={sceneRef}
-            onClick={handleSceneClick}
-            onDoubleClick={handleSceneDoubleClick}
-        >
-            <ambientLight intensity={1.5} />
-            <directionalLight position={[5, 5, 5]} intensity={1} />
-            <hemisphereLight groundColor="white" intensity={0.5} />
-            
-            <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-                <meshStandardMaterial color="#A0785A" />
-            </Plane>
-            <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]}>
-                <meshStandardMaterial color="#F5F5DC" />
-            </Plane>
-            <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]}>
-                <meshStandardMaterial color="#F5F5DC" />
-            </Plane>
-            
-            <Suspense fallback={null}>
-                {placedCabinets.map(cabinet => (
-                    <Cabinet
-                        key={cabinet.instanceId}
-                        cabinet={cabinet}
-                        appearance={appearance}
-                        onPointerOver={() => {}}
-                        onPointerOut={() => {}}
-                        onClick={handleSceneClick}
-                        onDoubleClick={handleSceneDoubleClick}
-                    />
-                ))}
-            </Suspense>
-            
-            {selectedObject && (
-                <TransformControls 
-                    ref={controlRef} 
-                    object={selectedObject as THREE.Object3D} 
-                    mode={transformMode}
-                    onMouseUp={handleTransformEnd}
-                    onObjectChange={() => {
-                      if (controlRef.current) {
-                        const object = controlRef.current.object;
-                        if (object.position.y < 0) {
-                          object.position.y = 0;
-                        }
-                      }
-                    }}
-                />
-            )}
-
-            <OrbitControls 
-                ref={orbitControlsRef} 
-                makeDefault 
-                maxPolarAngle={Math.PI / 2} 
-                minDistance={0.5}
-            />
-        </scene>
-    );
+      <OrbitControls
+        ref={orbitControlsRef}
+        makeDefault
+        maxPolarAngle={Math.PI / 2}
+        minDistance={0.1}
+      />
+    </scene>
+  );
 }
 
 export function KitchenLayout(props: KitchenLayoutProps) {
   const { onClearLayout, onOpenEditor, selectedInstanceId } = props;
-  const [transformMode, setTransformMode] = React.useState<'translate' | 'rotate'>('translate');
+  const [transformMode, setTransformMode] =
+    React.useState<'translate' | 'rotate'>('translate');
 
   return (
     <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm relative">
       <div className="p-2 border-b flex justify-between items-center">
         <h2 className="text-lg font-headline pl-2">Diseñador 3D</h2>
         <div className="flex items-center space-x-2">
-            <Button variant={transformMode === 'translate' ? 'secondary' : 'ghost'} size="icon" onClick={() => setTransformMode('translate')} disabled={!selectedInstanceId} title="Mover">
-                <Move className="w-5 h-5" />
-            </Button>
-            <Button variant={transformMode === 'rotate' ? 'secondary' : 'ghost'} size="icon" onClick={() => setTransformMode('rotate')} disabled={!selectedInstanceId} title="Rotar">
-                <RotateCcw className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => selectedInstanceId && onOpenEditor(selectedInstanceId)} disabled={!selectedInstanceId}>
-              <Edit className="w-4 h-4 mr-2" />
-              Editar Medidas
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onClearLayout} aria-label="Limpiar Diseño">
-              <Trash2 className="w-5 h-5 text-destructive" />
-            </Button>
+          <Button
+            variant={transformMode === 'translate' ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={() => setTransformMode('translate')}
+            disabled={!selectedInstanceId}
+            title="Mover"
+          >
+            <Move className="w-5 h-5" />
+          </Button>
+          <Button
+            variant={transformMode === 'rotate' ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={() => setTransformMode('rotate')}
+            disabled={!selectedInstanceId}
+            title="Rotar"
+          >
+            <RotateCcw className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => selectedInstanceId && onOpenEditor(selectedInstanceId)}
+            disabled={!selectedInstanceId}
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Editar Medidas
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClearLayout}
+            aria-label="Limpiar Diseño"
+          >
+            <Trash2 className="w-5 h-5 text-destructive" />
+          </Button>
         </div>
       </div>
       <Canvas
@@ -258,9 +269,8 @@ export function KitchenLayout(props: KitchenLayoutProps) {
 }
 
 type SceneProps = Omit<KitchenLayoutProps, 'onClearLayout'> & {
-    transformMode: 'translate' | 'rotate';
+  transformMode: 'translate' | 'rotate';
 };
-
 
 interface KitchenLayoutProps {
   placedCabinets: PlacedCabinet[];
@@ -268,6 +278,12 @@ interface KitchenLayoutProps {
   appearance: Appearance;
   selectedInstanceId: string | null;
   onSelectInstance: (id: string | null) => void;
-  onUpdateTransform: (id: string, transform: { position: [number, number, number], rotation: [number, number, number] }) => void;
+  onUpdateTransform: (
+    id: string,
+    transform: {
+      position: [number, number, number];
+      rotation: [number, number, number];
+    }
+  ) => void;
   onOpenEditor: (id: string) => void;
 }
