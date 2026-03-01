@@ -5,9 +5,10 @@ import { Canvas } from '@react-three/fiber';
 import {
   OrbitControls,
   TransformControls,
-  useCursor,
   Box,
   Plane,
+  Bounds,
+  useBounds,
 } from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Button } from './ui/button';
@@ -31,11 +32,13 @@ const Cabinet = memo(function Cabinet({
       position={cabinet.position}
       rotation={cabinet.rotation}
     >
+      {/* Carcass */}
       <Box args={[cabinetWidth, cabinetHeight, cabinetDepth]}>
         <meshStandardMaterial color={appearance.carcassColor} />
       </Box>
 
-      {cabinet.type === 'base' && (
+      {/* Countertop for base cabinets */}
+      {(cabinet.type === 'base') && (
         <Box
           args={[cabinetWidth, 0.03, cabinetDepth]}
           position={[0, cabinetHeight / 2 + 0.015, 0]}
@@ -43,8 +46,10 @@ const Cabinet = memo(function Cabinet({
           <meshStandardMaterial color={appearance.countertopColor} />
         </Box>
       )}
-
+      
+      {/* Front Components (Doors/Drawers) */}
       {cabinet.components.map((comp) => {
+        // Calculate the running total height of components before this one
         const totalHeightSoFar = cabinet.components
           .slice(0, cabinet.components.findIndex((c) => c.id === comp.id))
           .reduce((acc, c) => acc + c.height / 1000, 0);
@@ -66,18 +71,19 @@ const Cabinet = memo(function Cabinet({
   );
 });
 
-function Scene({
+const Scene = memo(function Scene({
   placedCabinets,
   appearance,
   selectedInstanceId,
+  transformMode,
   onSelectInstance,
   onUpdateTransform,
   onOpenEditor,
-  transformMode,
-}: SceneProps) {
+}: Omit<SceneProps, 'transformMode'> & { transformMode: 'translate' | 'rotate' }) {
   const controlRef = useRef<any>(null);
   const orbitControlsRef = useRef<any>(null);
-  const sceneRef = useRef<THREE.Scene>(null);
+  const sceneRef = useRef<THREE.Group>(null);
+  const boundsApi = useBounds();
 
   const selectedObject = React.useMemo(() => {
     if (selectedInstanceId && sceneRef.current) {
@@ -86,18 +92,25 @@ function Scene({
     return undefined;
   }, [selectedInstanceId]);
 
+  // This effect will fit the camera to the selected object or the whole scene
   useEffect(() => {
-    if (orbitControlsRef.current) {
-      if (selectedObject) {
-        const box = new THREE.Box3().setFromObject(selectedObject);
-        const center = box.getCenter(new THREE.Vector3());
-        orbitControlsRef.current.target.copy(center);
-      } else {
-        orbitControlsRef.current.target.set(0, 1, 0);
-      }
-      orbitControlsRef.current.update();
+    if (selectedObject) {
+      boundsApi.refresh(selectedObject).fit();
+    } else {
+      boundsApi.refresh().fit();
     }
-  }, [selectedObject]);
+  }, [selectedObject, boundsApi]);
+
+  // Disable orbit controls when transform controls are being dragged
+  useEffect(() => {
+    const control = controlRef.current;
+    if (control) {
+      const callback = (event: any) => (orbitControlsRef.current.enabled = !event.value);
+      control.addEventListener('dragging-changed', callback);
+      return () => control.removeEventListener('dragging-changed', callback);
+    }
+  });
+
 
   const handleTransformEnd = useCallback(() => {
     if (controlRef.current?.object) {
@@ -126,11 +139,10 @@ function Scene({
   const handleSceneClick = useCallback(
     (e: any) => {
       e.stopPropagation();
-      const group = findCabinetGroup(e.object);
-      if (group) {
-        onSelectInstance(group.name);
-      } else {
-        onSelectInstance(null);
+      // Only deselect if we click something that is NOT a cabinet group
+      if (e.delta < 2) { // Allow dragging without deselecting
+        const group = findCabinetGroup(e.object);
+        onSelectInstance(group?.name ?? null);
       }
     },
     [findCabinetGroup, onSelectInstance]
@@ -146,15 +158,9 @@ function Scene({
     },
     [findCabinetGroup, onOpenEditor]
   );
-
-  const cabinets = placedCabinets;
-
+  
   return (
-    <scene
-      ref={sceneRef}
-      onClick={handleSceneClick}
-      onDoubleClick={handleSceneDoubleClick}
-    >
+    <group ref={sceneRef} onClick={handleSceneClick} onDoubleClick={handleSceneDoubleClick}>
       <ambientLight intensity={1.5} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
       <hemisphereLight groundColor="white" intensity={0.5} />
@@ -174,7 +180,7 @@ function Scene({
       </Plane>
 
       <Suspense fallback={null}>
-        {cabinets.map((cabinet) => (
+        {placedCabinets.map((cabinet) => (
           <Cabinet
             key={cabinet.instanceId}
             cabinet={cabinet}
@@ -189,14 +195,6 @@ function Scene({
           object={selectedObject as THREE.Object3D}
           mode={transformMode}
           onMouseUp={handleTransformEnd}
-          onObjectChange={() => {
-            if (controlRef.current) {
-              const object = controlRef.current.object;
-              if (object.position.y < 0) {
-                object.position.y = 0;
-              }
-            }
-          }}
         />
       )}
 
@@ -204,11 +202,10 @@ function Scene({
         ref={orbitControlsRef}
         makeDefault
         maxPolarAngle={Math.PI / 2}
-        minDistance={0.1}
       />
-    </scene>
+    </group>
   );
-}
+});
 
 export function KitchenLayout(props: KitchenLayoutProps) {
   const { onClearLayout, onOpenEditor, selectedInstanceId } = props;
@@ -262,7 +259,9 @@ export function KitchenLayout(props: KitchenLayoutProps) {
         camera={{ position: [4, 2.5, 5], fov: 50 }}
         className="flex-1 bg-muted/20"
       >
-        <Scene {...props} transformMode={transformMode} />
+        <Bounds fit clip observe margin={1.5}>
+          <Scene {...props} transformMode={transformMode} />
+        </Bounds>
       </Canvas>
     </div>
   );
