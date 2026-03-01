@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { PlacedCabinet, CabinetComponent, Appearance } from '@/lib/types';
 import { CabinetSelector } from './cabinet-selector';
 import { KitchenLayout } from './kitchen-layout';
@@ -10,7 +10,8 @@ import { CabinetEditor } from './cabinet-editor';
 
 export function KitchenBuilder() {
   const [placedCabinets, setPlacedCabinets] = useState<PlacedCabinet[]>([]);
-  const [editingCabinet, setEditingCabinet] = useState<PlacedCabinet | null>(null);
+  const [editingCabinet, setEditingCabinet] = useState<PlacedCabinet | null>(null); // For the modal editor
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null); // For 3D manipulation
 
   const [appearance, setAppearance] = useState<Appearance>({
     frontColor: '#f8f9fa',
@@ -30,7 +31,6 @@ export function KitchenBuilder() {
         id: `comp_${Date.now()}_${i}_${Math.random()}`,
       }));
     } else {
-      // Infer default components from pieces
       defaultComponents = cabinetInfo.pieces
         .filter(p => p.name.toLowerCase().includes('puerta'))
         .map((p, i) => ({
@@ -52,8 +52,8 @@ export function KitchenBuilder() {
       cabinetId,
       instanceId: `cab_${Date.now()}_${Math.random()}`,
       type: cabinetInfo.type,
-      x: 20, // x/y no longer used for positioning but kept for data structure
-      y: 20,
+      position: [0, cabinetInfo.type === 'wall' ? 1.5 : (cabinetInfo.height / 1000) / 2, 0],
+      rotation: [0, 0, 0],
       width: cabinetInfo.width,
       height: cabinetInfo.height,
       depth: cabinetInfo.depth,
@@ -63,7 +63,7 @@ export function KitchenBuilder() {
     setPlacedCabinets((prev) => [...prev, newCabinet]);
   };
 
-  const handleSelectCabinet = (instanceId: string | null) => {
+  const handleOpenEditor = (instanceId: string | null) => {
     if (!instanceId) {
       setEditingCabinet(null);
       return;
@@ -71,7 +71,7 @@ export function KitchenBuilder() {
     const cabinet = placedCabinets.find((c) => c.instanceId === instanceId);
     setEditingCabinet(cabinet || null);
   };
-
+  
   const handleUpdateCabinet = (updatedCabinet: PlacedCabinet) => {
     setPlacedCabinets((prev) =>
       prev.map((c) =>
@@ -80,13 +80,26 @@ export function KitchenBuilder() {
     );
     setEditingCabinet(null);
   };
+  
+  const handleUpdateCabinetTransform = useCallback((instanceId: string, newTransform: { position: [number, number, number], rotation: [number, number, number] }) => {
+    setPlacedCabinets(prev => 
+        prev.map(cab => 
+            cab.instanceId === instanceId ? { ...cab, ...newTransform } : cab
+        )
+    );
+  }, []);
+
 
   const clearLayout = () => {
     setPlacedCabinets([]);
+    setSelectedInstanceId(null);
   };
 
   const removeCabinet = (instanceId: string) => {
     setPlacedCabinets((prev) => prev.filter((c) => c.instanceId !== instanceId));
+    if (selectedInstanceId === instanceId) {
+        setSelectedInstanceId(null);
+    }
   };
 
   return (
@@ -103,6 +116,10 @@ export function KitchenBuilder() {
                     placedCabinets={placedCabinets}
                     onClearLayout={clearLayout}
                     appearance={appearance}
+                    selectedInstanceId={selectedInstanceId}
+                    onSelectInstance={setSelectedInstanceId}
+                    onUpdateTransform={handleUpdateCabinetTransform}
+                    onOpenEditor={handleOpenEditor}
                 />
             </div>
             {/* Sección Inferior: Paneles de Control (Lista de corte, etc.) */}
@@ -112,7 +129,7 @@ export function KitchenBuilder() {
                     appearance={appearance}
                     onAppearanceChange={setAppearance}
                     onRemoveCabinet={removeCabinet}
-                    onSelectCabinet={handleSelectCabinet}
+                    onSelectCabinet={handleOpenEditor}
                     selectedCabinetId={editingCabinet?.instanceId}
                 />
             </div>

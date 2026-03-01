@@ -34,8 +34,8 @@ export interface PlacedCabinet {
   instanceId: string;
   cabinetId: string;
   type: 'base' | 'wall' | 'tall';
-  x: number;
-  y: number;
+  position: [number, number, number]; // [x, y, z]
+  rotation: [number, number, number]; // [x, y, z] Euler angles in radians
   width: number;
   height: number;
   depth: number;
