@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import type { PlacedCabinet, CabinetComponent, Appearance } from '@/lib/types';
 import { CabinetSelector } from './cabinet-selector';
 import { KitchenLayout } from './kitchen-layout';
@@ -12,9 +12,6 @@ export function KitchenBuilder() {
   const [placedCabinets, setPlacedCabinets] = useState<PlacedCabinet[]>([]);
   const [editingCabinet, setEditingCabinet] = useState<PlacedCabinet | null>(null); // For the modal editor
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null); // For 3D manipulation
-
-  const cabinetsRef = useRef(placedCabinets);
-  cabinetsRef.current = placedCabinets;
 
   const [appearance, setAppearance] = useState<Appearance>({
     frontColor: '#f8f9fa',
@@ -71,9 +68,9 @@ export function KitchenBuilder() {
       setEditingCabinet(null);
       return;
     }
-    const cabinet = cabinetsRef.current.find((c) => c.instanceId === instanceId);
+    const cabinet = placedCabinets.find((c) => c.instanceId === instanceId);
     setEditingCabinet(cabinet || null);
-  }, []);
+  }, [placedCabinets]);
   
   const handleUpdateCabinet = (updatedCabinet: PlacedCabinet) => {
     setPlacedCabinets((prev) =>
