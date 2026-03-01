@@ -55,7 +55,7 @@ export function KitchenBuilder() {
       position: [
         -2, 
         cabinetInfo.type === 'wall' ? 1.5 : (cabinetInfo.height / 1000) / 2, 
-        0 - (cabinetInfo.depth / 1000 / 2) // Place against the back wall at z=0
+        (cabinetInfo.depth / 1000 / 2) // Place against the back wall at z=0
       ],
       rotation: [0, 0, 0],
       width: cabinetInfo.width,

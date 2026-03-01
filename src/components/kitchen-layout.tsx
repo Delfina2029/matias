@@ -195,10 +195,10 @@ const Scene = memo(function Scene({
         }
 
         // --- Collision with the Back Wall ---
-        // The back wall is at z=0. The cabinet's back is at z + depth/2.
-        // We don't want the back to go past z=0.
-        const backWallLimitZ = -(cabinetDepth / 2);
-        if (object.position.z > backWallLimitZ) {
+        // The back wall is at z=0. The cabinet's back is at position.z - depth/2.
+        // We don't want the back to go past z=0 (into negative z).
+        const backWallLimitZ = cabinetDepth / 2;
+        if (object.position.z < backWallLimitZ) {
           object.position.z = backWallLimitZ;
         }
         
