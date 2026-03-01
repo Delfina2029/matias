@@ -36,6 +36,15 @@ function Cabinet({
     e.stopPropagation();
     onDoubleClick(cabinet.instanceId);
   }, [onDoubleClick, cabinet.instanceId]);
+
+  const handlePointerOver = useCallback((e: any) => {
+    e.stopPropagation();
+    setHovered(true);
+  }, []);
+
+  const handlePointerOut = useCallback(() => {
+    setHovered(false);
+  }, []);
   
   return (
     <group 
@@ -43,8 +52,8 @@ function Cabinet({
       position={cabinet.position} 
       rotation={cabinet.rotation}
       onClick={handleClick}
-      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
-      onPointerOut={() => setHovered(false)}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
       onDoubleClick={handleDoubleClick}
     >
         {/* Main carcass */}
