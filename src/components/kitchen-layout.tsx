@@ -9,23 +9,42 @@ import { Trash2, Edit, RotateCcw, Move } from 'lucide-react';
 import * as THREE from 'three';
 
 // Helper component to render a single cabinet
-function Cabinet({ cabinet, appearance, onSelect, onDoubleClick }: { cabinet: PlacedCabinet, appearance: Appearance, onSelect: (e: any) => void, onDoubleClick: () => void }) {
+function Cabinet({ 
+    cabinet, 
+    appearance, 
+    onSelect, 
+    onDoubleClick 
+}: { 
+    cabinet: PlacedCabinet, 
+    appearance: Appearance, 
+    onSelect: (instanceId: string, e: any) => void, 
+    onDoubleClick: (instanceId: string) => void 
+}) {
   const [hovered, setHovered] = React.useState(false);
   useCursor(hovered);
 
   const cabinetWidth = cabinet.width / 1000;
   const cabinetHeight = cabinet.height / 1000;
   const cabinetDepth = cabinet.depth / 1000;
+
+  const handleClick = useCallback((e: any) => {
+    e.stopPropagation();
+    onSelect(cabinet.instanceId, e);
+  }, [onSelect, cabinet.instanceId]);
+
+  const handleDoubleClick = useCallback(() => {
+    onDoubleClick(cabinet.instanceId);
+  }, [onDoubleClick, cabinet.instanceId]);
   
   return (
     <group 
       name={cabinet.instanceId} // Use instanceId as name to find it in the scene
       position={cabinet.position} 
       rotation={cabinet.rotation}
-      onClick={onSelect}
+      onClick={handleClick}
       onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
       onPointerOut={() => setHovered(false)}
-      onDoubleClick={onDoubleClick}
+      onDoubleClick={handleDoubleClick}
     >
         {/* Main carcass */}
         <Box args={[cabinetWidth, cabinetHeight, cabinetDepth]}>
@@ -75,14 +94,22 @@ function Scene(props: SceneProps) {
     const selectedObject = sceneRef.current?.getObjectByName(selectedInstanceId || '');
 
     const handleTransformEnd = useCallback(() => {
-        if (onUpdateTransform && controlRef.current?.object) {
+        if (onUpdateTransform && controlRef.current?.object && selectedInstanceId) {
             const object = controlRef.current.object;
-            onUpdateTransform(selectedInstanceId!, {
+            onUpdateTransform(selectedInstanceId, {
                 position: [object.position.x, object.position.y, object.position.z],
                 rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
             });
         }
     }, [onUpdateTransform, selectedInstanceId]);
+
+    const handleSelect = useCallback((instanceId: string) => {
+        onSelectInstance(instanceId);
+    }, [onSelectInstance]);
+
+    const handleDeselect = useCallback(() => {
+        onSelectInstance(null);
+    }, [onSelectInstance]);
 
     return (
         <scene ref={sceneRef}>
@@ -91,13 +118,13 @@ function Scene(props: SceneProps) {
             <hemisphereLight groundColor="white" intensity={0.5} />
             
             {/* Floor and Walls */}
-            <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} onClick={() => onSelectInstance(null)}>
+            <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} onClick={handleDeselect}>
                 <meshStandardMaterial color="#f0f0f0" />
             </Plane>
-            <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]} onClick={() => onSelectInstance(null)}>
+            <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]} onClick={handleDeselect}>
                 <meshStandardMaterial color="#e0e0e0" />
             </Plane>
-            <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]} onClick={() => onSelectInstance(null)}>
+            <Plane args={[10, 4]} rotation={[0, Math.PI / 2, 0]} position={[-5, 2, 0]} onClick={handleDeselect}>
                 <meshStandardMaterial color="#d0d0d0" />
             </Plane>
             
@@ -107,8 +134,8 @@ function Scene(props: SceneProps) {
                         key={cabinet.instanceId}
                         cabinet={cabinet}
                         appearance={appearance}
-                        onSelect={(e) => { e.stopPropagation(); onSelectInstance(cabinet.instanceId); }}
-                        onDoubleClick={() => onOpenEditor(cabinet.instanceId)}
+                        onSelect={(instanceId) => handleSelect(instanceId)}
+                        onDoubleClick={(instanceId) => onOpenEditor(instanceId)}
                     />
                 ))}
             </Suspense>
@@ -128,8 +155,12 @@ function Scene(props: SceneProps) {
 }
 
 export function KitchenLayout(props: KitchenLayoutProps) {
-  const { onClearLayout, onOpenEditor, selectedInstanceId } = props;
+  const { onClearLayout, onOpenEditor, selectedInstanceId, onSelectInstance } = props;
   const [transformMode, setTransformMode] = React.useState<'translate' | 'rotate'>('translate');
+
+  const handlePointerMissed = useCallback(() => {
+      onSelectInstance(null);
+  }, [onSelectInstance]);
 
   return (
     <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm relative">
@@ -155,7 +186,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
         shadows
         camera={{ position: [4, 2.5, 5], fov: 50 }}
         className="flex-1 bg-muted/20"
-        onPointerMissed={() => props.onSelectInstance(null)}
+        onPointerMissed={handlePointerMissed}
       >
         <Scene {...props} transformMode={transformMode} />
       </Canvas>
@@ -172,5 +203,5 @@ interface KitchenLayoutProps {
   selectedInstanceId: string | null;
   onSelectInstance: (id: string | null) => void;
   onUpdateTransform: (id: string, transform: { position: [number, number, number], rotation: [number, number, number] }) => void;
-  onOpenEditor: (id: string) => void;
+  onOpenEditor: (id: string | null) => void;
 }

@@ -63,14 +63,14 @@ export function KitchenBuilder() {
     setPlacedCabinets((prev) => [...prev, newCabinet]);
   };
 
-  const handleOpenEditor = (instanceId: string | null) => {
+  const handleOpenEditor = useCallback((instanceId: string | null) => {
     if (!instanceId) {
       setEditingCabinet(null);
       return;
     }
     const cabinet = placedCabinets.find((c) => c.instanceId === instanceId);
     setEditingCabinet(cabinet || null);
-  };
+  }, [placedCabinets]);
   
   const handleUpdateCabinet = (updatedCabinet: PlacedCabinet) => {
     setPlacedCabinets((prev) =>
