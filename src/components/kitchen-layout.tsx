@@ -5,7 +5,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, TransformControls, useCursor, Box, Plane } from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Button } from './ui/button';
-import { Trash2, Edit, RotateCcw, ArrowsMove } from 'lucide-react';
+import { Trash2, Edit, RotateCcw, Move } from 'lucide-react';
 import * as THREE from 'three';
 
 // Helper component to render a single cabinet
@@ -137,7 +137,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
         <h2 className="text-lg font-headline pl-2">Diseñador 3D</h2>
         <div className="flex items-center space-x-2">
             <Button variant={transformMode === 'translate' ? 'secondary' : 'ghost'} size="icon" onClick={() => setTransformMode('translate')} disabled={!selectedInstanceId} title="Mover">
-                <ArrowsMove className="w-5 h-5" />
+                <Move className="w-5 h-5" />
             </Button>
             <Button variant={transformMode === 'rotate' ? 'secondary' : 'ghost'} size="icon" onClick={() => setTransformMode('rotate')} disabled={!selectedInstanceId} title="Rotar">
                 <RotateCcw className="w-5 h-5" />
