@@ -168,6 +168,64 @@ const Scene = memo(function Scene({
       e.stopPropagation();
       onOpenEditor(instanceId);
   }, [onOpenEditor]);
+  
+  useEffect(() => {
+    const control = controlRef.current;
+    if (control) {
+      // This is the callback that will be executed when the user drags the object.
+      const handleCollisionDetection = () => {
+        if (!control.object) return;
+        
+        const object = control.object;
+        const cabinetInfo = placedCabinets.find(c => c.instanceId === object.name);
+
+        if (!cabinetInfo) return;
+
+        // Get the cabinet's dimensions (in meters)
+        const cabinetWidth = cabinetInfo.width / 1000;
+        const cabinetHeight = cabinetInfo.height / 1000;
+        const cabinetDepth = cabinetInfo.depth / 1000;
+
+        // --- Collision with the Floor ---
+        // The cabinet's anchor point is its center. Its bottom is at y - height/2.
+        // We don't want the bottom to go below y=0.
+        const floorLimitY = cabinetHeight / 2;
+        if (object.position.y < floorLimitY) {
+          object.position.y = floorLimitY;
+        }
+
+        // --- Collision with the Back Wall ---
+        // The back wall is at z=0. The cabinet's back is at z + depth/2.
+        // We don't want the back to go past z=0.
+        const backWallLimitZ = -(cabinetDepth / 2);
+        if (object.position.z > backWallLimitZ) {
+          object.position.z = backWallLimitZ;
+        }
+        
+        // --- Collision with the Left Side Wall ---
+        // The left wall is at x=-10. The cabinet's left side is at x - width/2.
+        // We don't want the left side to go past x=-10.
+        const leftWallLimitX = -10 + (cabinetWidth / 2);
+        if (object.position.x < leftWallLimitX) {
+          object.position.x = leftWallLimitX;
+        }
+        
+        // --- Collision with the Right Side Wall ---
+        // The right wall is at x=10. The cabinet's right side is at x + width/2.
+        // We don't want the right side to go past x=10.
+        const rightWallLimitX = 10 - (cabinetWidth / 2);
+        if (object.position.x > rightWallLimitX) {
+          object.position.x = rightWallLimitX;
+        }
+      };
+
+      // Attach the listener to the 'objectChange' event.
+      control.addEventListener('objectChange', handleCollisionDetection);
+      
+      // Cleanup: remove the listener when the component unmounts or dependencies change.
+      return () => control.removeEventListener('objectChange', handleCollisionDetection);
+    }
+  }, [placedCabinets, selectedObject]); // Re-run this effect if the list of cabinets or the selected one changes.
 
 
   return (
@@ -191,8 +249,14 @@ const Scene = memo(function Scene({
          <meshStandardMaterial color="#F5F5DC" />
       </mesh>
       
-      {/* Side Wall */}
+      {/* Side Wall (Left) */}
       <mesh position={[-10, 2, 10]} rotation={[0, Math.PI / 2, 0]} onPointerMissed={handlePointerMissed}>
+        <planeGeometry args={[20, 4]} />
+        <meshStandardMaterial color="#F5F5DC" />
+      </mesh>
+
+      {/* Side Wall (Right) */}
+      <mesh position={[10, 2, 10]} rotation={[0, -Math.PI / 2, 0]} onPointerMissed={handlePointerMissed}>
         <planeGeometry args={[20, 4]} />
         <meshStandardMaterial color="#F5F5DC" />
       </mesh>
