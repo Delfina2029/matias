@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useRef, useCallback, memo, useEffect } from 'react';
+import React, { Suspense, useRef, useCallback, memo, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import {
   OrbitControls,
@@ -12,6 +12,7 @@ import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Button } from './ui/button';
 import { Trash2, Edit, RotateCcw, Move } from 'lucide-react';
 import * as THREE from 'three';
+
 
 const Cabinet = memo(function Cabinet({
   cabinet,
@@ -89,16 +90,18 @@ const Scene = memo(function Scene({
     return undefined;
   }, [selectedInstanceId]);
 
-  // Disable orbit controls when transform controls are being dragged
   useEffect(() => {
     const control = controlRef.current;
     if (control) {
-      const callback = (event: any) => (orbitControlsRef.current.enabled = !event.value);
+      const callback = (event: any) => {
+          if (orbitControlsRef.current) {
+            orbitControlsRef.current.enabled = !event.value;
+          }
+      };
       control.addEventListener('dragging-changed', callback);
       return () => control.removeEventListener('dragging-changed', callback);
     }
   });
-
 
   const handleTransformEnd = useCallback(() => {
     if (controlRef.current?.object) {
@@ -127,6 +130,7 @@ const Scene = memo(function Scene({
   const handleSceneClick = useCallback(
     (e: any) => {
       e.stopPropagation();
+      // Only trigger on simple clicks, not drags
       if (e.delta < 2) { 
         const group = findCabinetGroup(e.object);
         onSelectInstance(group?.name ?? null);
@@ -134,7 +138,7 @@ const Scene = memo(function Scene({
     },
     [findCabinetGroup, onSelectInstance]
   );
-
+  
   const handleSceneDoubleClick = useCallback(
     (e: any) => {
       e.stopPropagation();
@@ -184,22 +188,22 @@ const Scene = memo(function Scene({
           onMouseUp={handleTransformEnd}
         />
       )}
-
+      
       <OrbitControls
         ref={orbitControlsRef}
         makeDefault
         minDistance={0.1}
         maxPolarAngle={Math.PI / 2}
-        target={[0, 1, -4]}
+        target={[0, 1, 0]}
       />
     </group>
   );
 });
 
 export function KitchenLayout(props: KitchenLayoutProps) {
-  const { onClearLayout, onOpenEditor, selectedInstanceId, onRemoveCabinet } = props;
+  const { onClearLayout, onOpenEditor, selectedInstanceId, onRemoveCabinet, onSelectInstance } = props;
   const [transformMode, setTransformMode] =
-    React.useState<'translate' | 'rotate'>('translate');
+    useState<'translate' | 'rotate'>('translate');
 
   return (
     <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm relative">
@@ -259,7 +263,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
       </div>
       <Canvas
         shadows
-        camera={{ position: [2, 1.5, 0], fov: 60 }}
+        camera={{ position: [2, 1.5, 4], fov: 60 }}
         className="flex-1 bg-muted/20"
       >
         <Scene {...props} transformMode={transformMode} />
@@ -267,10 +271,6 @@ export function KitchenLayout(props: KitchenLayoutProps) {
     </div>
   );
 }
-
-type SceneProps = Omit<KitchenLayoutProps, 'onClearLayout' | 'onRemoveCabinet'> & {
-  transformMode: 'translate' | 'rotate';
-};
 
 interface KitchenLayoutProps {
   placedCabinets: PlacedCabinet[];
