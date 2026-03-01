@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { PlacedCabinet, CabinetComponent, Appearance } from '@/lib/types';
 import { CabinetSelector } from './cabinet-selector';
 import { KitchenLayout } from './kitchen-layout';
@@ -52,7 +52,11 @@ export function KitchenBuilder() {
       cabinetId,
       instanceId: `cab_${Date.now()}_${Math.random()}`,
       type: cabinetInfo.type,
-      position: [0, cabinetInfo.type === 'wall' ? 1.5 : (cabinetInfo.height / 1000) / 2, 0],
+      position: [
+        -2, 
+        cabinetInfo.type === 'wall' ? 1.5 : (cabinetInfo.height / 1000) / 2, 
+        -5 + (cabinetInfo.depth / 1000 / 2)
+      ],
       rotation: [0, 0, 0],
       width: cabinetInfo.width,
       height: cabinetInfo.height,
@@ -68,8 +72,10 @@ export function KitchenBuilder() {
       setEditingCabinet(null);
       return;
     }
-    const cabinet = placedCabinets.find((c) => c.instanceId === instanceId);
-    setEditingCabinet(cabinet || null);
+    const cabinetToEdit = placedCabinets.find((c) => c.instanceId === instanceId);
+    if (cabinetToEdit) {
+      setEditingCabinet(cabinetToEdit);
+    }
   }, [placedCabinets]);
   
   const handleUpdateCabinet = (updatedCabinet: PlacedCabinet) => {

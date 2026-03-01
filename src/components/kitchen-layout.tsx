@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useRef, useCallback } from 'react';
+import React, { Suspense, useRef, useCallback, memo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, TransformControls, useCursor, Box, Plane } from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
@@ -9,13 +9,13 @@ import { Trash2, Edit, RotateCcw, Move } from 'lucide-react';
 import * as THREE from 'three';
 
 // Helper component to render a single cabinet
-function Cabinet({ 
+const Cabinet = memo(({ 
     cabinet, 
     appearance,
 }: { 
     cabinet: PlacedCabinet, 
     appearance: Appearance, 
-}) {
+}) => {
   const [hovered, setHovered] = React.useState(false);
   useCursor(hovered);
 
@@ -70,7 +70,9 @@ function Cabinet({
 
     </group>
   );
-}
+});
+Cabinet.displayName = 'Cabinet';
+
 
 // The main scene component
 function Scene({ 
@@ -87,22 +89,22 @@ function Scene({
     const sceneRef = useRef<THREE.Scene>(null);
 
     const selectedObject = React.useMemo(() => {
-      if (selectedInstanceId) {
-        return sceneRef.current?.getObjectByName(selectedInstanceId);
+      if (selectedInstanceId && sceneRef.current) {
+        return sceneRef.current.getObjectByName(selectedInstanceId);
       }
       return undefined;
     }, [selectedInstanceId]);
 
 
     const handleTransformEnd = useCallback(() => {
-        if (onUpdateTransform && controlRef.current?.object && selectedInstanceId) {
+        if (controlRef.current?.object) {
             const object = controlRef.current.object;
-            onUpdateTransform(selectedInstanceId, {
+            onUpdateTransform(object.name, {
                 position: [object.position.x, object.position.y, object.position.z],
                 rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
             });
         }
-    }, [onUpdateTransform, selectedInstanceId]);
+    }, [onUpdateTransform]);
 
     const findCabinetGroup = useCallback((object: THREE.Object3D): THREE.Object3D | null => {
         if (!object) return null;
@@ -144,7 +146,7 @@ function Scene({
             <hemisphereLight groundColor="white" intensity={0.5} />
             
             <Plane args={[10, 10]} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-                <meshStandardMaterial color="#DEB887" />
+                <meshStandardMaterial color="#A0785A" />
             </Plane>
             <Plane args={[10, 4]} rotation={[0, 0, 0]} position={[0, 2, -5]}>
                 <meshStandardMaterial color="#F5F5DC" />
@@ -169,6 +171,14 @@ function Scene({
                     object={selectedObject as THREE.Object3D} 
                     mode={transformMode}
                     onMouseUp={handleTransformEnd}
+                    onObjectChange={() => {
+                      if (controlRef.current) {
+                        const object = controlRef.current.object;
+                        if (object.position.y < 0) {
+                          object.position.y = 0;
+                        }
+                      }
+                    }}
                 />
             )}
 
@@ -178,15 +188,8 @@ function Scene({
 }
 
 export function KitchenLayout(props: KitchenLayoutProps) {
-  const { onClearLayout, onOpenEditor, selectedInstanceId, onSelectInstance } = props;
+  const { onClearLayout, onOpenEditor, selectedInstanceId } = props;
   const [transformMode, setTransformMode] = React.useState<'translate' | 'rotate'>('translate');
-
-  const handlePointerMissed = useCallback((e: any) => {
-      // Check if the click was directly on the canvas, not on an object
-      if (e.target === e.currentTarget) {
-        onSelectInstance(null);
-      }
-  }, [onSelectInstance]);
 
   return (
     <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm relative">
@@ -212,7 +215,6 @@ export function KitchenLayout(props: KitchenLayoutProps) {
         shadows
         camera={{ position: [4, 2.5, 5], fov: 50 }}
         className="flex-1 bg-muted/20"
-        onPointerMissed={handlePointerMissed}
       >
         <Scene {...props} transformMode={transformMode} />
       </Canvas>
