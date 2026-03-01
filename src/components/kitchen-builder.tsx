@@ -52,7 +52,7 @@ export function KitchenBuilder() {
       cabinetId,
       instanceId: `cab_${Date.now()}_${Math.random()}`,
       type: cabinetInfo.type,
-      x: 20,
+      x: 20, // x/y no longer used for positioning but kept for data structure
       y: 20,
       width: cabinetInfo.width,
       height: cabinetInfo.height,
