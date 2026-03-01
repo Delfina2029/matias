@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useRef, useEffect } from 'react';
+import React, { Suspense, useRef, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, TransformControls, useCursor, Box, Plane } from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
@@ -74,22 +74,15 @@ function Scene(props: SceneProps) {
     const sceneRef = useRef<THREE.Scene>(null);
     const selectedObject = sceneRef.current?.getObjectByName(selectedInstanceId || '');
 
-    useEffect(() => {
-        if (controlRef.current) {
-            const controls = controlRef.current;
-            const onDragEnd = () => {
-                if (onUpdateTransform && selectedObject) {
-                    const { position, rotation } = selectedObject;
-                    onUpdateTransform(selectedInstanceId!, {
-                        position: [position.x, position.y, position.z],
-                        rotation: [rotation.x, rotation.y, rotation.z],
-                    });
-                }
-            };
-            controls.addEventListener('mouseUp', onDragEnd);
-            return () => controls.removeEventListener('mouseUp', onDragEnd);
+    const handleTransformEnd = useCallback(() => {
+        if (onUpdateTransform && controlRef.current?.object) {
+            const object = controlRef.current.object;
+            onUpdateTransform(selectedInstanceId!, {
+                position: [object.position.x, object.position.y, object.position.z],
+                rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
+            });
         }
-    }, [selectedObject, selectedInstanceId, onUpdateTransform]);
+    }, [onUpdateTransform, selectedInstanceId]);
 
     return (
         <scene ref={sceneRef}>
@@ -120,7 +113,14 @@ function Scene(props: SceneProps) {
                 ))}
             </Suspense>
             
-            {selectedObject && <TransformControls ref={controlRef} object={selectedObject} mode={transformMode} />}
+            {selectedObject && (
+                <TransformControls 
+                    ref={controlRef} 
+                    object={selectedObject} 
+                    mode={transformMode}
+                    onMouseUp={handleTransformEnd}
+                />
+            )}
 
             <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI / 1.9} />
         </scene>
