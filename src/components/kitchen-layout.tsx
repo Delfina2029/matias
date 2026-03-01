@@ -11,16 +11,11 @@ import * as THREE from 'three';
 // Helper component to render a single cabinet
 function Cabinet({ 
     cabinet, 
-    appearance, 
-    onSelect, 
-    onDoubleClick 
+    appearance,
 }: { 
     cabinet: PlacedCabinet, 
     appearance: Appearance, 
-    onSelect: (instanceId: string) => void, 
-    onDoubleClick: (instanceId: string) => void 
 }) {
-  const { instanceId } = cabinet;
   const [hovered, setHovered] = React.useState(false);
   useCursor(hovered);
 
@@ -28,22 +23,13 @@ function Cabinet({
   const cabinetHeight = cabinet.height / 1000;
   const cabinetDepth = cabinet.depth / 1000;
 
-  const handleClick = useCallback((e: any) => {
-    e.stopPropagation();
-    onSelect(instanceId);
-  }, [onSelect, instanceId]);
-
-  const handleDoubleClick = useCallback((e: any) => {
-    e.stopPropagation();
-    onDoubleClick(instanceId);
-  }, [onDoubleClick, instanceId]);
-
   const handlePointerOver = useCallback((e: any) => {
     e.stopPropagation();
     setHovered(true);
   }, []);
 
-  const handlePointerOut = useCallback(() => {
+  const handlePointerOut = useCallback((e: any) => {
+    e.stopPropagation();
     setHovered(false);
   }, []);
   
@@ -52,10 +38,8 @@ function Cabinet({
       name={cabinet.instanceId} // Use instanceId as name to find it in the scene
       position={cabinet.position} 
       rotation={cabinet.rotation}
-      onClick={handleClick}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      onDoubleClick={handleDoubleClick}
     >
         {/* Main carcass */}
         <Box args={[cabinetWidth, cabinetHeight, cabinetDepth]}>
@@ -114,12 +98,46 @@ function Scene(props: SceneProps) {
         }
     }, [onUpdateTransform, selectedInstanceId]);
 
-    const handleDeselect = useCallback(() => {
+    const handleDeselect = useCallback((e: any) => {
+        e.stopPropagation();
         onSelectInstance(null);
     }, [onSelectInstance]);
 
+    const findCabinetGroup = (object: THREE.Object3D): THREE.Object3D | null => {
+        if (!object) return null;
+        if (object.name && object.name.startsWith('cab_')) {
+            return object;
+        }
+        if (object.parent) {
+            return findCabinetGroup(object.parent);
+        }
+        return null;
+    }
+
+    const handleSceneClick = useCallback((e: any) => {
+        e.stopPropagation();
+        const group = findCabinetGroup(e.object);
+        if (group) {
+            onSelectInstance(group.name);
+        } else {
+            onSelectInstance(null);
+        }
+    }, [onSelectInstance]);
+
+    const handleSceneDoubleClick = useCallback((e: any) => {
+        e.stopPropagation();
+        const group = findCabinetGroup(e.object);
+        if (group) {
+            onOpenEditor(group.name);
+        }
+    }, [onOpenEditor]);
+
     return (
-        <scene ref={sceneRef}>
+        <scene 
+            ref={sceneRef}
+            onClick={handleSceneClick}
+            onDoubleClick={handleSceneDoubleClick}
+        >
             <ambientLight intensity={1.5} />
             <directionalLight position={[5, 5, 5]} intensity={1} />
             <hemisphereLight groundColor="white" intensity={0.5} />
@@ -141,8 +159,6 @@ function Scene(props: SceneProps) {
                         key={cabinet.instanceId}
                         cabinet={cabinet}
                         appearance={appearance}
-                        onSelect={onSelectInstance}
-                        onDoubleClick={onOpenEditor}
                     />
                 ))}
             </Suspense>
@@ -165,8 +181,10 @@ export function KitchenLayout(props: KitchenLayoutProps) {
   const { onClearLayout, onOpenEditor, selectedInstanceId, onSelectInstance } = props;
   const [transformMode, setTransformMode] = React.useState<'translate' | 'rotate'>('translate');
 
-  const handlePointerMissed = useCallback(() => {
-      onSelectInstance(null);
+  const handlePointerMissed = useCallback((e: any) => {
+      if (e.target === e.currentTarget) {
+        onSelectInstance(null);
+      }
   }, [onSelectInstance]);
 
   return (
