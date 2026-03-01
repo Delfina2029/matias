@@ -20,6 +20,7 @@ function Cabinet({
     onSelect: (instanceId: string) => void, 
     onDoubleClick: (instanceId: string) => void 
 }) {
+  const { instanceId } = cabinet;
   const [hovered, setHovered] = React.useState(false);
   useCursor(hovered);
 
@@ -29,13 +30,13 @@ function Cabinet({
 
   const handleClick = useCallback((e: any) => {
     e.stopPropagation();
-    onSelect(cabinet.instanceId);
-  }, [onSelect, cabinet.instanceId]);
+    onSelect(instanceId);
+  }, [onSelect, instanceId]);
 
   const handleDoubleClick = useCallback((e: any) => {
     e.stopPropagation();
-    onDoubleClick(cabinet.instanceId);
-  }, [onDoubleClick, cabinet.instanceId]);
+    onDoubleClick(instanceId);
+  }, [onDoubleClick, instanceId]);
 
   const handlePointerOver = useCallback((e: any) => {
     e.stopPropagation();
@@ -113,10 +114,6 @@ function Scene(props: SceneProps) {
         }
     }, [onUpdateTransform, selectedInstanceId]);
 
-    const handleSelect = useCallback((instanceId: string) => {
-        onSelectInstance(instanceId);
-    }, [onSelectInstance]);
-
     const handleDeselect = useCallback(() => {
         onSelectInstance(null);
     }, [onSelectInstance]);
@@ -144,7 +141,7 @@ function Scene(props: SceneProps) {
                         key={cabinet.instanceId}
                         cabinet={cabinet}
                         appearance={appearance}
-                        onSelect={handleSelect}
+                        onSelect={onSelectInstance}
                         onDoubleClick={onOpenEditor}
                     />
                 ))}
