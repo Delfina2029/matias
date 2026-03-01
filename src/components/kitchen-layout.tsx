@@ -7,8 +7,6 @@ import {
   TransformControls,
   Box,
   Plane,
-  Bounds,
-  useBounds,
 } from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Button } from './ui/button';
@@ -79,11 +77,10 @@ const Scene = memo(function Scene({
   onSelectInstance,
   onUpdateTransform,
   onOpenEditor,
-}: Omit<SceneProps, 'transformMode'> & { transformMode: 'translate' | 'rotate' }) {
+}: Omit<KitchenLayoutProps, 'onClearLayout' | 'onRemoveCabinet'> & { transformMode: 'translate' | 'rotate' }) {
   const controlRef = useRef<any>(null);
   const orbitControlsRef = useRef<any>(null);
   const sceneRef = useRef<THREE.Group>(null);
-  const boundsApi = useBounds();
 
   const selectedObject = React.useMemo(() => {
     if (selectedInstanceId && sceneRef.current) {
@@ -91,15 +88,6 @@ const Scene = memo(function Scene({
     }
     return undefined;
   }, [selectedInstanceId]);
-
-  // This effect will fit the camera to the selected object or the whole scene
-  useEffect(() => {
-    if (selectedObject) {
-      boundsApi.refresh(selectedObject).fit();
-    } else {
-      boundsApi.refresh().fit();
-    }
-  }, [selectedObject, boundsApi]);
 
   // Disable orbit controls when transform controls are being dragged
   useEffect(() => {
@@ -123,10 +111,10 @@ const Scene = memo(function Scene({
   }, [onUpdateTransform]);
 
   const findCabinetGroup = useCallback(
-    (object: THREE.Object3D): THREE.Object3D | null => {
+    (object: THREE.Object3D): THREE.Group | null => {
       if (!object) return null;
-      if (object.name && object.name.startsWith('cab_')) {
-        return object;
+      if (object.name && object.name.startsWith('cab_') && object.type === 'Group') {
+        return object as THREE.Group;
       }
       if (object.parent) {
         return findCabinetGroup(object.parent);
@@ -139,8 +127,7 @@ const Scene = memo(function Scene({
   const handleSceneClick = useCallback(
     (e: any) => {
       e.stopPropagation();
-      // Only deselect if we click something that is NOT a cabinet group
-      if (e.delta < 2) { // Allow dragging without deselecting
+      if (e.delta < 2) { 
         const group = findCabinetGroup(e.object);
         onSelectInstance(group?.name ?? null);
       }
@@ -201,14 +188,16 @@ const Scene = memo(function Scene({
       <OrbitControls
         ref={orbitControlsRef}
         makeDefault
+        minDistance={0.1}
         maxPolarAngle={Math.PI / 2}
+        target={[0, 1, -4]}
       />
     </group>
   );
 });
 
 export function KitchenLayout(props: KitchenLayoutProps) {
-  const { onClearLayout, onOpenEditor, selectedInstanceId } = props;
+  const { onClearLayout, onOpenEditor, selectedInstanceId, onRemoveCabinet } = props;
   const [transformMode, setTransformMode] =
     React.useState<'translate' | 'rotate'>('translate');
 
@@ -244,36 +233,49 @@ export function KitchenLayout(props: KitchenLayoutProps) {
             <Edit className="w-4 h-4 mr-2" />
             Editar Medidas
           </Button>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => selectedInstanceId && onRemoveCabinet(selectedInstanceId)}
+            disabled={!selectedInstanceId}
+            title="Eliminar mueble"
+          >
+            <Trash2 className="w-5 h-5 text-destructive" />
+          </Button>
+
+          <div className="h-6 w-px bg-border mx-1" />
+
           <Button
             variant="ghost"
             size="icon"
             onClick={onClearLayout}
             aria-label="Limpiar Diseño"
+            title="Limpiar todo el diseño"
           >
-            <Trash2 className="w-5 h-5 text-destructive" />
+            <Trash2 className="w-5 h-5" />
           </Button>
         </div>
       </div>
       <Canvas
         shadows
-        camera={{ position: [4, 2.5, 5], fov: 50 }}
+        camera={{ position: [2, 1.5, 0], fov: 60 }}
         className="flex-1 bg-muted/20"
       >
-        <Bounds fit clip observe margin={1.5}>
-          <Scene {...props} transformMode={transformMode} />
-        </Bounds>
+        <Scene {...props} transformMode={transformMode} />
       </Canvas>
     </div>
   );
 }
 
-type SceneProps = Omit<KitchenLayoutProps, 'onClearLayout'> & {
+type SceneProps = Omit<KitchenLayoutProps, 'onClearLayout' | 'onRemoveCabinet'> & {
   transformMode: 'translate' | 'rotate';
 };
 
 interface KitchenLayoutProps {
   placedCabinets: PlacedCabinet[];
   onClearLayout: () => void;
+  onRemoveCabinet: (id: string) => void;
   appearance: Appearance;
   selectedInstanceId: string | null;
   onSelectInstance: (id: string | null) => void;

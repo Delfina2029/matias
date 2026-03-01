@@ -126,6 +126,7 @@ export function KitchenBuilder() {
                     onSelectInstance={setSelectedInstanceId}
                     onUpdateTransform={handleUpdateCabinetTransform}
                     onOpenEditor={handleOpenEditor}
+                    onRemoveCabinet={removeCabinet}
                 />
             </div>
             {/* Sección Inferior: Paneles de Control (Lista de corte, etc.) */}
