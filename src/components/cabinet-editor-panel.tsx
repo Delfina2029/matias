@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus, ArrowUp, ArrowDown, ArrowLeft } from 'lucide-react';
+import { X, Plus, ArrowLeft, GripVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Table,
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select"
 import { ScrollArea } from './ui/scroll-area';
 import { cabinetData } from '@/lib/cabinets';
+import { cn } from '@/lib/utils';
 
 
 type CabinetEditorPanelProps = {
@@ -46,6 +47,9 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   const [components, setComponents] = useState<CabinetComponent[]>(cabinet.components || []);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
 
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+
   const { toast } = useToast();
   const isCornerCabinet = cabinet.cabinetId === 'base-corner-900';
   const isPlacar = cabinet.type === 'placar';
@@ -60,7 +64,11 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         depth2: cabinet.depth2 || cabinet.depth,
     });
     setComponents(cabinet.components || []);
-    setSelectedComponentId(null);
+    if (cabinet.components && cabinet.components.length > 0) {
+        setSelectedComponentId(cabinet.components[0].id);
+    } else {
+        setSelectedComponentId(null);
+    }
   }, [cabinet]);
 
   const handleDimensionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,24 +79,6 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   
   const handleUpdateComponent = (id: string, newProps: Partial<CabinetComponent>) => {
     setComponents(prev => prev.map(c => c.id === id ? { ...c, ...newProps } : c));
-  };
-  
-  const moveComponent = (id: string, direction: 'up' | 'down') => {
-    setComponents(prev => {
-        const index = prev.findIndex(c => c.id === id);
-        if (index === -1) return prev;
-
-        const newComponents = [...prev];
-        // In flex-col-reverse, UP means a higher index. DOWN means a lower index.
-        const toIndex = direction === 'up' ? index + 1 : index - 1;
-
-        if (toIndex < 0 || toIndex >= newComponents.length) return prev;
-        
-        const element = newComponents.splice(index, 1)[0];
-        newComponents.splice(toIndex, 0, element);
-
-        return newComponents;
-    });
   };
 
   const handleSave = () => {
@@ -110,62 +100,51 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   
   const handleAddShelf = () => {
     setComponents(prev => {
-        // Find the largest 'opening' component to split
-        let largestOpeningIndex = -1;
-        let maxHeight = -1;
-
-        prev.forEach((c, i) => {
-            if (c.type === 'opening' && c.height > maxHeight) {
-                maxHeight = c.height;
-                largestOpeningIndex = i;
-            }
-        });
-
-        if (largestOpeningIndex === -1) {
-            toast({
-                variant: 'destructive',
-                title: 'No hay espacio para añadir estantes.',
-                description: 'No se encontró un espacio abierto para dividir.',
+        let openingToModifyIndex = prev.findIndex(c => c.type === 'opening');
+        
+        if (openingToModifyIndex === -1 && prev.length > 0) {
+            // If no opening, but there are other components, find largest one to split
+            let largestComponentIndex = -1;
+            let maxHeight = -1;
+            prev.forEach((c, i) => {
+                if (c.height > maxHeight) {
+                    maxHeight = c.height;
+                    largestComponentIndex = i;
+                }
             });
-            return prev;
+            openingToModifyIndex = largestComponentIndex;
+        } else if (openingToModifyIndex === -1 && prev.length === 0) {
+             // If completely empty, add a base opening
+             const newOpening: CabinetComponent = { id: `comp_${Date.now()}_open`, type: 'opening', height: dimensions.height };
+             setComponents([newOpening]);
+             openingToModifyIndex = 0; // The one we just added
+             // We return here because we will add the shelf on the next click
+             return [newOpening];
         }
 
+
+        const componentToSplit = prev[openingToModifyIndex];
         const newShelf: CabinetComponent = {
-            id: `comp_${Date.now()}_${Math.random()}`,
+            id: `comp_${Date.now()}_shelf`,
             type: 'shelf',
             height: MELAMINE_THICKNESS,
         };
-
-        const openingToSplit = prev[largestOpeningIndex];
-        const remainingOpeningHeight = openingToSplit.height - newShelf.height;
+        const remainingHeight = componentToSplit.height - newShelf.height;
         
-        if (remainingOpeningHeight < 0) {
-            toast({
-                variant: 'destructive',
-                title: 'No hay suficiente espacio.',
-            });
+        if (remainingHeight <= 0) {
+            toast({ variant: 'destructive', title: 'No hay suficiente espacio.' });
             return prev;
         }
 
-        const newOpening1Height = Math.floor(remainingOpeningHeight / 2);
-        const newOpening2Height = remainingOpeningHeight - newOpening1Height;
-
-        const newOpening1: CabinetComponent = {
-            ...openingToSplit,
-            id: `comp_${Date.now()}_${Math.random()}`, // new id
-            height: newOpening1Height,
-        };
-        const newOpening2: CabinetComponent = {
-            ...openingToSplit,
-            id: `comp_${Date.now()}_${Math.random()}`, // new id
-            height: newOpening2Height,
-        };
+        const newOpeningHeight = Math.floor(remainingHeight / 2);
         
-        const newComponents = [...prev];
-        // Replace the old opening with the new set of components
-        newComponents.splice(largestOpeningIndex, 1, newOpening1, newShelf, newOpening2);
+        const newComponent1: CabinetComponent = { ...componentToSplit, id: `comp_${Date.now()}_1`, height: newOpeningHeight };
+        const newComponent2: CabinetComponent = { ...componentToSplit, id: `comp_${Date.now()}_2`, height: remainingHeight - newOpeningHeight };
 
-        return newComponents.filter(c => c.height > 0); // Clean up any zero-height components
+        const newComponents = [...prev];
+        newComponents.splice(openingToModifyIndex, 1, newComponent1, newShelf, newComponent2);
+
+        return newComponents.filter(c => c.height > 0);
     });
   };
 
@@ -179,7 +158,6 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         
         let drawersToKeep = [...drawers];
         
-        // If there are no drawers for some reason, add a default one.
         if (drawersToKeep.length === 0) {
           drawersToKeep.push({ id: `comp_${Date.now()}_drawer`, type: 'drawer' as const, height: 200 });
         }
@@ -187,16 +165,12 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         const totalDrawersHeight = drawersToKeep.reduce((sum, d) => sum + d.height, 0);
         const doorSectionHeight = dimensions.height - totalDrawersHeight;
         
-        // Create a single door component to represent the door section below the drawer(s).
-        // The rendering logic will interpret this single 'door' component as two doors.
         const doorComponent = { 
             id: existingDoors[0]?.id || `comp_${Date.now()}_door`, 
             type: 'door' as const, 
             height: doorSectionHeight > 0 ? doorSectionHeight : 0,
         };
         
-        // Re-assemble the components, placing the door section first (renders at bottom due to flex-col-reverse)
-        // and then all the drawers.
         setComponents([doorComponent, ...drawersToKeep]);
         return;
     }
@@ -216,8 +190,6 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   const handleStartWithDrawers = () => {
       setSelectedComponentId(null);
       if (cabinet.cabinetId.startsWith('vanity')) {
-          // This action is destructive and doesn't make sense for a vanitory.
-          // Let's reset to the default configuration.
           const drawerComponent = { id: `comp_${Date.now()}_drawer`, type: 'drawer' as const, height: 200 };
           const doorComponent = { id: `comp_${Date.now()}_door`, type: 'door' as const, height: dimensions.height - 200 };
           setComponents([doorComponent, drawerComponent]);
@@ -255,8 +227,41 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
   const selectedComponent = components.find(c => c.id === selectedComponentId);
 
-  const treatAsHorizontalDoors = cabinet.type !== 'tall' && components.length > 1 && components.every(c => c.type === 'door');
-  const numDoors = treatAsHorizontalDoors ? components.length : 1;
+  // --- Drag and Drop Logic ---
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
+        setDraggedId(id);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>, id: string) => {
+        e.preventDefault();
+        if (id !== dropTargetId) {
+            setDropTargetId(id);
+        }
+    };
+
+    const handleDragEnd = () => {
+        setDraggedId(null);
+        setDropTargetId(null);
+    };
+
+    const handleDrop = () => {
+        if (!draggedId || !dropTargetId || draggedId === dropTargetId) return;
+
+        setComponents(prev => {
+            const newComponents = [...prev];
+            const draggedIndex = newComponents.findIndex(c => c.id === draggedId);
+            const targetIndex = newComponents.findIndex(c => c.id === dropTargetId);
+
+            if (draggedIndex === -1 || targetIndex === -1) return prev;
+            
+            const [draggedItem] = newComponents.splice(draggedIndex, 1);
+            newComponents.splice(targetIndex, 0, draggedItem);
+            
+            return newComponents;
+        });
+    };
+  // --- End Drag and Drop ---
 
   const selectedDrawerPieces = useMemo(() => {
     if (!selectedComponent || selectedComponent.type !== 'drawer') {
@@ -431,65 +436,52 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                 <div className="space-y-4">
                     <h4 className="font-medium text-sm text-center">Personalizar Componentes</h4>
                     <div className="grid grid-cols-2 gap-6">
-                        {/* Visual Preview */}
-                        <div className="relative bg-secondary/30 rounded-md p-1 border-2 border-dashed flex items-end" style={{ height: 400 }}>
-                            <div className={`w-full h-full flex gap-1 ${treatAsHorizontalDoors && !isPlacar ? 'flex-row' : 'flex-col-reverse'}`}>
-                                {components.map(comp => {
-                                    const compStyle = treatAsHorizontalDoors && !isPlacar
-                                        ? { width: `${100 / numDoors}%` }
-                                        : { height: `${(comp.height / dimensions.height) * 100}%` };
-                                    const isVanityTwoDoor = comp.type === 'door' && cabinet.cabinetId.startsWith('vanity');
-
-                                    if (comp.type === 'shelf') {
-                                        return (
-                                            <div 
-                                                key={comp.id}
-                                                onClick={() => setSelectedComponentId(comp.id)}
-                                                className={`relative w-full border-y-2 border-dashed border-primary/50 bg-primary/20 flex items-center justify-center cursor-pointer transition-all ${selectedComponentId === comp.id ? 'ring-2 ring-accent z-10' : ''}`}
-                                                style={compStyle}
-                                            >
-                                                <span className="text-xs font-medium select-none text-primary-foreground/80">
-                                                    Estante
-                                                </span>
-                                            </div>
-                                        )
-                                    }
-                                    
-                                    return (
-                                        <div 
-                                            key={comp.id}
-                                            onClick={() => setSelectedComponentId(comp.id)}
-                                            className={`relative w-full border rounded-sm flex items-center justify-center cursor-pointer transition-all ${selectedComponentId === comp.id ? 'ring-2 ring-accent z-10' : ''} ${treatAsHorizontalDoors ? 'h-full' : ''}
-                                                ${comp.type === 'opening' ? 'bg-secondary/20 border-dashed border-muted-foreground/50' : 'bg-primary/20 border-primary hover:bg-primary/30'}`
-                                            }
-                                            style={compStyle}
-                                        >
-                                            {isVanityTwoDoor ? (
-                                                <div className="flex h-full w-full items-center justify-center gap-px">
-                                                    <div className="h-full w-1/2 bg-primary/20 border-r border-primary/50" />
-                                                    <div className="h-full w-1/2 bg-primary/20" />
-                                                    <span className="pointer-events-none absolute text-xs font-medium select-none text-primary-foreground/80">
-                                                        Puertas
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className={`text-xs font-medium select-none ${comp.type === 'opening' ? 'text-muted-foreground' : 'text-primary-foreground/80'}`}>
-                                                    {comp.type === 'drawer' ? 'Cajón' : comp.type === 'door' ? 'Puerta' : 'Espacio Abierto'}
-                                                </span>
-                                            )}
-                                            {comp.type !== 'opening' && comp.handle === 'j-profile' && (
-                                                <div className="absolute top-0.5 left-0 right-0 h-1 bg-primary/50 rounded-t-sm" title="Perfil J"></div>
-                                            )}
-                                            {comp.type === 'door' && comp.hinge === 'top' && (
-                                                <div className="absolute top-1 left-1/2 -translate-x-1/2 w-3 h-0.5 bg-primary-foreground/50 rounded-full" title="Apertura hacia arriba"></div>
-                                            )}
+                        {/* Component List */}
+                        <div className="space-y-4">
+                            <h5 className="font-semibold text-center text-sm">Componentes (de abajo hacia arriba)</h5>
+                            <div 
+                                className="space-y-2 border rounded-md p-2 bg-secondary/20 min-h-[300px]"
+                                onDrop={handleDrop}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDragLeave={() => setDropTargetId(null)}
+                            >
+                                {components.map((comp) => (
+                                    <div
+                                        key={comp.id}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, comp.id)}
+                                        onDragOver={(e) => handleDragOver(e, comp.id)}
+                                        onDragEnd={handleDragEnd}
+                                        onClick={() => setSelectedComponentId(comp.id)}
+                                        className={cn(
+                                            "flex items-center justify-between p-2 rounded-md cursor-grab transition-all bg-background border",
+                                            selectedComponentId === comp.id && 'ring-2 ring-accent',
+                                            draggedId === comp.id && 'opacity-50',
+                                            dropTargetId === comp.id && comp.id !== draggedId && 'outline-2 outline-dashed outline-accent'
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+                                            <span>{comp.type === 'drawer' ? 'Cajón' : comp.type === 'door' ? 'Puerta' : comp.type === 'shelf' ? 'Estante' : 'Espacio Abierto'}</span>
                                         </div>
-                                    )
-                                })}
+                                        <span className="text-sm text-muted-foreground">{comp.height}mm</span>
+                                    </div>
+                                ))}
+                                 {components.length === 0 && (
+                                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                                        El gabinete está vacío.
+                                    </div>
+                                )}
                             </div>
+                            {components.length > 0 && !isCornerCabinet && (
+                                <div className="text-xs text-muted-foreground space-y-1 pt-2">
+                                    <div className="flex justify-between"><span>Suma de alturas:</span> <span>{totalComponentsHeight}mm</span></div>
+                                    <div className={`flex justify-between font-medium ${remainingHeight < 0 ? 'text-destructive' : ''}`}><span>Espacio restante:</span> <span>{remainingHeight}mm</span></div>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Controls */}
+                        {/* Controls & Editor */}
                         <div className="space-y-4">
                             {isPlacar ? (
                                 <div>
@@ -527,17 +519,10 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                 <div className="space-y-3 p-3 border rounded-md bg-background animate-in fade-in-50">
                                     <div className="flex justify-between items-center">
                                         <h5 className="font-medium">Editar Componente</h5>
-                                        <div className="flex items-center -mr-2">
-                                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveComponent(selectedComponent.id, 'up')} disabled={components.findIndex(c => c.id === selectedComponent.id) === components.length - 1}>
-                                            <ArrowUp className="h-4 w-4" />
-                                            </Button>
-                                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => moveComponent(selectedComponent.id, 'down')} disabled={components.findIndex(c => c.id === selectedComponent.id) === 0}>
-                                            <ArrowDown className="h-4 w-4" />
-                                            </Button>
-                                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleRemoveComponent(selectedComponent.id)}>
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleRemoveComponent(selectedComponent.id)}>
+                                            <X className="h-4 w-4" />
+                                            <span className="sr-only">Quitar</span>
+                                        </Button>
                                     </div>
                                     <div className="space-y-1">
                                         <Label htmlFor="comp-height">Alto del Frente (mm)</Label>
@@ -575,7 +560,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                             <Label htmlFor="j-profile-switch" className="flex flex-col space-y-1">
                                                 <span>Perfil J</span>
                                                 <span className="font-normal leading-snug text-muted-foreground text-xs">
-                                                    Añade un tirador integrado en el borde superior.
+                                                    Añade un tirador integrado.
                                                 </span>
                                             </Label>
                                             <Switch
@@ -586,9 +571,8 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                         </div>
                                     )}
                                     
-
                                     {selectedComponent.type === 'drawer' && selectedDrawerPieces.length > 0 && (
-                                        <div className="space-y-2 pt-2">
+                                        <div className="space-y-2 pt-2 border-t mt-3">
                                         <h6 className="text-sm font-medium">Despiece del Cajón</h6>
                                         <Table className="text-xs">
                                             <TableHeader>
@@ -638,7 +622,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                         }
 
                                         return (
-                                            <div className="space-y-2 pt-2">
+                                            <div className="space-y-2 pt-2 border-t mt-3">
                                                 <h6 className="text-sm font-medium">Despiece de la Puerta</h6>
                                                 <Table className="text-xs">
                                                     <TableHeader>
@@ -663,14 +647,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                 </div>
                             ) : (
                                 <div className="text-center text-sm text-muted-foreground p-4 flex items-center justify-center h-full">
-                                    <p>Selecciona un componente de la izquierda para editar sus propiedades.</p>
-                                </div>
-                            )}
-
-                            {components.length > 0 && !isCornerCabinet && (
-                                <div className="text-xs text-muted-foreground space-y-1 pt-2">
-                                    <div className="flex justify-between"><span>Suma de alturas:</span> <span>{totalComponentsHeight}mm</span></div>
-                                    <div className={`flex justify-between font-medium ${remainingHeight < 0 ? 'text-destructive' : ''}`}><span>Espacio restante:</span> <span>{remainingHeight}mm</span></div>
+                                    <p>Selecciona un componente de la lista para editar sus propiedades.</p>
                                 </div>
                             )}
                         </div>
