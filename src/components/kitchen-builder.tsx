@@ -23,6 +23,8 @@ export function KitchenBuilder() {
     const cabinetInfo = cabinetData.find((c) => c.id === cabinetId);
     if (!cabinetInfo) return;
 
+    const SCALE = 1.5; // Visual scale factor
+
     let defaultComponents: CabinetComponent[];
 
     if (cabinetInfo.defaultComponents) {
@@ -47,6 +49,10 @@ export function KitchenBuilder() {
             height: cabinetInfo.height
         });
     }
+    
+    const cabinetHeightM = cabinetInfo.height / 1000;
+    const cabinetDepthM = cabinetInfo.depth / 1000;
+
 
     const newCabinet: PlacedCabinet = {
       cabinetId,
@@ -54,8 +60,8 @@ export function KitchenBuilder() {
       type: cabinetInfo.type,
       position: [
         -2, 
-        cabinetInfo.type === 'wall' ? 1.5 : (cabinetInfo.height / 1000) / 2, 
-        (cabinetInfo.depth / 1000 / 2) // Place against the back wall at z=0
+        cabinetInfo.type === 'wall' ? 1.5 : (cabinetHeightM * SCALE) / 2, 
+        (cabinetDepthM * SCALE / 2) // Place against the back wall at z=0
       ],
       rotation: [0, 0, 0],
       width: cabinetInfo.width,

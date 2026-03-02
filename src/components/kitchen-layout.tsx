@@ -11,6 +11,7 @@ import { Button } from './ui/button';
 import { Trash2, Edit, RotateCcw, Move } from 'lucide-react';
 import * as THREE from 'three';
 
+const SCALE = 1.5; // Visual scale factor
 
 const Cabinet = memo(function Cabinet({
   cabinet,
@@ -29,7 +30,7 @@ const Cabinet = memo(function Cabinet({
   const boxArgs: [number, number, number] = [cabinetWidth, cabinetHeight, cabinetDepth];
 
   return (
-    <group>
+    <group scale={SCALE}>
       {/* Carcass */}
       <mesh>
         <boxGeometry args={boxArgs} />
@@ -182,9 +183,9 @@ const Scene = memo(function Scene({
         if (!cabinetInfo) return;
 
         // Get the cabinet's dimensions (in meters)
-        const cabinetWidth = cabinetInfo.width / 1000;
-        const cabinetHeight = cabinetInfo.height / 1000;
-        const cabinetDepth = cabinetInfo.depth / 1000;
+        const cabinetWidth = (cabinetInfo.width / 1000) * SCALE;
+        const cabinetHeight = (cabinetInfo.height / 1000) * SCALE;
+        const cabinetDepth = (cabinetInfo.depth / 1000) * SCALE;
 
         // --- Collision with the Floor ---
         // The cabinet's anchor point is its center. Its bottom is at y - height/2.
