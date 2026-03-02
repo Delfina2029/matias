@@ -171,7 +171,6 @@ const Scene = memo(function Scene({
   transformMode,
   onSelectInstance,
   onUpdateTransform,
-  onOpenEditor,
 }: Omit<KitchenLayoutProps, 'onClearLayout' | 'onRemoveCabinet'> & { transformMode: 'translate' | 'rotate' }) {
   const controlRef = useRef<any>(null);
   const orbitControlsRef = useRef<any>(null);
@@ -223,8 +222,8 @@ const Scene = memo(function Scene({
 
   const handleObjectDoubleClick = useCallback((e: any, instanceId: string) => {
       e.stopPropagation();
-      onOpenEditor(instanceId);
-  }, [onOpenEditor]);
+      onSelectInstance(instanceId);
+  }, [onSelectInstance]);
   
   useEffect(() => {
     const control = controlRef.current;
@@ -350,15 +349,15 @@ const Scene = memo(function Scene({
         makeDefault
         minDistance={0.5}
         maxDistance={20}
-        maxPolarAngle={Math.PI / 2}
-        target={[0, 1, 0]}
+        maxPolarAngle={Math.PI / 1.9}
+        target={[0, 1.2, -1]}
       />
     </group>
   );
 });
 
 export function KitchenLayout(props: KitchenLayoutProps) {
-  const { onClearLayout, onOpenEditor, selectedInstanceId, onRemoveCabinet } = props;
+  const { onClearLayout, onSelectInstance, selectedInstanceId, onRemoveCabinet } = props;
   const [transformMode, setTransformMode] =
     useState<'translate' | 'rotate'>('translate');
 
@@ -388,7 +387,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => selectedInstanceId && onOpenEditor(selectedInstanceId)}
+            onClick={() => selectedInstanceId && onSelectInstance(selectedInstanceId)}
             disabled={!selectedInstanceId}
           >
             <Edit className="w-4 h-4 mr-2" />
@@ -443,5 +442,4 @@ interface KitchenLayoutProps {
       rotation: [number, number, number];
     }
   ) => void;
-  onOpenEditor: (id: string) => void;
 }

@@ -6,12 +6,10 @@ import { CabinetSelector } from './cabinet-selector';
 import { KitchenLayout } from './kitchen-layout';
 import { CuttingListPanel } from './cutting-list-panel';
 import { cabinetData } from '@/lib/cabinets';
-import { CabinetEditor } from './cabinet-editor';
 
 export function KitchenBuilder() {
   const [placedCabinets, setPlacedCabinets] = useState<PlacedCabinet[]>([]);
-  const [editingCabinet, setEditingCabinet] = useState<PlacedCabinet | null>(null); // For the modal editor
-  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null); // For 3D manipulation
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
 
   const [appearance, setAppearance] = useState<Appearance>({
     frontColor: '#f8f9fa',
@@ -72,17 +70,6 @@ export function KitchenBuilder() {
     };
     setPlacedCabinets((prev) => [...prev, newCabinet]);
   };
-
-  const handleOpenEditor = useCallback((instanceId: string | null) => {
-    if (!instanceId) {
-      setEditingCabinet(null);
-      return;
-    }
-    const cabinetToEdit = placedCabinets.find((c) => c.instanceId === instanceId);
-    if (cabinetToEdit) {
-      setEditingCabinet(cabinetToEdit);
-    }
-  }, [placedCabinets]);
   
   const handleUpdateCabinet = (updatedCabinet: PlacedCabinet) => {
     setPlacedCabinets((prev) =>
@@ -90,7 +77,6 @@ export function KitchenBuilder() {
         c.instanceId === updatedCabinet.instanceId ? updatedCabinet : c
       )
     );
-    setEditingCabinet(null);
   };
   
   const handleUpdateCabinetTransform = useCallback((instanceId: string, newTransform: { position: [number, number, number], rotation: [number, number, number] }) => {
@@ -131,7 +117,6 @@ export function KitchenBuilder() {
                     selectedInstanceId={selectedInstanceId}
                     onSelectInstance={setSelectedInstanceId}
                     onUpdateTransform={handleUpdateCabinetTransform}
-                    onOpenEditor={handleOpenEditor}
                     onRemoveCabinet={removeCabinet}
                 />
             </div>
@@ -142,21 +127,13 @@ export function KitchenBuilder() {
                     appearance={appearance}
                     onAppearanceChange={setAppearance}
                     onRemoveCabinet={removeCabinet}
-                    onSelectCabinet={handleOpenEditor}
-                    selectedCabinetId={editingCabinet?.instanceId}
+                    onSelectInstance={setSelectedInstanceId}
+                    selectedInstanceId={selectedInstanceId}
+                    onUpdateCabinet={handleUpdateCabinet}
                 />
             </div>
         </div>
       </div>
-      
-      {/* Editor Modal */}
-      {editingCabinet && (
-        <CabinetEditor
-          cabinet={editingCabinet}
-          onUpdate={handleUpdateCabinet}
-          onClose={() => setEditingCabinet(null)}
-        />
-      )}
     </>
   );
 }

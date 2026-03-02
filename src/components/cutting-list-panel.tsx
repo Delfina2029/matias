@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { cabinetData } from '@/lib/cabinets';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
+import { CabinetEditorPanel } from './cabinet-editor-panel';
 
 
 type CuttingListPanelProps = {
@@ -21,8 +22,9 @@ type CuttingListPanelProps = {
   appearance: Appearance;
   onAppearanceChange: (appearance: Appearance) => void;
   onRemoveCabinet: (instanceId: string) => void;
-  onSelectCabinet: (instanceId: string | null) => void;
-  selectedCabinetId?: string | null;
+  onSelectInstance: (instanceId: string | null) => void;
+  selectedInstanceId: string | null;
+  onUpdateCabinet: (cabinet: PlacedCabinet) => void;
 };
 
 type AggregatedPiece = {
@@ -40,8 +42,9 @@ export function CuttingListPanel({
     appearance, 
     onAppearanceChange,
     onRemoveCabinet,
-    onSelectCabinet,
-    selectedCabinetId 
+    onSelectInstance,
+    selectedInstanceId,
+    onUpdateCabinet
 }: CuttingListPanelProps) {
   const { aggregatedPieces, cuttingListString } = useMemo(() => {
     const pieceMap = new Map<string, AggregatedPiece>();
@@ -87,6 +90,12 @@ export function CuttingListPanel({
 
     return { aggregatedPieces: piecesArray, cuttingListString: listString };
   }, [placedCabinets]);
+  
+  const selectedCabinet = useMemo(() => {
+    if (!selectedInstanceId) return null;
+    return placedCabinets.find(c => c.instanceId === selectedInstanceId);
+  }, [selectedInstanceId, placedCabinets]);
+
 
   return (
     <Card className="h-full flex flex-col">
@@ -114,45 +123,54 @@ export function CuttingListPanel({
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0">
           <TabsContent value="design" className="h-full m-0">
-            <ScrollArea className="h-full p-6 pt-0">
-                 <div className="space-y-3">
-                    {placedCabinets.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-8">Añade gabinetes desde el panel de la izquierda para empezar.</p>
-                    ) : (
-                        placedCabinets.map(placed => {
-                            const cabinetInfo = cabinetData.find(c => c.id === placed.cabinetId);
-                            return (
-                                <Card 
-                                    key={placed.instanceId}
-                                    className={cn(
-                                        "hover:shadow-md transition-shadow",
-                                        selectedCabinetId === placed.instanceId && 'ring-2 ring-primary'
-                                    )}
-                                >
-                                    <CardContent className="p-3 flex items-center justify-between gap-2">
-                                        {cabinetInfo && <cabinetInfo.icon className="w-8 h-8 text-primary shrink-0" />}
-                                        <div className="flex-1 overflow-hidden">
-                                            <p className="font-medium truncate">{cabinetInfo?.name || placed.cabinetId}</p>
-                                            <p className="text-xs text-muted-foreground">{placed.width}x{placed.height}x{placed.depth}mm</p>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <Button variant="ghost" size="sm" onClick={() => onSelectCabinet(placed.instanceId)}>Editar</Button>
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="w-8 h-8 text-destructive/80 hover:text-destructive"
-                                                onClick={() => onRemoveCabinet(placed.instanceId)}
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )
-                        })
-                    )}
-                </div>
-            </ScrollArea>
+            {selectedCabinet ? (
+              <CabinetEditorPanel
+                cabinet={selectedCabinet}
+                onUpdate={onUpdateCabinet}
+                onClose={() => onSelectInstance(null)}
+              />
+            ) : (
+              <ScrollArea className="h-full p-6 pt-0">
+                  <div className="space-y-3">
+                      {placedCabinets.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-8">Añade gabinetes desde el panel de la izquierda para empezar.</p>
+                      ) : (
+                          placedCabinets.map(placed => {
+                              const cabinetInfo = cabinetData.find(c => c.id === placed.cabinetId);
+                              return (
+                                  <Card 
+                                      key={placed.instanceId}
+                                      className={cn(
+                                          "hover:shadow-md transition-shadow cursor-pointer",
+                                          selectedInstanceId === placed.instanceId && 'ring-2 ring-primary'
+                                      )}
+                                      onClick={() => onSelectInstance(placed.instanceId)}
+                                  >
+                                      <CardContent className="p-3 flex items-center justify-between gap-2">
+                                          {cabinetInfo && <cabinetInfo.icon className="w-8 h-8 text-primary shrink-0" />}
+                                          <div className="flex-1 overflow-hidden">
+                                              <p className="font-medium truncate">{cabinetInfo?.name || placed.cabinetId}</p>
+                                              <p className="text-xs text-muted-foreground">{placed.width}x{placed.height}x{placed.depth}mm</p>
+                                          </div>
+                                          <div className="flex items-center">
+                                              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onSelectInstance(placed.instanceId); }}>Editar</Button>
+                                              <Button
+                                                  size="icon"
+                                                  variant="ghost"
+                                                  className="w-8 h-8 text-destructive/80 hover:text-destructive"
+                                                  onClick={(e) => { e.stopPropagation(); onRemoveCabinet(placed.instanceId); }}
+                                              >
+                                                  <X className="w-4 h-4" />
+                                              </Button>
+                                          </div>
+                                      </CardContent>
+                                  </Card>
+                              )
+                          })
+                      )}
+                  </div>
+              </ScrollArea>
+            )}
           </TabsContent>
           <TabsContent value="list" className="h-full m-0">
             <ScrollArea className="h-full p-6 pt-0">
