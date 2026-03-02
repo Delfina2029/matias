@@ -181,6 +181,33 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     return pieces;
   }
 
+  // Placar/Closet Module Logic
+  if (cabinet.type === 'placar') {
+    const { width, height, depth, components } = cabinet;
+    const pieces: Piece[] = [];
+    const interiorWidth = width - (2 * MELAMINE_THICKNESS);
+
+    // Carcass
+    pieces.push({ name: 'Lateral Placar', width: depth, height: height, quantity: 2, material: MELAMINE_MATERIAL });
+    pieces.push({ name: 'Piso Placar', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
+    pieces.push({ name: 'Tapa Placar', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
+    pieces.push({ name: 'Panel Trasero Placar', width: width - 5, height: height - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
+    
+    // Interior Components
+    components.forEach(component => {
+      if (component.type === 'shelf') {
+        pieces.push({
+          name: 'Estante Placar',
+          width: interiorWidth - 2, // A little tolerance
+          height: depth - 20, // Not full depth to allow for back panel and air flow
+          quantity: 1,
+          material: MELAMINE_MATERIAL,
+        });
+      }
+    });
+
+    return pieces;
+  }
 
   // --- Regular rectangular cabinet logic ---
   const { width, height, depth, components, type } = cabinet;

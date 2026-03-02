@@ -54,6 +54,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
 
   const { toast } = useToast();
   const isCornerCabinet = cabinet.cabinetId === 'base-corner-900';
+  const isPlacar = cabinet.type === 'placar';
 
   useEffect(() => {
     setDimensions({
@@ -110,6 +111,67 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
       }
       setComponents(prev => [...prev, newDrawer]);
   }
+  
+  const handleAddShelf = () => {
+    setComponents(prev => {
+        // Find the largest 'opening' component to split
+        let largestOpeningIndex = -1;
+        let maxHeight = -1;
+
+        prev.forEach((c, i) => {
+            if (c.type === 'opening' && c.height > maxHeight) {
+                maxHeight = c.height;
+                largestOpeningIndex = i;
+            }
+        });
+
+        if (largestOpeningIndex === -1) {
+            toast({
+                variant: 'destructive',
+                title: 'No hay espacio para añadir estantes.',
+                description: 'No se encontró un espacio abierto para dividir.',
+            });
+            return prev;
+        }
+
+        const newShelf: CabinetComponent = {
+            id: `comp_${Date.now()}_${Math.random()}`,
+            type: 'shelf',
+            height: MELAMINE_THICKNESS,
+        };
+
+        const openingToSplit = prev[largestOpeningIndex];
+        const remainingOpeningHeight = openingToSplit.height - newShelf.height;
+        
+        if (remainingOpeningHeight < 0) {
+            toast({
+                variant: 'destructive',
+                title: 'No hay suficiente espacio.',
+            });
+            return prev;
+        }
+
+        const newOpening1Height = Math.floor(remainingOpeningHeight / 2);
+        const newOpening2Height = remainingOpeningHeight - newOpening1Height;
+
+        const newOpening1: CabinetComponent = {
+            ...openingToSplit,
+            id: `comp_${Date.now()}_${Math.random()}`, // new id
+            height: newOpening1Height,
+        };
+        const newOpening2: CabinetComponent = {
+            ...openingToSplit,
+            id: `comp_${Date.now()}_${Math.random()}`, // new id
+            height: newOpening2Height,
+        };
+        
+        const newComponents = [...prev];
+        // Replace the old opening with the new set of components
+        newComponents.splice(largestOpeningIndex, 1, newOpening1, newShelf, newOpening2);
+
+        return newComponents.filter(c => c.height > 0); // Clean up any zero-height components
+    });
+  };
 
   const handleDoorConfig = (doorCount: number) => {
     setSelectedComponentId(null);
@@ -365,12 +427,27 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
               <div className="grid grid-cols-2 gap-6">
                   {/* Visual Preview */}
                   <div className="relative bg-secondary/30 rounded-md p-1 border-2 border-dashed flex items-end" style={{ height: 400 }}>
-                      <div className={`w-full h-full flex gap-1 ${treatAsHorizontalDoors ? 'flex-row' : 'flex-col-reverse'}`}>
+                      <div className={`w-full h-full flex gap-1 ${treatAsHorizontalDoors && !isPlacar ? 'flex-row' : 'flex-col-reverse'}`}>
                           {components.map(comp => {
-                              const compStyle = treatAsHorizontalDoors
+                              const compStyle = treatAsHorizontalDoors && !isPlacar
                                   ? { width: `${100 / numDoors}%` }
                                   : { height: `${(comp.height / dimensions.height) * 100}%` };
                               const isVanityTwoDoor = comp.type === 'door' && cabinet.cabinetId.startsWith('vanity');
+
+                              if (comp.type === 'shelf') {
+                                return (
+                                    <div 
+                                        key={comp.id}
+                                        onClick={() => setSelectedComponentId(comp.id)}
+                                        className={`relative w-full border-y-2 border-dashed border-primary/50 bg-primary/20 flex items-center justify-center cursor-pointer transition-all ${selectedComponentId === comp.id ? 'ring-2 ring-accent z-10' : ''}`}
+                                        style={compStyle}
+                                    >
+                                        <span className="text-xs font-medium select-none text-primary-foreground/80">
+                                            Estante
+                                        </span>
+                                    </div>
+                                )
+                              }
                               
                               return (
                                   <div 
@@ -408,24 +485,33 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
 
                   {/* Controls */}
                   <div className="space-y-4">
-                      <div>
-                          <h5 className="font-semibold mb-2">Configuración Rápida</h5>
-                           <div className="space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Button variant="outline" onClick={() => handleDoorConfig(1)}>
-                                        1 Puerta
-                                    </Button>
-                                    <Button variant="outline" disabled={cabinet.type === 'tall' || isCornerCabinet} onClick={() => handleDoorConfig(2)}>
-                                        2 Puertas
-                                    </Button>
-                                </div>
-                                <Button variant="outline" className="w-full" onClick={handleStartWithDrawers}>
-                                    <Plus className="mr-2 h-4 w-4" /> Empezar con Cajones
-                                </Button>
-                            </div>
-                      </div>
+                      {isPlacar ? (
+                        <div>
+                            <h5 className="font-semibold mb-2">Configuración Interior</h5>
+                            <Button variant="outline" className="w-full" onClick={handleAddShelf}>
+                                <Plus className="mr-2 h-4 w-4" /> Añadir Estante
+                            </Button>
+                        </div>
+                      ) : (
+                        <div>
+                            <h5 className="font-semibold mb-2">Configuración Rápida</h5>
+                             <div className="space-y-2">
+                                  <div className="grid grid-cols-2 gap-2">
+                                      <Button variant="outline" onClick={() => handleDoorConfig(1)}>
+                                          1 Puerta
+                                      </Button>
+                                      <Button variant="outline" disabled={cabinet.type === 'tall' || isCornerCabinet} onClick={() => handleDoorConfig(2)}>
+                                          2 Puertas
+                                      </Button>
+                                  </div>
+                                  <Button variant="outline" className="w-full" onClick={handleStartWithDrawers}>
+                                      <Plus className="mr-2 h-4 w-4" /> Empezar con Cajones
+                                  </Button>
+                              </div>
+                        </div>
+                      )}
 
-                      {components.length > 0 && components.every(c => c.type === 'drawer') && (
+                      {components.length > 0 && components.every(c => c.type === 'drawer') && !isPlacar && (
                           <Button variant="outline" size="sm" className="w-full" onClick={handleAddAnotherDrawer}>Añadir otro cajón</Button>
                       )}
                     
@@ -454,6 +540,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                       type="number"
                                       value={selectedComponent.height}
                                       onChange={(e) => handleUpdateComponentHeight(selectedComponent.id, Number(e.target.value))}
+                                      disabled={selectedComponent.type === 'shelf'}
                                   />
                               </div>
 
@@ -477,7 +564,7 @@ export function CabinetEditor({ cabinet, onUpdate, onClose }: CabinetEditorProps
                                 </div>
                               )}
                               
-                              {selectedComponent.type !== 'opening' && (
+                              {selectedComponent.type !== 'opening' && selectedComponent.type !== 'shelf' && (
                                 <div className="flex items-center justify-between space-x-2 pt-2 border-t mt-2">
                                     <Label htmlFor="j-profile-switch" className="flex flex-col space-y-1">
                                         <span>Perfil J</span>

@@ -42,7 +42,7 @@ export function KitchenBuilder() {
         }));
     }
     
-    if (defaultComponents.length === 0 && cabinetId !== 'base-corner-900') {
+    if (defaultComponents.length === 0 && cabinetId !== 'base-corner-900' && cabinetInfo.type !== 'placar') {
         defaultComponents.push({
             id: `comp_${Date.now()}_${Math.random()}`,
             type: 'door',

@@ -17,7 +17,7 @@ export function CabinetSelector({ onSelectCabinet }: CabinetSelectorProps) {
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-3 pt-0">
         <ScrollArea className="h-full pr-3">
-            <Accordion type="multiple" defaultValue={['Bajo Mesada', 'Vanitory']} className="w-full">
+            <Accordion type="multiple" defaultValue={['Bajo Mesada', 'Vanitory', 'Interior de Placar']} className="w-full">
                 {cabinetCategories.map((category) => (
                     <AccordionItem value={category.name} key={category.name}>
                         <AccordionTrigger className="text-base font-semibold py-3 hover:no-underline">

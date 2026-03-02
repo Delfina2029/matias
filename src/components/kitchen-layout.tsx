@@ -25,6 +25,7 @@ const Cabinet = memo(function Cabinet({
   const cabinetDepth = cabinet.depth / 1000;
 
   const isCorner = cabinet.cabinetId === 'base-corner-900';
+  const isPlacar = cabinet.type === 'placar';
 
   // A single box represents the cabinet carcass visually for simplicity
   const boxArgs: [number, number, number] = [cabinetWidth, cabinetHeight, cabinetDepth];
@@ -32,10 +33,41 @@ const Cabinet = memo(function Cabinet({
   return (
     <group scale={SCALE}>
       {/* Carcass */}
-      <mesh>
-        <boxGeometry args={boxArgs} />
-        <meshStandardMaterial color={appearance.carcassColor} />
-      </mesh>
+      {isPlacar ? (
+        <>
+            {/* Floor */}
+            <mesh position={[0, -cabinetHeight / 2 + 0.018 / 2, 0]}>
+                <boxGeometry args={[cabinetWidth, 0.018, cabinetDepth]} />
+                <meshStandardMaterial color={appearance.carcassColor} />
+            </mesh>
+            {/* Top */}
+            <mesh position={[0, cabinetHeight / 2 - 0.018 / 2, 0]}>
+                <boxGeometry args={[cabinetWidth, 0.018, cabinetDepth]} />
+                <meshStandardMaterial color={appearance.carcassColor} />
+            </mesh>
+            {/* Left Side */}
+            <mesh position={[-cabinetWidth / 2 + 0.018 / 2, 0, 0]}>
+                <boxGeometry args={[0.018, cabinetHeight - 0.036, cabinetDepth]} />
+                <meshStandardMaterial color={appearance.carcassColor} />
+            </mesh>
+            {/* Right Side */}
+            <mesh position={[cabinetWidth / 2 - 0.018 / 2, 0, 0]}>
+                <boxGeometry args={[0.018, cabinetHeight - 0.036, cabinetDepth]} />
+                <meshStandardMaterial color={appearance.carcassColor} />
+            </mesh>
+            {/* Back */}
+            <mesh position={[0, 0, -cabinetDepth / 2 + 0.003 / 2]}>
+                <boxGeometry args={[cabinetWidth - 0.036, cabinetHeight - 0.036, 0.003]} />
+                <meshStandardMaterial color={appearance.carcassColor} transparent opacity={0.5} />
+            </mesh>
+        </>
+      ) : (
+        <mesh>
+          <boxGeometry args={boxArgs} />
+          <meshStandardMaterial color={appearance.carcassColor} />
+        </mesh>
+      )}
+
 
        {/* Countertop for base cabinets */}
       {cabinet.type === 'base' && !isCorner && (
@@ -45,8 +77,32 @@ const Cabinet = memo(function Cabinet({
         </mesh>
       )}
 
-      {/* Front Components (Doors/Drawers) - simplified rendering */}
-       {!isCorner && cabinet.components.map((comp, index) => {
+      {/* Front Components (Doors/Drawers) or Placar Interior */}
+      {isPlacar ? (
+        cabinet.components.map((comp, index) => {
+            if (comp.type !== 'shelf') return null;
+
+            const totalHeightSoFar = cabinet.components
+              .slice(0, index)
+              .reduce((acc, c) => acc + c.height / 1000, 0);
+
+            const compHeight = comp.height / 1000;
+            // The y position is relative to the bottom of the *interior* space.
+            const interiorBottomY = -cabinetHeight / 2 + 0.018; 
+            const yPos = interiorBottomY + totalHeightSoFar + compHeight / 2;
+
+            return (
+                 <mesh
+                    key={comp.id}
+                    position={[0, yPos, 0]}
+                >
+                    <boxGeometry args={[cabinetWidth - 0.036, compHeight, cabinetDepth - 0.02]} />
+                    <meshStandardMaterial color={appearance.frontColor} />
+                </mesh>
+            );
+        })
+      ) : (
+       !isCorner && cabinet.components.map((comp, index) => {
         const totalHeightSoFar = cabinet.components
           .slice(0, index)
           .reduce((acc, c) => acc + c.height / 1000, 0);
@@ -102,7 +158,7 @@ const Cabinet = memo(function Cabinet({
             <meshStandardMaterial color={appearance.frontColor} />
           </mesh>
         );
-      })}
+      }))}
     </group>
   );
 });

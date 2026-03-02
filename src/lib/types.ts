@@ -11,7 +11,7 @@ export interface Piece {
 
 export interface CabinetComponent {
   id: string;
-  type: 'drawer' | 'door' | 'opening';
+  type: 'drawer' | 'door' | 'opening' | 'shelf';
   height: number;
   handle?: 'j-profile';
   hinge?: 'side' | 'top';
@@ -20,7 +20,7 @@ export interface CabinetComponent {
 export interface Cabinet {
   id: string;
   name: string;
-  type: 'base' | 'wall' | 'tall';
+  type: 'base' | 'wall' | 'tall' | 'placar';
   icon: LucideIcon;
   width: number;
   height: number;
@@ -33,7 +33,7 @@ export interface Cabinet {
 export interface PlacedCabinet {
   instanceId: string;
   cabinetId: string;
-  type: 'base' | 'wall' | 'tall';
+  type: 'base' | 'wall' | 'tall' | 'placar';
   position: [number, number, number]; // [x, y, z]
   rotation: [number, number, number]; // [x, y, z] Euler angles in radians
   width: number;
