@@ -52,6 +52,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ActiveTool | null>(null);
   const [selectedComponentPosition, setSelectedComponentPosition] = useState(0);
+  const [positionInput, setPositionInput] = useState('');
 
 
   const { toast } = useToast();
@@ -82,8 +83,12 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         // Calculate position relative to the start of the component list.
         const positionInComponentList = components.slice(0, index).reduce((sum, c) => sum + c.height, 0);
         // Add the base offset to get the absolute position from the cabinet floor.
-        setSelectedComponentPosition(positionInComponentList + baseOffset);
+        const newPosition = positionInComponentList + baseOffset;
+        setSelectedComponentPosition(newPosition);
+        setPositionInput(String(Math.round(newPosition)));
       }
+    } else {
+        setPositionInput('');
     }
   }, [selectedComponentId, components, cabinet.type]);
 
@@ -141,10 +146,8 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
             newComp = { id: `comp_${Date.now()}`, type: type, height: defaultHeight };
         }
 
-        // Re-check just in case state changed
         if (currentOpening.height < newComp.height + 10) return prev;
         
-        // Split the opening, placing the new component in the middle.
         const remainingHeight = currentOpening.height - newComp.height;
         const opening1Height = remainingHeight / 2;
         const opening2Height = remainingHeight / 2;
@@ -249,27 +252,28 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
       });
   };
   
-  const handleUpdateComponentPosition = (id: string, newPosition: number) => {
+  const handleUpdateComponentPosition = (id: string, newPosition: number): boolean => {
     const index = components.findIndex(c => c.id === id);
-    if (index === -1) return;
+    if (index === -1) {
+      return false;
+    }
   
     const isPlacarModule = cabinet.type === 'placar';
     const baseOffset = isPlacarModule ? MELAMINE_THICKNESS : 0;
     const targetPositionInComponentList = newPosition - baseOffset;
   
-    if (targetPositionInComponentList < -0.1) { // Allow for small rounding errors
+    if (targetPositionInComponentList < -0.1) {
       toast({
         variant: 'destructive',
         title: 'Posición no válida',
         description: 'La posición no puede ser menor que la base del mueble.',
       });
-      return;
+      return false;
     }
   
     const prevIndex = components.findIndex(c => c.id === id);
-    // This check is important because we need openings before AND after.
     if (prevIndex <= 0 || prevIndex >= components.length - 1) {
-      return;
+      return false;
     }
   
     const openingBefore = components[prevIndex - 1];
@@ -281,7 +285,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         title: 'Movimiento no válido',
         description: 'Se necesita espacio flexible (huecos) alrededor del componente para moverlo con precisión.',
       });
-      return;
+      return false;
     }
   
     const prevPositionInComponentList = components.slice(0, prevIndex).reduce((sum, c) => sum + c.height, 0);
@@ -297,13 +301,11 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         title: 'Límite alcanzado',
         description: 'El movimiento excede el espacio disponible.',
       });
-      return;
+      return false;
     }
     
-    // Now that all validations are done, update the state.
     setComponents(prev => {
-        const newComponents = [...prev]; // Create a copy of the current state array
-        
+        const newComponents = [...prev];
         const currentIndex = newComponents.findIndex(c => c.id === id);
         if (currentIndex <= 0 || currentIndex >= newComponents.length - 1) return prev;
 
@@ -325,6 +327,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
         return newComponents.filter(c => c.height > 0.1);
     });
+    return true;
   };
   
   const internalHeight = isPlacar ? dimensions.height - (2 * MELAMINE_THICKNESS) : dimensions.height;
@@ -632,8 +635,16 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                                     <Input 
                                                         id="comp-position"
                                                         type="number"
-                                                        value={Math.round(selectedComponentPosition)}
-                                                        onChange={(e) => handleUpdateComponentPosition(selectedComponent.id, Number(e.target.value))}
+                                                        value={positionInput}
+                                                        onChange={(e) => setPositionInput(e.target.value)}
+                                                        onBlur={(e) => {
+                                                            if (selectedComponent) {
+                                                                const success = handleUpdateComponentPosition(selectedComponent.id, Number(e.target.value));
+                                                                if (!success) {
+                                                                    setPositionInput(String(Math.round(selectedComponentPosition)));
+                                                                }
+                                                            }
+                                                        }}
                                                     />
                                                     <p className="text-xs text-muted-foreground">Distancia hasta la base del componente.</p>
                                                 </div>
