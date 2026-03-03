@@ -2,10 +2,9 @@
 
 import { useState, useCallback } from 'react';
 import type { PlacedCabinet, CabinetComponent, Appearance } from '@/lib/types';
-import { CabinetSelector } from './cabinet-selector';
 import { KitchenLayout } from './kitchen-layout';
-import { CuttingListPanel } from './cutting-list-panel';
 import { cabinetData } from '@/lib/cabinets';
+import { EditorSidebar } from './editor-sidebar';
 
 export function KitchenBuilder() {
   const [placedCabinets, setPlacedCabinets] = useState<PlacedCabinet[]>([]);
@@ -59,7 +58,7 @@ export function KitchenBuilder() {
       position: [
         -2, 
         cabinetInfo.type === 'wall' ? 1.5 : (cabinetHeightM * SCALE) / 2, 
-        (cabinetDepthM * SCALE / 2) // Place against the back wall at z=0
+        (cabinetDepthM * SCALE / 2)
       ],
       rotation: [0, 0, 0],
       width: cabinetInfo.width,
@@ -101,39 +100,30 @@ export function KitchenBuilder() {
   }, [selectedInstanceId]);
 
   return (
-    <>
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 p-6 h-[calc(100vh-4rem)]">
-        {/* Columna Izquierda: Selector de Gabinetes */}
-        <CabinetSelector onSelectCabinet={addCabinet} />
-
-        {/* Columna Derecha: Vista Previa y Controles */}
-        <div className="flex flex-col gap-6 h-full min-h-0">
-            {/* Sección Superior: Vista Previa */}
-            <div className="flex-[3] min-h-0">
-                <KitchenLayout
-                    placedCabinets={placedCabinets}
-                    onClearLayout={clearLayout}
-                    appearance={appearance}
-                    selectedInstanceId={selectedInstanceId}
-                    onSelectInstance={setSelectedInstanceId}
-                    onUpdateTransform={handleUpdateCabinetTransform}
-                    onRemoveCabinet={removeCabinet}
-                />
-            </div>
-            {/* Sección Inferior: Paneles de Control (Lista de corte, etc.) */}
-            <div className="flex-[2] min-h-0">
-                <CuttingListPanel 
-                    placedCabinets={placedCabinets}
-                    appearance={appearance}
-                    onAppearanceChange={setAppearance}
-                    onRemoveCabinet={removeCabinet}
-                    onSelectInstance={setSelectedInstanceId}
-                    selectedInstanceId={selectedInstanceId}
-                    onUpdateCabinet={handleUpdateCabinet}
-                />
-            </div>
-        </div>
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-6 p-6 h-[calc(100vh-4rem)]">
+      <div className="h-full min-h-0">
+        <KitchenLayout
+            placedCabinets={placedCabinets}
+            onClearLayout={clearLayout}
+            appearance={appearance}
+            selectedInstanceId={selectedInstanceId}
+            onSelectInstance={setSelectedInstanceId}
+            onUpdateTransform={handleUpdateCabinetTransform}
+            onRemoveCabinet={removeCabinet}
+        />
       </div>
-    </>
+      <div className="h-full min-h-0">
+        <EditorSidebar
+            placedCabinets={placedCabinets}
+            appearance={appearance}
+            onAppearanceChange={setAppearance}
+            onRemoveCabinet={removeCabinet}
+            onUpdateCabinet={handleUpdateCabinet}
+            onAddCabinet={addCabinet}
+            selectedInstanceId={selectedInstanceId}
+            onSelectInstance={setSelectedInstanceId}
+        />
+      </div>
+    </div>
   );
 }

@@ -1,219 +1,129 @@
 'use client';
 
-import { useMemo } from 'react';
-import type { PlacedCabinet, Appearance } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
-import { OptimizerForm } from './optimizer-form';
-import { Sparkles, Palette, LayoutGrid, List } from 'lucide-react';
-import { generatePiecesForCabinet } from '@/lib/cutting-logic';
-import { AppearanceEditor } from './appearance-editor';
-import { cn } from '@/lib/utils';
+import { useState, useCallback } from 'react';
+import type { PlacedCabinet, CabinetComponent, Appearance } from '@/lib/types';
+import { KitchenLayout } from './kitchen-layout';
 import { cabinetData } from '@/lib/cabinets';
-import { Button } from './ui/button';
-import { X } from 'lucide-react';
-import { CabinetEditorPanel } from './cabinet-editor-panel';
+import { EditorSidebar } from './editor-sidebar';
+
+export function KitchenBuilder() {
+  const [placedCabinets, setPlacedCabinets] = useState<PlacedCabinet[]>([]);
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
+
+  const [appearance, setAppearance] = useState<Appearance>({
+    frontColor: '#f8f9fa',
+    carcassColor: '#e9ecef',
+    countertopColor: '#343a40',
+  });
+
+  const addCabinet = (cabinetId: string) => {
+    const cabinetInfo = cabinetData.find((c) => c.id === cabinetId);
+    if (!cabinetInfo) return;
+
+    const SCALE = 1.5; // Visual scale factor
+
+    let defaultComponents: CabinetComponent[];
+
+    if (cabinetInfo.defaultComponents) {
+      defaultComponents = cabinetInfo.defaultComponents.map((comp, i) => ({
+        ...comp,
+        id: `comp_${Date.now()}_${i}_${Math.random()}`,
+      }));
+    } else {
+      defaultComponents = cabinetInfo.pieces
+        .filter(p => p.name.toLowerCase().includes('puerta'))
+        .map((p, i) => ({
+          id: `comp_${Date.now()}_${i}_${Math.random()}`,
+          type: 'door',
+          height: p.height
+        }));
+    }
+    
+    if (defaultComponents.length === 0 && cabinetId !== 'base-corner-900' && cabinetInfo.type !== 'placar') {
+        defaultComponents.push({
+            id: `comp_${Date.now()}_${Math.random()}`,
+            type: 'door',
+            height: cabinetInfo.height
+        });
+    }
+    
+    const cabinetHeightM = cabinetInfo.height / 1000;
+    const cabinetDepthM = cabinetInfo.depth / 1000;
 
 
-type CuttingListPanelProps = {
-  placedCabinets: PlacedCabinet[];
-  appearance: Appearance;
-  onAppearanceChange: (appearance: Appearance) => void;
-  onRemoveCabinet: (instanceId: string) => void;
-  onSelectInstance: (instanceId: string | null) => void;
-  selectedInstanceId: string | null;
-  onUpdateCabinet: (cabinet: PlacedCabinet) => void;
-};
-
-type AggregatedPiece = {
-  name: string;
-  width: number;
-  height: number;
-  quantity: number;
-  material: string;
-};
-
-const BACK_PANEL_MATERIAL = 'MDF 3mm';
-
-export function CuttingListPanel({ 
-    placedCabinets, 
-    appearance, 
-    onAppearanceChange,
-    onRemoveCabinet,
-    onSelectInstance,
-    selectedInstanceId,
-    onUpdateCabinet
-}: CuttingListPanelProps) {
-  const { aggregatedPieces, cuttingListString } = useMemo(() => {
-    const pieceMap = new Map<string, AggregatedPiece>();
-
-    placedCabinets.forEach((pc) => {
-      const pieces = generatePiecesForCabinet(pc);
-      
-      pieces.forEach((piece) => {
-        // Round dimensions to one decimal to avoid floating point issues creating many unique parts
-        const roundedWidth = Math.round(piece.width * 10) / 10;
-        const roundedHeight = Math.round(piece.height * 10) / 10;
-        const key = `${piece.name}|${roundedWidth}|${roundedHeight}|${piece.material}`;
-        
-        const existing = pieceMap.get(key);
-        if (existing) {
-          existing.quantity += piece.quantity;
-        } else {
-          pieceMap.set(key, { ...piece, width: roundedWidth, height: roundedHeight });
-        }
-      });
-    });
-
-    const piecesArray = Array.from(pieceMap.values());
-
-    piecesArray.sort((a, b) => {
-      const isABackPanel = a.material === BACK_PANEL_MATERIAL;
-      const isBBackPanel = b.material === BACK_PANEL_MATERIAL;
-
-      if (isABackPanel && !isBBackPanel) {
-        return 1; // a comes after b
-      }
-      if (!isABackPanel && isBBackPanel) {
-        return -1; // a comes before b
-      }
-      // For pieces of the same type, sort by name then width
-      if (a.name === b.name) {
-        return a.width - b.width;
-      }
-      return a.name.localeCompare(b.name);
-    });
-
-    const listString = piecesArray.map(p => `${p.quantity}x ${p.name} @ ${p.width}mm x ${p.height}mm (${p.material})`).join('\n');
-
-    return { aggregatedPieces: piecesArray, cuttingListString: listString };
-  }, [placedCabinets]);
+    const newCabinet: PlacedCabinet = {
+      cabinetId,
+      instanceId: `cab_${Date.now()}_${Math.random()}`,
+      type: cabinetInfo.type,
+      position: [
+        -2, 
+        cabinetInfo.type === 'wall' ? 1.5 : (cabinetHeightM * SCALE) / 2, 
+        (cabinetDepthM * SCALE / 2)
+      ],
+      rotation: [0, 0, 0],
+      width: cabinetInfo.width,
+      height: cabinetInfo.height,
+      depth: cabinetInfo.depth,
+      depth2: cabinetInfo.depth2,
+      components: defaultComponents,
+    };
+    setPlacedCabinets((prev) => [...prev, newCabinet]);
+  };
   
-  const selectedCabinet = useMemo(() => {
-    if (!selectedInstanceId) return null;
-    return placedCabinets.find(c => c.instanceId === selectedInstanceId);
-  }, [selectedInstanceId, placedCabinets]);
+  const handleUpdateCabinet = (updatedCabinet: PlacedCabinet) => {
+    setPlacedCabinets((prev) =>
+      prev.map((c) =>
+        c.instanceId === updatedCabinet.instanceId ? updatedCabinet : c
+      )
+    );
+  };
+  
+  const handleUpdateCabinetTransform = useCallback((instanceId: string, newTransform: { position: [number, number, number], rotation: [number, number, number] }) => {
+    setPlacedCabinets(prev => 
+        prev.map(cab => 
+            cab.instanceId === instanceId ? { ...cab, ...newTransform } : cab
+        )
+    );
+  }, []);
 
+
+  const clearLayout = () => {
+    setPlacedCabinets([]);
+    setSelectedInstanceId(null);
+  };
+
+  const removeCabinet = useCallback((instanceId: string) => {
+    setPlacedCabinets((prev) => prev.filter((c) => c.instanceId !== instanceId));
+    if (selectedInstanceId === instanceId) {
+        setSelectedInstanceId(null);
+    }
+  }, [selectedInstanceId]);
 
   return (
-    <Card className="h-full flex flex-col">
-      <Tabs defaultValue="design" className="flex-1 flex flex-col">
-        <CardHeader className="flex-row justify-between items-center">
-            <CardTitle className="font-headline">Controles</CardTitle>
-            <TabsList>
-                <TabsTrigger value="design" className="flex items-center gap-2">
-                    <LayoutGrid className="w-4 h-4 text-primary" />
-                    Diseño
-                </TabsTrigger>
-                <TabsTrigger value="list" className="flex items-center gap-2">
-                    <List className="w-4 h-4 text-primary" />
-                    Lista de Corte
-                </TabsTrigger>
-                <TabsTrigger value="optimizer" className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-accent" />
-                  Optimizador
-                </TabsTrigger>
-                <TabsTrigger value="appearance" className="flex items-center gap-2">
-                  <Palette className="w-4 h-4 text-accent" />
-                  Apariencia
-                </TabsTrigger>
-            </TabsList>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-hidden p-0">
-          <TabsContent value="design" className="h-full m-0">
-            {selectedCabinet ? (
-              <CabinetEditorPanel
-                cabinet={selectedCabinet}
-                onUpdate={onUpdateCabinet}
-                onClose={() => onSelectInstance(null)}
-              />
-            ) : (
-              <ScrollArea className="h-full p-6 pt-0">
-                  <div className="space-y-3">
-                      {placedCabinets.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-8">Añade gabinetes desde el panel de la izquierda para empezar.</p>
-                      ) : (
-                          placedCabinets.map(placed => {
-                              const cabinetInfo = cabinetData.find(c => c.id === placed.cabinetId);
-                              return (
-                                  <Card 
-                                      key={placed.instanceId}
-                                      className={cn(
-                                          "hover:shadow-md transition-shadow cursor-pointer",
-                                          selectedInstanceId === placed.instanceId && 'ring-2 ring-primary'
-                                      )}
-                                      onClick={() => onSelectInstance(placed.instanceId)}
-                                  >
-                                      <CardContent className="p-3 flex items-center justify-between gap-2">
-                                          {cabinetInfo && <cabinetInfo.icon className="w-8 h-8 text-primary shrink-0" />}
-                                          <div className="flex-1 overflow-hidden">
-                                              <p className="font-medium truncate">{cabinetInfo?.name || placed.cabinetId}</p>
-                                              <p className="text-xs text-muted-foreground">{placed.width}x{placed.height}x{placed.depth}mm</p>
-                                          </div>
-                                          <div className="flex items-center">
-                                              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onSelectInstance(placed.instanceId); }}>Editar</Button>
-                                              <Button
-                                                  size="icon"
-                                                  variant="ghost"
-                                                  className="w-8 h-8 text-destructive/80 hover:text-destructive"
-                                                  onClick={(e) => { e.stopPropagation(); onRemoveCabinet(placed.instanceId); }}
-                                              >
-                                                  <X className="w-4 h-4" />
-                                              </Button>
-                                          </div>
-                                      </CardContent>
-                                  </Card>
-                              )
-                          })
-                      )}
-                  </div>
-              </ScrollArea>
-            )}
-          </TabsContent>
-          <TabsContent value="list" className="h-full m-0">
-            <ScrollArea className="h-full p-6 pt-0">
-              <Table>
-                 {placedCabinets.length === 0 && <TableCaption>Añade gabinetes al diseño para ver la lista de corte.</TableCaption>}
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cant</TableHead>
-                    <TableHead>Pieza</TableHead>
-                    <TableHead>Dimensiones (AnxAl)</TableHead>
-                    <TableHead>Material</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {aggregatedPieces.map((piece, index) => (
-                    <TableRow 
-                      key={index}
-                      className={cn(
-                        piece.material === BACK_PANEL_MATERIAL && 'text-orange-600 dark:text-orange-400'
-                      )}
-                    >
-                      <TableCell className="font-medium">{piece.quantity}</TableCell>
-                      <TableCell>{piece.name}</TableCell>
-                      <TableCell>{`${piece.width} x ${piece.height} mm`}</TableCell>
-                      <TableCell>{piece.material}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </TabsContent>
-          <TabsContent value="optimizer" className="h-full m-0">
-            <ScrollArea className="h-full p-6 pt-0">
-              <OptimizerForm cuttingListString={cuttingListString} hasCuts={aggregatedPieces.length > 0} />
-            </ScrollArea>
-          </TabsContent>
-          <TabsContent value="appearance" className="h-full m-0">
-            <ScrollArea className="h-full p-6 pt-2">
-                <AppearanceEditor appearance={appearance} setAppearance={onAppearanceChange} />
-            </ScrollArea>
-          </TabsContent>
-        </CardContent>
-      </Tabs>
-    </Card>
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-6 p-6 h-[calc(100vh-4rem)]">
+      <div className="h-full min-h-0">
+        <KitchenLayout
+            placedCabinets={placedCabinets}
+            onClearLayout={clearLayout}
+            appearance={appearance}
+            selectedInstanceId={selectedInstanceId}
+            onSelectInstance={setSelectedInstanceId}
+            onUpdateTransform={handleUpdateCabinetTransform}
+            onRemoveCabinet={removeCabinet}
+        />
+      </div>
+      <div className="h-full min-h-0">
+        <EditorSidebar
+            placedCabinets={placedCabinets}
+            appearance={appearance}
+            onAppearanceChange={setAppearance}
+            onRemoveCabinet={removeCabinet}
+            onUpdateCabinet={handleUpdateCabinet}
+            onAddCabinet={addCabinet}
+            selectedInstanceId={selectedInstanceId}
+            onSelectInstance={setSelectedInstanceId}
+        />
+      </div>
+    </div>
   );
 }
