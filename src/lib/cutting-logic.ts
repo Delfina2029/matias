@@ -203,6 +203,15 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
           quantity: 1,
           material: MELAMINE_MATERIAL,
         });
+      } else if (component.type === 'hanging-rail') {
+        pieces.push({
+            name: 'Barral para Placar',
+            width: interiorWidth - 10,
+            height: 0,
+            quantity: 1,
+            material: 'Hardware',
+            notes: 'Largo del barral'
+        });
       }
     });
 

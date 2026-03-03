@@ -11,7 +11,7 @@ export interface Piece {
 
 export interface CabinetComponent {
   id: string;
-  type: 'drawer' | 'door' | 'opening' | 'shelf';
+  type: 'drawer' | 'door' | 'opening' | 'shelf' | 'hanging-rail';
   height: number;
   handle?: 'j-profile';
   hinge?: 'side' | 'top';

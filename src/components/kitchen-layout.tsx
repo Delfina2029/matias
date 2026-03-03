@@ -5,6 +5,8 @@ import { Canvas } from '@react-three/fiber';
 import {
   OrbitControls,
   TransformControls,
+  Bounds,
+  Box as DreiBox,
 } from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Button } from './ui/button';
@@ -80,26 +82,39 @@ const Cabinet = memo(function Cabinet({
       {/* Front Components (Doors/Drawers) or Placar Interior */}
       {isPlacar ? (
         cabinet.components.map((comp, index) => {
-            if (comp.type !== 'shelf') return null;
-
             const totalHeightSoFar = cabinet.components
               .slice(0, index)
               .reduce((acc, c) => acc + c.height / 1000, 0);
 
             const compHeight = comp.height / 1000;
-            // The y position is relative to the bottom of the *interior* space.
             const interiorBottomY = -cabinetHeight / 2 + 0.018; 
             const yPos = interiorBottomY + totalHeightSoFar + compHeight / 2;
+            
+            if (comp.type === 'shelf') {
+                 return (
+                    <mesh
+                        key={comp.id}
+                        position={[0, yPos, 0]}
+                    >
+                        <boxGeometry args={[cabinetWidth - 0.036, compHeight, cabinetDepth - 0.02]} />
+                        <meshStandardMaterial color={appearance.frontColor} />
+                    </mesh>
+                );
+            }
 
-            return (
-                 <mesh
-                    key={comp.id}
-                    position={[0, yPos, 0]}
-                >
-                    <boxGeometry args={[cabinetWidth - 0.036, compHeight, cabinetDepth - 0.02]} />
-                    <meshStandardMaterial color={appearance.frontColor} />
-                </mesh>
-            );
+            if (comp.type === 'hanging-rail') {
+                 return (
+                    <mesh
+                        key={comp.id}
+                        position={[0, yPos, 0]}
+                        rotation={[0, 0, Math.PI / 2]}
+                    >
+                        <cylinderGeometry args={[0.012, 0.012, cabinetWidth - 0.05, 16]} />
+                        <meshStandardMaterial color="#c0c0c0" metalness={0.8} roughness={0.2} />
+                    </mesh>
+                );
+            }
+            return null;
         })
       ) : (
        !isCorner && cabinet.components.map((comp, index) => {
@@ -208,7 +223,7 @@ const Scene = memo(function Scene({
   
   const handlePointerMissed = useCallback(
       (e: any) => {
-          if (e.type === 'click') {
+          if (e.type === 'click' && e.target.localName !== 'canvas') {
               onSelectInstance(null);
           }
       },
@@ -243,79 +258,70 @@ const Scene = memo(function Scene({
         const cabinetDepth = (cabinetInfo.depth / 1000) * SCALE;
 
         // --- Collision with the Floor ---
-        // The cabinet's anchor point is its center. Its bottom is at y - height/2.
-        // We don't want the bottom to go below y=0.
         const floorLimitY = cabinetHeight / 2;
         if (object.position.y < floorLimitY) {
           object.position.y = floorLimitY;
         }
 
         // --- Collision with the Back Wall ---
-        // The back wall is at z=0. The cabinet's back is at position.z - depth/2.
-        // We don't want the back to go past z=0 (into negative z).
         const backWallLimitZ = cabinetDepth / 2;
         if (object.position.z < backWallLimitZ) {
           object.position.z = backWallLimitZ;
         }
         
         // --- Collision with the Left Side Wall ---
-        // The left wall is at x=-10. The cabinet's left side is at x - width/2.
-        // We don't want the left side to go past x=-10.
         const leftWallLimitX = -10 + (cabinetWidth / 2);
         if (object.position.x < leftWallLimitX) {
           object.position.x = leftWallLimitX;
         }
         
         // --- Collision with the Right Side Wall ---
-        // The right wall is at x=10. The cabinet's right side is at x + width/2.
-        // We don't want the right side to go past x=10.
         const rightWallLimitX = 10 - (cabinetWidth / 2);
         if (object.position.x > rightWallLimitX) {
           object.position.x = rightWallLimitX;
         }
       };
 
-      // Attach the listener to the 'objectChange' event.
       control.addEventListener('objectChange', handleCollisionDetection);
       
-      // Cleanup: remove the listener when the component unmounts or dependencies change.
       return () => control.removeEventListener('objectChange', handleCollisionDetection);
     }
-  }, [placedCabinets, selectedObject]); // Re-run this effect if the list of cabinets or the selected one changes.
+  }, [placedCabinets, selectedObject]);
 
 
   return (
-    <group ref={sceneRef} >
+    <Bounds fit clip observe margin={1.2}>
+      <group ref={sceneRef} onPointerMissed={handlePointerMissed}>
       <ambientLight intensity={1.5} />
       <directionalLight position={[5, 5, 5]} intensity={1} />
       <hemisphereLight groundColor="white" intensity={0.5} />
 
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0, 0]}
-        onPointerMissed={handlePointerMissed}
+        position={[0, 0, 10]}
       >
         <planeGeometry args={[20, 20]} />
         <meshStandardMaterial color="#A0785A" />
       </mesh>
       
       {/* Back Wall */}
-      <mesh position={[0, 2, -0.01]} onPointerMissed={handlePointerMissed}>
+      <mesh position={[0, 2, 0]} >
          <planeGeometry args={[20, 4]} />
          <meshStandardMaterial color="#F5F5DC" />
       </mesh>
       
       {/* Side Wall (Left) */}
-      <mesh position={[-10, 2, 10]} rotation={[0, Math.PI / 2, 0]} onPointerMissed={handlePointerMissed}>
+      <mesh position={[-10, 2, 10]} rotation={[0, Math.PI / 2, 0]} >
+        <planeGeometry args={[20, 4]} />
+        <meshStandardMaterial color="#F5F5DC" />
+      </mesh>
+      
+      {/* Side Wall (Right) */}
+      <mesh position={[10, 2, 10]} rotation={[0, -Math.PI / 2, 0]} >
         <planeGeometry args={[20, 4]} />
         <meshStandardMaterial color="#F5F5DC" />
       </mesh>
 
-      {/* Side Wall (Right) */}
-      <mesh position={[10, 2, 10]} rotation={[0, -Math.PI / 2, 0]} onPointerMissed={handlePointerMissed}>
-        <planeGeometry args={[20, 4]} />
-        <meshStandardMaterial color="#F5F5DC" />
-      </mesh>
 
       <Suspense fallback={null}>
         {placedCabinets.map((cabinet) => (
@@ -341,18 +347,20 @@ const Scene = memo(function Scene({
           object={selectedObject as THREE.Object3D}
           mode={transformMode}
           onMouseUp={handleTransformEnd}
+          onDraggingChanged={(e) => orbitControlsRef.current && (orbitControlsRef.current.enabled = !e.value)}
         />
       )}
-      
+      </group>
+
       <OrbitControls
         ref={orbitControlsRef}
         makeDefault
-        minDistance={0.5}
-        maxDistance={20}
+        minDistance={1}
+        maxDistance={25}
         maxPolarAngle={Math.PI / 1.9}
-        target={[0, 1.2, -1]}
+        target={[0, 1.2, 0]}
       />
-    </group>
+    </Bounds>
   );
 });
 
@@ -419,7 +427,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
       </div>
       <Canvas
         shadows
-        camera={{ position: [-2, 2, 8], fov: 60 }}
+        camera={{ position: [0, 1.5, 12], fov: 50 }}
         className="flex-1 bg-muted/20"
       >
         <Scene {...props} transformMode={transformMode} />
