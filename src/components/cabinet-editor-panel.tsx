@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus, ArrowLeft, GripVertical } from 'lucide-react';
+import { X, Plus, ArrowLeft, ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Table,
@@ -36,6 +36,7 @@ type CabinetEditorPanelProps = {
 };
 
 const MELAMINE_THICKNESS = 18;
+const VISUAL_EDITOR_HEIGHT_PX = 500;
 
 export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditorPanelProps) {
   const [dimensions, setDimensions] = useState({
@@ -46,9 +47,6 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   });
   const [components, setComponents] = useState<CabinetComponent[]>(cabinet.components || []);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
-
-  const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
 
   const { toast } = useToast();
   const isCornerCabinet = cabinet.cabinetId === 'base-corner-900';
@@ -64,11 +62,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         depth2: cabinet.depth2 || cabinet.depth,
     });
     setComponents(cabinet.components || []);
-    if (cabinet.components && cabinet.components.length > 0) {
-        setSelectedComponentId(cabinet.components[0].id);
-    } else {
-        setSelectedComponentId(null);
-    }
+    setSelectedComponentId(null);
   }, [cabinet]);
 
   const handleDimensionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,97 +83,62 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
     });
   };
 
-  const handleAddAnotherDrawer = () => {
-      const newDrawer: CabinetComponent = {
-          id: `comp_${Date.now()}_${Math.random()}`,
-          type: 'drawer',
-          height: 180,
-      }
-      setComponents(prev => [...prev, newDrawer]);
-  }
-  
-  const handleAddShelf = () => {
+  const addComponentInOpening = (openingId: string, type: 'drawer' | 'shelf' | 'door') => {
     setComponents(prev => {
-        let openingToModifyIndex = prev.findIndex(c => c.type === 'opening');
-        
-        if (openingToModifyIndex === -1 && prev.length > 0) {
-            // If no opening, but there are other components, find largest one to split
-            let largestComponentIndex = -1;
-            let maxHeight = -1;
-            prev.forEach((c, i) => {
-                if (c.height > maxHeight) {
-                    maxHeight = c.height;
-                    largestComponentIndex = i;
-                }
-            });
-            openingToModifyIndex = largestComponentIndex;
-        } else if (openingToModifyIndex === -1 && prev.length === 0) {
-             // If completely empty, add a base opening
-             const newOpening: CabinetComponent = { id: `comp_${Date.now()}_open`, type: 'opening', height: dimensions.height };
-             setComponents([newOpening]);
-             openingToModifyIndex = 0; // The one we just added
-             // We return here because we will add the shelf on the next click
-             return [newOpening];
+        const openingIndex = prev.findIndex(c => c.id === openingId);
+        if (openingIndex === -1) return prev;
+
+        const opening = prev[openingIndex];
+        let newComp: CabinetComponent;
+        let remainingHeight = opening.height;
+
+        if (type === 'shelf') {
+            newComp = { id: `comp_${Date.now()}`, type: 'shelf', height: MELAMINE_THICKNESS };
+            remainingHeight -= newComp.height;
+        } else { // drawer or door
+            newComp = { id: `comp_${Date.now()}`, type: type, height: Math.min(200, remainingHeight) };
+            remainingHeight -= newComp.height;
         }
 
-
-        const componentToSplit = prev[openingToModifyIndex];
-        const newShelf: CabinetComponent = {
-            id: `comp_${Date.now()}_shelf`,
-            type: 'shelf',
-            height: MELAMINE_THICKNESS,
-        };
-        const remainingHeight = componentToSplit.height - newShelf.height;
-        
-        if (remainingHeight <= 0) {
-            toast({ variant: 'destructive', title: 'No hay suficiente espacio.' });
+        if (remainingHeight < 0) {
+            toast({ variant: 'destructive', title: 'No hay suficiente espacio' });
             return prev;
         }
 
-        const newOpeningHeight = Math.floor(remainingHeight / 2);
+        const newOpening: CabinetComponent = { ...opening, height: remainingHeight };
         
-        const newComponent1: CabinetComponent = { ...componentToSplit, id: `comp_${Date.now()}_1`, height: newOpeningHeight };
-        const newComponent2: CabinetComponent = { ...componentToSplit, id: `comp_${Date.now()}_2`, height: remainingHeight - newOpeningHeight };
-
         const newComponents = [...prev];
-        newComponents.splice(openingToModifyIndex, 1, newComponent1, newShelf, newComponent2);
-
+        if (remainingHeight > 0) {
+            newComponents.splice(openingIndex, 1, newComp, newOpening);
+        } else {
+            newComponents.splice(openingIndex, 1, newComp);
+        }
+        
         return newComponents.filter(c => c.height > 0);
     });
+  };
+  
+  const handleAddShelf = () => {
+    let openingIndex = components.findIndex(c => c.type === 'opening');
+    if (openingIndex === -1) {
+        if (components.length === 0) {
+             setComponents([{ id: `comp_${Date.now()}`, type: 'opening', height: dimensions.height }]);
+             toast({ title: "Espacio creado", description: "Ahora haz clic en el espacio para añadir un estante." });
+             return;
+        }
+        toast({ title: "No hay espacio abierto para dividir", variant: 'destructive' });
+        return;
+    }
+    const openingId = components[openingIndex].id;
+    addComponentInOpening(openingId, 'shelf');
   };
 
   const handleDoorConfig = (doorCount: number) => {
     setSelectedComponentId(null);
-
-    // Special logic for the vanitory to preserve the drawer(s)
-    if (cabinet.cabinetId.startsWith('vanity')) {
-        const drawers = components.filter(c => c.type === 'drawer');
-        const existingDoors = components.filter(c => c.type === 'door');
-        
-        let drawersToKeep = [...drawers];
-        
-        if (drawersToKeep.length === 0) {
-          drawersToKeep.push({ id: `comp_${Date.now()}_drawer`, type: 'drawer' as const, height: 200 });
-        }
-
-        const totalDrawersHeight = drawersToKeep.reduce((sum, d) => sum + d.height, 0);
-        const doorSectionHeight = dimensions.height - totalDrawersHeight;
-        
-        const doorComponent = { 
-            id: existingDoors[0]?.id || `comp_${Date.now()}_door`, 
-            type: 'door' as const, 
-            height: doorSectionHeight > 0 ? doorSectionHeight : 0,
-        };
-        
-        setComponents([doorComponent, ...drawersToKeep]);
-        return;
-    }
-
-    // Generic logic for other cabinets
     if (doorCount === 1) {
         setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: dimensions.height }]);
     } else if (doorCount === 2) {
-        if (cabinet.type === 'tall' || isCornerCabinet) return;
+        if (cabinet.type === 'tall' || isCornerCabinet || cabinet.cabinetId.startsWith('vanity')) return;
         setComponents([
             { id: `comp_${Date.now()}_1`, type: 'door', height: dimensions.height },
             { id: `comp_${Date.now()}_2`, type: 'door', height: dimensions.height }
@@ -189,13 +148,8 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
   const handleStartWithDrawers = () => {
       setSelectedComponentId(null);
-      if (cabinet.cabinetId.startsWith('vanity')) {
-          const drawerComponent = { id: `comp_${Date.now()}_drawer`, type: 'drawer' as const, height: 200 };
-          const doorComponent = { id: `comp_${Date.now()}_door`, type: 'door' as const, height: dimensions.height - 200 };
-          setComponents([doorComponent, drawerComponent]);
-      } else {
-          setComponents([{ id: `comp_${Date.now()}`, type: 'drawer', height: 180 }]);
-      }
+      setComponents([{ id: `comp_${Date.now()}`, type: 'opening', height: dimensions.height }]);
+      toast({ title: "Espacio Creado", description: "Ahora haz clic en el espacio para añadir cajones."});
   };
 
   const handleUpdateComponentHeight = (id: string, newHeight: number) => {
@@ -216,52 +170,60 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   };
 
   const handleRemoveComponent = (id: string) => {
-    setComponents(prev => prev.filter(c => c.id !== id));
+    const componentToRemove = components.find(c => c.id === id);
+    if (!componentToRemove) return;
+
+    setComponents(prev => {
+        const index = prev.findIndex(c => c.id === id);
+        if (index === -1) return prev;
+
+        const newComponents = [...prev];
+        newComponents.splice(index, 1);
+
+        // If removing a shelf, try to merge adjacent openings
+        if (componentToRemove.type === 'shelf') {
+            const prevComp = newComponents[index - 1];
+            const nextComp = newComponents[index];
+            if (prevComp?.type === 'opening' && nextComp?.type === 'opening') {
+                const mergedOpening: CabinetComponent = {
+                    ...prevComp,
+                    id: `comp_${Date.now()}`,
+                    height: prevComp.height + nextComp.height
+                };
+                newComponents.splice(index - 1, 2, mergedOpening);
+            }
+        }
+        // If there are no components left, create a single opening
+        if (newComponents.length === 0) {
+            return [{ id: `comp_${Date.now()}`, type: 'opening', height: dimensions.height }];
+        }
+
+        return newComponents;
+    });
+
     if (selectedComponentId === id) {
         setSelectedComponentId(null);
     }
+  };
+
+  const handleMoveComponent = (index: number, direction: 'up' | 'down') => {
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= components.length) return;
+
+      setComponents(prev => {
+          const newComps = [...prev];
+          const [moved] = newComps.splice(index, 1);
+          newComps.splice(targetIndex, 0, moved);
+          return newComps;
+      });
   };
   
   const totalComponentsHeight = components.reduce((sum, c) => sum + c.height, 0);
   const remainingHeight = dimensions.height - totalComponentsHeight;
 
   const selectedComponent = components.find(c => c.id === selectedComponentId);
+  const selectedComponentIndex = components.findIndex(c => c.id === selectedComponentId);
 
-  // --- Drag and Drop Logic ---
-    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
-        setDraggedId(id);
-        e.dataTransfer.effectAllowed = 'move';
-    };
-
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>, id: string) => {
-        e.preventDefault();
-        if (id !== dropTargetId) {
-            setDropTargetId(id);
-        }
-    };
-
-    const handleDragEnd = () => {
-        setDraggedId(null);
-        setDropTargetId(null);
-    };
-
-    const handleDrop = () => {
-        if (!draggedId || !dropTargetId || draggedId === dropTargetId) return;
-
-        setComponents(prev => {
-            const newComponents = [...prev];
-            const draggedIndex = newComponents.findIndex(c => c.id === draggedId);
-            const targetIndex = newComponents.findIndex(c => c.id === dropTargetId);
-
-            if (draggedIndex === -1 || targetIndex === -1) return prev;
-            
-            const [draggedItem] = newComponents.splice(draggedIndex, 1);
-            newComponents.splice(targetIndex, 0, draggedItem);
-            
-            return newComponents;
-        });
-    };
-  // --- End Drag and Drop ---
 
   const selectedDrawerPieces = useMemo(() => {
     if (!selectedComponent || selectedComponent.type !== 'drawer') {
@@ -435,54 +397,66 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
                 <div className="space-y-4">
                     <h4 className="font-medium text-sm text-center">Personalizar Componentes</h4>
-                    <div className="grid grid-cols-2 gap-6">
-                        {/* Component List */}
-                        <div className="space-y-4">
-                            <h5 className="font-semibold text-center text-sm">Componentes (de abajo hacia arriba)</h5>
-                            <div 
-                                className="space-y-2 border rounded-md p-2 bg-secondary/20 min-h-[300px]"
-                                onDrop={handleDrop}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDragLeave={() => setDropTargetId(null)}
-                            >
-                                {components.map((comp) => (
-                                    <div
-                                        key={comp.id}
-                                        draggable
-                                        onDragStart={(e) => handleDragStart(e, comp.id)}
-                                        onDragOver={(e) => handleDragOver(e, comp.id)}
-                                        onDragEnd={handleDragEnd}
-                                        onClick={() => setSelectedComponentId(comp.id)}
-                                        className={cn(
-                                            "flex items-center justify-between p-2 rounded-md cursor-grab transition-all bg-background border",
-                                            selectedComponentId === comp.id && 'ring-2 ring-accent',
-                                            draggedId === comp.id && 'opacity-50',
-                                            dropTargetId === comp.id && comp.id !== draggedId && 'outline-2 outline-dashed outline-accent'
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-                                            <span>{comp.type === 'drawer' ? 'Cajón' : comp.type === 'door' ? 'Puerta' : comp.type === 'shelf' ? 'Estante' : 'Espacio Abierto'}</span>
-                                        </div>
-                                        <span className="text-sm text-muted-foreground">{comp.height}mm</span>
-                                    </div>
-                                ))}
-                                 {components.length === 0 && (
-                                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                                        El gabinete está vacío.
-                                    </div>
-                                )}
-                            </div>
-                            {components.length > 0 && !isCornerCabinet && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                        {/* Interactive 2D Layout */}
+                        <div className="space-y-2">
+                             <h5 className="font-semibold text-center text-sm">Maqueta 2D (Interior)</h5>
+                             <div className="relative w-full bg-secondary/30 rounded-md border-2 border-dashed" style={{ height: `${VISUAL_EDITOR_HEIGHT_PX}px` }}>
+                                <div className="absolute inset-0 flex flex-col-reverse">
+                                    {components.map((comp, index) => {
+                                        const visualHeight = (comp.height / dimensions.height) * 100;
+                                        const isSelected = selectedComponentId === comp.id;
+
+                                        return (
+                                            <div
+                                                key={comp.id}
+                                                style={{ height: `${visualHeight}%` }}
+                                                className={cn(
+                                                    "w-full flex items-center justify-center text-xs relative cursor-pointer transition-all",
+                                                    comp.type === 'shelf' ? 'bg-amber-200 dark:bg-amber-800' : 'bg-secondary/80',
+                                                    isSelected && "ring-2 ring-accent z-10",
+                                                    comp.type === 'opening' && 'border-2 border-dashed border-muted-foreground/50 hover:bg-green-500/10'
+                                                )}
+                                                onClick={() => setSelectedComponentId(comp.id)}
+                                            >
+                                                {comp.type === 'shelf' ? '' : 
+                                                    <span className={cn(
+                                                        'text-muted-foreground',
+                                                        isSelected && 'font-bold text-accent-foreground'
+                                                    )}>
+                                                        {comp.type === 'opening' ? `Hueco (${comp.height}mm)` : `${comp.type} (${comp.height}mm)`}
+                                                    </span>
+                                                }
+                                                {isSelected && comp.type === 'opening' && (
+                                                    <div className="absolute inset-0 bg-accent/20 flex flex-col items-center justify-center gap-2 z-20">
+                                                        <p className="text-sm font-semibold">Añadir a hueco:</p>
+                                                        <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); addComponentInOpening(comp.id, 'drawer');}}>Cajón</Button>
+                                                        <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); addComponentInOpening(comp.id, 'shelf');}}>Estante</Button>
+                                                        <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); addComponentInOpening(comp.id, 'door');}}>Puerta</Button>
+                                                    </div>
+                                                )}
+
+                                                {isSelected && comp.type !== 'opening' && (
+                                                    <div className="absolute top-1 right-1 z-20 flex items-center gap-1 bg-background/80 p-1 rounded-md">
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === components.length -1} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'up')}}><ArrowUp className="h-4 w-4"/></Button>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === 0} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'down')}}><ArrowDown className="h-4 w-4"/></Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                             </div>
+                             {components.length > 0 && !isCornerCabinet && (
                                 <div className="text-xs text-muted-foreground space-y-1 pt-2">
                                     <div className="flex justify-between"><span>Suma de alturas:</span> <span>{totalComponentsHeight}mm</span></div>
-                                    <div className={`flex justify-between font-medium ${remainingHeight < 0 ? 'text-destructive' : ''}`}><span>Espacio restante:</span> <span>{remainingHeight}mm</span></div>
+                                    <div className={`flex justify-between font-medium ${remainingHeight !== 0 ? 'text-destructive' : ''}`}><span>Espacio restante:</span> <span>{remainingHeight}mm</span></div>
                                 </div>
                             )}
                         </div>
 
                         {/* Controls & Editor */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 sticky top-4">
                             {isPlacar ? (
                                 <div>
                                     <h5 className="font-semibold mb-2">Configuración Interior</h5>
@@ -498,19 +472,15 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                             <Button variant="outline" onClick={() => handleDoorConfig(1)}>
                                                 1 Puerta
                                             </Button>
-                                            <Button variant="outline" disabled={cabinet.type === 'tall' || isCornerCabinet} onClick={() => handleDoorConfig(2)}>
+                                            <Button variant="outline" disabled={cabinet.type === 'tall' || isCornerCabinet || cabinet.cabinetId.startsWith('vanity')} onClick={() => handleDoorConfig(2)}>
                                                 2 Puertas
                                             </Button>
                                         </div>
                                         <Button variant="outline" className="w-full" onClick={handleStartWithDrawers}>
-                                            <Plus className="mr-2 h-4 w-4" /> Empezar con Cajones
+                                            <Plus className="mr-2 h-4 w-4" /> Empezar con Huecos
                                         </Button>
                                     </div>
                                 </div>
-                            )}
-
-                            {components.length > 0 && components.every(c => c.type === 'drawer') && !isPlacar && (
-                                <Button variant="outline" size="sm" className="w-full" onClick={handleAddAnotherDrawer}>Añadir otro cajón</Button>
                             )}
                             
                             <Separator />
@@ -531,7 +501,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                             type="number"
                                             value={selectedComponent.height}
                                             onChange={(e) => handleUpdateComponentHeight(selectedComponent.id, Number(e.target.value))}
-                                            disabled={selectedComponent.type === 'shelf'}
+                                            disabled={selectedComponent.type === 'shelf' || selectedComponent.type === 'opening'}
                                         />
                                     </div>
 
@@ -596,9 +566,9 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                     )}
                                     
                                     {selectedComponent.type === 'door' && (() => {
-                                        const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity');
-                                        const treatAsHorizontalDoors = cabinet.type !== 'tall' && components.length > 1 && components.every(c => c.type === 'door');
-                                        
+                                        const treatAsHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && components.length > 1 && components.every(c => c.type === 'door');
+                                        const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity') && components.filter(c => c.type === 'door').length > 0;
+
                                         let doorQuantity = 1;
                                         let doorWidth = dimensions.width - 4;
 
@@ -647,7 +617,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                 </div>
                             ) : (
                                 <div className="text-center text-sm text-muted-foreground p-4 flex items-center justify-center h-full">
-                                    <p>Selecciona un componente de la lista para editar sus propiedades.</p>
+                                    <p>Selecciona un componente de la maqueta para editar sus propiedades.</p>
                                 </div>
                             )}
                         </div>
