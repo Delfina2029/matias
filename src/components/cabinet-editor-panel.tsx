@@ -74,14 +74,18 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   useEffect(() => {
     if (selectedComponentId) {
       const index = components.findIndex(c => c.id === selectedComponentId);
-      if (index > 0) { // Position is only relevant for items not at the bottom
-        const position = components.slice(0, index).reduce((sum, c) => sum + c.height, 0);
-        setSelectedComponentPosition(position);
-      } else {
-        setSelectedComponentPosition(0);
+      const isPlacarModule = cabinet.type === 'placar';
+      // The base offset is the thickness of the cabinet's bottom panel.
+      const baseOffset = isPlacarModule ? MELAMINE_THICKNESS : 0;
+      
+      if (index >= 0) {
+        // Calculate position relative to the start of the component list.
+        const positionInComponentList = components.slice(0, index).reduce((sum, c) => sum + c.height, 0);
+        // Add the base offset to get the absolute position from the cabinet floor.
+        setSelectedComponentPosition(positionInComponentList + baseOffset);
       }
     }
-  }, [selectedComponentId, components]);
+  }, [selectedComponentId, components, cabinet.type]);
 
   const handleDimensionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -248,66 +252,68 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   const handleUpdateComponentPosition = (id: string, newPosition: number) => {
     const index = components.findIndex(c => c.id === id);
 
-    if (index <= 0 || index >= components.length) return;
+    if (index === -1) return;
 
-    const openingBefore = components[index - 1];
-    const openingAfter = components[index + 1];
+    const isPlacarModule = cabinet.type === 'placar';
+    const baseOffset = isPlacarModule ? MELAMINE_THICKNESS : 0;
+    const targetPositionInComponentList = newPosition - baseOffset;
 
-    if (openingBefore?.type !== 'opening' || openingAfter?.type !== 'opening') {
-        toast({
-            variant: 'destructive',
-            title: 'Movimiento no válido',
-            description: 'Se necesita espacio flexible (huecos) alrededor del componente para moverlo con precisión.',
-        });
-        return;
-    }
-
-    const currentPosition = components.slice(0, index).reduce((sum, c) => sum + c.height, 0);
-    const delta = newPosition - currentPosition;
-
-    const newBeforeHeight = openingBefore.height + delta;
-    const newAfterHeight = openingAfter.height - delta;
-    
-    if (newBeforeHeight < 0 || newAfterHeight < 0) {
-        toast({
-            variant: 'destructive',
-            title: 'Límite alcanzado',
-            description: 'El movimiento excede el espacio disponible.',
-        });
-        return;
+    if (targetPositionInComponentList < -0.1) { // Allow for small rounding errors
+      toast({
+        variant: 'destructive',
+        title: 'Posición no válida',
+        description: 'La posición no puede ser menor que la base del mueble.',
+      });
+      return;
     }
 
     setComponents(prev => {
-        const prevIndex = prev.findIndex(c => c.id === id);
-        if (prevIndex <= 0 || prevIndex >= prev.length) return prev;
+      const prevIndex = prev.findIndex(c => c.id === id);
+      if (prevIndex <= 0 || prevIndex >= prev.length) {
+        // Cannot move the very first or last item with this method.
+        // This check is important because we need openings before AND after.
+        return prev;
+      }
 
-        const prevOpeningBefore = prev[prevIndex - 1];
-        const prevOpeningAfter = prev[prevIndex + 1];
+      const openingBefore = prev[prevIndex - 1];
+      const openingAfter = prev[prevIndex + 1];
 
-        if (prevOpeningBefore?.type !== 'opening' || prevOpeningAfter?.type !== 'opening') {
-            return prev;
-        }
+      if (openingBefore?.type !== 'opening' || openingAfter?.type !== 'opening') {
+        toast({
+          variant: 'destructive',
+          title: 'Movimiento no válido',
+          description: 'Se necesita espacio flexible (huecos) alrededor del componente para moverlo con precisión.',
+        });
+        return prev;
+      }
 
-        const prevPosition = prev.slice(0, prevIndex).reduce((sum, c) => sum + c.height, 0);
-        const prevDelta = newPosition - prevPosition;
+      const prevPositionInComponentList = prev.slice(0, prevIndex).reduce((sum, c) => sum + c.height, 0);
+      const targetPos = newPosition - baseOffset;
+      const delta = targetPos - prevPositionInComponentList;
 
-        const newPrevBeforeHeight = prevOpeningBefore.height + prevDelta;
-        const newPrevAfterHeight = prevOpeningAfter.height - prevDelta;
-        
-        if (newPrevBeforeHeight < 0 || newPrevAfterHeight < 0) {
-            return prev;
-        }
-        
-        const newComponents = [...prev];
-        newComponents[prevIndex - 1] = { ...prevOpeningBefore, height: newPrevBeforeHeight };
-        newComponents[prevIndex + 1] = { ...prevOpeningAfter, height: newPrevAfterHeight };
+      const newBeforeHeight = openingBefore.height + delta;
+      const newAfterHeight = openingAfter.height - delta;
 
-        return newComponents.filter(c => c.height > 0.1);
+      if (newBeforeHeight < 0 || newAfterHeight < 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Límite alcanzado',
+          description: 'El movimiento excede el espacio disponible.',
+        });
+        return prev;
+      }
+
+      const newComponents = [...prev];
+      newComponents[prevIndex - 1] = { ...openingBefore, height: newBeforeHeight };
+      newComponents[prevIndex + 1] = { ...openingAfter, height: newAfterHeight };
+
+      return newComponents.filter(c => c.height > 0.1);
     });
   };
-
+  
+  const internalHeight = isPlacar ? dimensions.height - (2 * MELAMINE_THICKNESS) : dimensions.height;
   const totalComponentsHeight = components.reduce((sum, c) => sum + c.height, 0);
-  const remainingHeight = dimensions.height - totalComponentsHeight;
+  const remainingHeight = internalHeight - totalComponentsHeight;
 
   const selectedComponent = components.find(c => c.id === selectedComponentId);
 
@@ -528,7 +534,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                 <div className="relative w-full bg-secondary/30 rounded-md border-2 border-dashed" style={{ height: `${VISUAL_EDITOR_HEIGHT_PX}px` }}>
                                     <div className="absolute inset-0 flex flex-col-reverse">
                                         {components.map((comp, index) => {
-                                            const visualHeight = (comp.height / dimensions.height) * 100;
+                                            const visualHeight = (comp.height / internalHeight) * 100;
                                             const isSelected = selectedComponentId === comp.id;
 
                                             return (
@@ -612,7 +618,6 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                                         type="number"
                                                         value={Math.round(selectedComponentPosition)}
                                                         onChange={(e) => handleUpdateComponentPosition(selectedComponent.id, Number(e.target.value))}
-                                                        disabled={components.findIndex(c => c.id === selectedComponent.id) === 0}
                                                     />
                                                     <p className="text-xs text-muted-foreground">Distancia hasta la base del componente.</p>
                                                 </div>
