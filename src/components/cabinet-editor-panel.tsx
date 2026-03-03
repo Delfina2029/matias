@@ -251,13 +251,12 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   
   const handleUpdateComponentPosition = (id: string, newPosition: number) => {
     const index = components.findIndex(c => c.id === id);
-
     if (index === -1) return;
-
+  
     const isPlacarModule = cabinet.type === 'placar';
     const baseOffset = isPlacarModule ? MELAMINE_THICKNESS : 0;
     const targetPositionInComponentList = newPosition - baseOffset;
-
+  
     if (targetPositionInComponentList < -0.1) { // Allow for small rounding errors
       toast({
         variant: 'destructive',
@@ -266,48 +265,65 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
       });
       return;
     }
-
+  
+    const prevIndex = components.findIndex(c => c.id === id);
+    // This check is important because we need openings before AND after.
+    if (prevIndex <= 0 || prevIndex >= components.length - 1) {
+      return;
+    }
+  
+    const openingBefore = components[prevIndex - 1];
+    const openingAfter = components[prevIndex + 1];
+  
+    if (openingBefore?.type !== 'opening' || openingAfter?.type !== 'opening') {
+      toast({
+        variant: 'destructive',
+        title: 'Movimiento no válido',
+        description: 'Se necesita espacio flexible (huecos) alrededor del componente para moverlo con precisión.',
+      });
+      return;
+    }
+  
+    const prevPositionInComponentList = components.slice(0, prevIndex).reduce((sum, c) => sum + c.height, 0);
+    const targetPos = newPosition - baseOffset;
+    const delta = targetPos - prevPositionInComponentList;
+  
+    const newBeforeHeight = openingBefore.height + delta;
+    const newAfterHeight = openingAfter.height - delta;
+  
+    if (newBeforeHeight < 0 || newAfterHeight < 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Límite alcanzado',
+        description: 'El movimiento excede el espacio disponible.',
+      });
+      return;
+    }
+    
+    // Now that all validations are done, update the state.
     setComponents(prev => {
-      const prevIndex = prev.findIndex(c => c.id === id);
-      if (prevIndex <= 0 || prevIndex >= prev.length) {
-        // Cannot move the very first or last item with this method.
-        // This check is important because we need openings before AND after.
-        return prev;
-      }
+        const newComponents = [...prev]; // Create a copy of the current state array
+        
+        const currentIndex = newComponents.findIndex(c => c.id === id);
+        if (currentIndex <= 0 || currentIndex >= newComponents.length - 1) return prev;
 
-      const openingBefore = prev[prevIndex - 1];
-      const openingAfter = prev[prevIndex + 1];
+        const currentOpeningBefore = newComponents[currentIndex - 1];
+        const currentOpeningAfter = newComponents[currentIndex + 1];
+        if (currentOpeningBefore?.type !== 'opening' || currentOpeningAfter?.type !== 'opening') return prev;
 
-      if (openingBefore?.type !== 'opening' || openingAfter?.type !== 'opening') {
-        toast({
-          variant: 'destructive',
-          title: 'Movimiento no válido',
-          description: 'Se necesita espacio flexible (huecos) alrededor del componente para moverlo con precisión.',
-        });
-        return prev;
-      }
+        const currentPrevPositionInComponentList = newComponents.slice(0, currentIndex).reduce((sum, c) => sum + c.height, 0);
+        const currentTargetPos = newPosition - baseOffset;
+        const currentDelta = currentTargetPos - currentPrevPositionInComponentList;
+        
+        const currentNewBeforeHeight = currentOpeningBefore.height + currentDelta;
+        const currentNewAfterHeight = currentOpeningAfter.height - currentDelta;
 
-      const prevPositionInComponentList = prev.slice(0, prevIndex).reduce((sum, c) => sum + c.height, 0);
-      const targetPos = newPosition - baseOffset;
-      const delta = targetPos - prevPositionInComponentList;
+        if (currentNewBeforeHeight < 0 || currentNewAfterHeight < 0) return prev;
 
-      const newBeforeHeight = openingBefore.height + delta;
-      const newAfterHeight = openingAfter.height - delta;
+        newComponents[currentIndex - 1] = { ...currentOpeningBefore, height: currentNewBeforeHeight };
+        newComponents[currentIndex + 1] = { ...currentOpeningAfter, height: currentNewAfterHeight };
 
-      if (newBeforeHeight < 0 || newAfterHeight < 0) {
-        toast({
-          variant: 'destructive',
-          title: 'Límite alcanzado',
-          description: 'El movimiento excede el espacio disponible.',
-        });
-        return prev;
-      }
-
-      const newComponents = [...prev];
-      newComponents[prevIndex - 1] = { ...openingBefore, height: newBeforeHeight };
-      newComponents[prevIndex + 1] = { ...openingAfter, height: newAfterHeight };
-
-      return newComponents.filter(c => c.height > 0.1);
+        return newComponents.filter(c => c.height > 0.1);
     });
   };
   
@@ -748,3 +764,5 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
     </div>
   );
 }
+
+    
