@@ -5,6 +5,8 @@ import type { PlacedCabinet, CabinetComponent, Appearance } from '@/lib/types';
 import { KitchenLayout } from './kitchen-layout';
 import { cabinetData } from '@/lib/cabinets';
 import { EditorSidebar } from './editor-sidebar';
+import { CabinetSelector } from './cabinet-selector';
+import { Header } from '@/components/layout/header';
 
 export function KitchenBuilder() {
   const [placedCabinets, setPlacedCabinets] = useState<PlacedCabinet[]>([]);
@@ -100,29 +102,34 @@ export function KitchenBuilder() {
   }, [selectedInstanceId]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-6 p-6 h-[calc(100vh-4rem)]">
-      <div className="h-full min-h-0">
-        <KitchenLayout
-            placedCabinets={placedCabinets}
-            onClearLayout={clearLayout}
-            appearance={appearance}
-            selectedInstanceId={selectedInstanceId}
-            onSelectInstance={setSelectedInstanceId}
-            onUpdateTransform={handleUpdateCabinetTransform}
-            onRemoveCabinet={removeCabinet}
-        />
-      </div>
-      <div className="h-full min-h-0">
-        <EditorSidebar
-            placedCabinets={placedCabinets}
-            appearance={appearance}
-            onAppearanceChange={setAppearance}
-            onRemoveCabinet={removeCabinet}
-            onUpdateCabinet={handleUpdateCabinet}
-            onAddCabinet={addCabinet}
-            selectedInstanceId={selectedInstanceId}
-            onSelectInstance={setSelectedInstanceId}
-        />
+    <div className="flex flex-col h-screen">
+      <Header />
+      <div className="grid grid-cols-[380px_1fr_450px] gap-4 p-4 flex-1 overflow-hidden">
+        <div className="h-full min-h-0">
+          <CabinetSelector onSelectCabinet={addCabinet} />
+        </div>
+        <div className="h-full min-h-0">
+          <KitchenLayout
+              placedCabinets={placedCabinets}
+              onClearLayout={clearLayout}
+              appearance={appearance}
+              selectedInstanceId={selectedInstanceId}
+              onSelectInstance={setSelectedInstanceId}
+              onUpdateTransform={handleUpdateCabinetTransform}
+              onRemoveCabinet={removeCabinet}
+          />
+        </div>
+        <div className="h-full min-h-0">
+          <EditorSidebar
+              placedCabinets={placedCabinets}
+              appearance={appearance}
+              onAppearanceChange={setAppearance}
+              onRemoveCabinet={removeCabinet}
+              onUpdateCabinet={handleUpdateCabinet}
+              selectedInstanceId={selectedInstanceId}
+              onSelectInstance={setSelectedInstanceId}
+          />
+        </div>
       </div>
     </div>
   );
