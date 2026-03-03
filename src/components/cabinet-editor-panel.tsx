@@ -439,7 +439,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                              </div>
                         </div>
 
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                         <div className="grid grid-cols-1 gap-6">
                             {/* Interactive 2D Layout */}
                             <div className="space-y-2">
                                 <h5 className="font-semibold text-center text-sm">Maqueta 2D (Interior)</h5>
@@ -482,8 +482,8 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
                                                     {isSelected && comp.type !== 'opening' && (
                                                         <div className="absolute top-1 right-1 z-20 flex items-center gap-1 bg-background/80 p-1 rounded-md">
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === components.length -1} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'up')}}><ArrowUp className="h-4 w-4"/></Button>
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === 0} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'down')}}><ArrowDown className="h-4 w-4"/></Button>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === components.length -1} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'down')}}><ArrowUp className="h-4 w-4"/></Button>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === 0} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'up')}}><ArrowDown className="h-4 w-4"/></Button>
                                                         </div>
                                                     )}
                                                 </div>
