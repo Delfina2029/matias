@@ -102,34 +102,51 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   };
 
   const addComponentInOpening = (openingId: string, type: ActiveTool) => {
+    const opening = components.find(c => c.id === openingId);
+    if (!opening) return;
+
+    let newCompHeight: number;
+    let newCompType: CabinetComponent['type'] = type;
+
+    if (type === 'shelf') {
+        newCompHeight = MELAMINE_THICKNESS;
+    } else if (type === 'hanging-rail') {
+        newCompHeight = 80;
+    } else { // drawer or door
+        newCompHeight = Math.max(150, opening.height / 2);
+    }
+    
+    if (opening.height < newCompHeight + 10) { // need at least 10mm of openings left
+        toast({ variant: 'destructive', title: 'No hay suficiente espacio' });
+        return;
+    }
+
     setComponents(prev => {
         const openingIndex = prev.findIndex(c => c.id === openingId);
         if (openingIndex === -1) return prev;
 
-        const opening = prev[openingIndex];
+        const currentOpening = prev[openingIndex];
+        
         let newComp: CabinetComponent;
-
         if (type === 'shelf') {
             newComp = { id: `comp_${Date.now()}`, type: 'shelf', height: MELAMINE_THICKNESS };
         } else if (type === 'hanging-rail') {
             newComp = { id: `comp_${Date.now()}`, type: 'hanging-rail', height: 80 };
         } else { // drawer or door
-            const defaultHeight = Math.max(150, opening.height / 2);
+            const defaultHeight = Math.max(150, currentOpening.height / 2);
             newComp = { id: `comp_${Date.now()}`, type: type, height: defaultHeight };
         }
-        
-        if (opening.height < newComp.height + 10) { // need at least 10mm of openings left
-            toast({ variant: 'destructive', title: 'No hay suficiente espacio' });
-            return prev;
-        }
+
+        // Re-check just in case state changed
+        if (currentOpening.height < newComp.height + 10) return prev;
         
         // Split the opening, placing the new component in the middle.
-        const remainingHeight = opening.height - newComp.height;
+        const remainingHeight = currentOpening.height - newComp.height;
         const opening1Height = remainingHeight / 2;
         const opening2Height = remainingHeight / 2;
 
-        const newOpening1: CabinetComponent = { ...opening, id: `comp_open_${Date.now()}_1`, height: opening1Height };
-        const newOpening2: CabinetComponent = { ...opening, id: `comp_open_${Date.now()}_2`, height: opening2Height };
+        const newOpening1: CabinetComponent = { ...currentOpening, id: `comp_open_${Date.now()}_1`, height: opening1Height };
+        const newOpening2: CabinetComponent = { ...currentOpening, id: `comp_open_${Date.now()}_2`, height: opening2Height };
 
         const newComponents = [...prev];
         
@@ -228,46 +245,66 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
       });
   };
   
-    const handleUpdateComponentPosition = (id: string, newPosition: number) => {
-        setComponents(prev => {
-            const index = prev.findIndex(c => c.id === id);
+  const handleUpdateComponentPosition = (id: string, newPosition: number) => {
+    const index = components.findIndex(c => c.id === id);
 
-            if (index <= 0 || index >= prev.length) return prev;
+    if (index <= 0 || index >= components.length) return;
 
-            const currentPosition = prev.slice(0, index).reduce((sum, c) => sum + c.height, 0);
-            const delta = newPosition - currentPosition;
-            
-            const newComponents = [...prev];
-            const openingBefore = newComponents[index - 1];
-            const openingAfter = newComponents[index + 1];
+    const openingBefore = components[index - 1];
+    const openingAfter = components[index + 1];
 
-            if (openingBefore?.type !== 'opening' || openingAfter?.type !== 'opening') {
-                toast({
-                    variant: 'destructive',
-                    title: 'Movimiento no válido',
-                    description: 'Se necesita espacio flexible (huecos) alrededor del componente para moverlo con precisión.',
-                });
-                return prev;
-            }
-
-            const newBeforeHeight = openingBefore.height + delta;
-            const newAfterHeight = openingAfter.height - delta;
-            
-            if (newBeforeHeight < 0 || newAfterHeight < 0) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Límite alcanzado',
-                    description: 'El movimiento excede el espacio disponible.',
-                });
-                return prev;
-            }
-            
-            newComponents[index - 1] = { ...openingBefore, height: newBeforeHeight };
-            newComponents[index + 1] = { ...openingAfter, height: newAfterHeight };
-
-            return newComponents.filter(c => c.height > 0.1);
+    if (openingBefore?.type !== 'opening' || openingAfter?.type !== 'opening') {
+        toast({
+            variant: 'destructive',
+            title: 'Movimiento no válido',
+            description: 'Se necesita espacio flexible (huecos) alrededor del componente para moverlo con precisión.',
         });
-    };
+        return;
+    }
+
+    const currentPosition = components.slice(0, index).reduce((sum, c) => sum + c.height, 0);
+    const delta = newPosition - currentPosition;
+
+    const newBeforeHeight = openingBefore.height + delta;
+    const newAfterHeight = openingAfter.height - delta;
+    
+    if (newBeforeHeight < 0 || newAfterHeight < 0) {
+        toast({
+            variant: 'destructive',
+            title: 'Límite alcanzado',
+            description: 'El movimiento excede el espacio disponible.',
+        });
+        return;
+    }
+
+    setComponents(prev => {
+        const prevIndex = prev.findIndex(c => c.id === id);
+        if (prevIndex <= 0 || prevIndex >= prev.length) return prev;
+
+        const prevOpeningBefore = prev[prevIndex - 1];
+        const prevOpeningAfter = prev[prevIndex + 1];
+
+        if (prevOpeningBefore?.type !== 'opening' || prevOpeningAfter?.type !== 'opening') {
+            return prev;
+        }
+
+        const prevPosition = prev.slice(0, prevIndex).reduce((sum, c) => sum + c.height, 0);
+        const prevDelta = newPosition - prevPosition;
+
+        const newPrevBeforeHeight = prevOpeningBefore.height + prevDelta;
+        const newPrevAfterHeight = prevOpeningAfter.height - prevDelta;
+        
+        if (newPrevBeforeHeight < 0 || newPrevAfterHeight < 0) {
+            return prev;
+        }
+        
+        const newComponents = [...prev];
+        newComponents[prevIndex - 1] = { ...prevOpeningBefore, height: newPrevBeforeHeight };
+        newComponents[prevIndex + 1] = { ...prevOpeningAfter, height: newPrevAfterHeight };
+
+        return newComponents.filter(c => c.height > 0.1);
+    });
+  };
 
   const totalComponentsHeight = components.reduce((sum, c) => sum + c.height, 0);
   const remainingHeight = dimensions.height - totalComponentsHeight;
