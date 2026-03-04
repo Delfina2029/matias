@@ -477,7 +477,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                     <h4 className="font-medium mb-2 text-sm">Dimensiones Generales</h4>
                     <div className="grid gap-4 py-4">
                         {isCornerCabinet ? (
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="width">Espacio en Pared (mm)</Label>
                                 <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
@@ -496,7 +496,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                             </div>
                         </div>
                         ) : (
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                                 <Label htmlFor="width">Ancho (mm)</Label>
                                 <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
@@ -518,7 +518,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
                 <div className="space-y-4">
                     <h4 className="font-medium text-sm text-center">Personalizar Componentes</h4>
-                    <div className="grid grid-cols-[180px_1fr] gap-6 items-start">
+                    <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-6 items-start">
                         {/* Toolbar */}
                         <div className="space-y-3 sticky top-4">
                             <h5 className="font-semibold text-sm px-2">Añadir Componente</h5>

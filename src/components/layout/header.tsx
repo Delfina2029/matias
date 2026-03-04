@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 
 function Logo({ className }: { className?: string }) {
   return (
@@ -22,17 +23,19 @@ function Logo({ className }: { className?: string }) {
 }
 
 
-export function Header() {
+export function Header({ children }: { children?: ReactNode }) {
   return (
     <header className="border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <Logo />
-            <h1 className="text-xl font-bold font-headline text-foreground">
-              Constructor de Cocinas
-            </h1>
-          </div>
+          {children ? children : (
+            <div className="flex items-center gap-2">
+              <Logo />
+              <h1 className="text-xl font-bold font-headline text-foreground">
+                Constructor de Cocinas
+              </h1>
+            </div>
+          )}
         </div>
       </div>
     </header>

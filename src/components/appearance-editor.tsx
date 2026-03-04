@@ -49,7 +49,7 @@ export function AppearanceEditor({ appearance, setAppearance }: AppearanceEditor
     <div className="space-y-6">
       <div>
         <h4 className="font-semibold mb-3">Color de Frentes (Puertas/Cajones)</h4>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {WOOD_COLORS.map((c) => (
             <ColorSwatch
               key={c.name}
@@ -63,7 +63,7 @@ export function AppearanceEditor({ appearance, setAppearance }: AppearanceEditor
       </div>
        <div>
         <h4 className="font-semibold mb-3">Color de Cuerpo</h4>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {CARCASS_COLORS.map((c) => (
             <ColorSwatch
               key={c.name}
@@ -77,7 +77,7 @@ export function AppearanceEditor({ appearance, setAppearance }: AppearanceEditor
       </div>
       <div>
         <h4 className="font-semibold mb-3">Color de Encimera</h4>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {COUNTERTOP_COLORS.map((c) => (
             <ColorSwatch
               key={c.name}
