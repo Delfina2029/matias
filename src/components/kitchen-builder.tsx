@@ -8,7 +8,7 @@ import { EditorSidebar } from './editor-sidebar';
 import { CabinetSelector } from './cabinet-selector';
 import { Header } from '@/components/layout/header';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { PanelLeft, PanelRight } from 'lucide-react';
 
@@ -136,6 +136,8 @@ export function KitchenBuilder() {
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" className="p-0 w-[320px]">
+                            <SheetTitle className="sr-only">Selector de Gabinetes</SheetTitle>
+                            <SheetDescription className="sr-only">Elige los gabinetes para añadir a tu diseño.</SheetDescription>
                             <CabinetSelector onSelectCabinet={addCabinetAndCloseSheet} />
                         </SheetContent>
                     </Sheet>
@@ -152,6 +154,8 @@ export function KitchenBuilder() {
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="right" className="p-0 w-[320px] max-w-[90vw]">
+                            <SheetTitle className="sr-only">Panel de Edición</SheetTitle>
+                            <SheetDescription className="sr-only">Edita las propiedades de los gabinetes, gestiona la lista de corte y ajusta la apariencia del diseño.</SheetDescription>
                             <EditorSidebar
                                 placedCabinets={placedCabinets}
                                 appearance={appearance}
