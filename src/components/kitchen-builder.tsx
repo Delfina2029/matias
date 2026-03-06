@@ -91,6 +91,13 @@ export function KitchenBuilder() {
     }
   };
 
+  const selectInstanceAndOpenSheet = (id: string | null) => {
+    setSelectedInstanceId(id);
+    if (id && isMobile) {
+        setRightSheetOpen(true);
+    }
+  }
+
   const addCabinet = (cabinetId: string) => {
     const cabinetInfo = cabinetData.find((c) => c.id === cabinetId);
     if (!cabinetInfo) return;
@@ -143,6 +150,7 @@ export function KitchenBuilder() {
       components: defaultComponents,
     };
     setPlacedCabinets((prev) => [...prev, newCabinet]);
+    selectInstanceAndOpenSheet(newCabinet.instanceId);
   };
   
   const handleUpdateCabinet = (updatedCabinet: PlacedCabinet) => {
@@ -181,12 +189,6 @@ export function KitchenBuilder() {
     }
   };
 
-  const selectInstanceAndOpenSheet = (id: string | null) => {
-    setSelectedInstanceId(id);
-    if (id && isMobile) {
-        setRightSheetOpen(true);
-    }
-  }
 
   if (isMobile) {
     return (
@@ -266,7 +268,7 @@ export function KitchenBuilder() {
               onClearLayout={clearLayout}
               appearance={appearance}
               selectedInstanceId={selectedInstanceId}
-              onSelectInstance={setSelectedInstanceId}
+              onSelectInstance={selectInstanceAndOpenSheet}
               onUpdateTransform={handleUpdateCabinetTransform}
               onRemoveCabinet={removeCabinet}
               onGenerateRender={handleGenerateRender}
@@ -282,7 +284,7 @@ export function KitchenBuilder() {
               onUpdateCabinet={handleUpdateCabinet}
               onAddCabinet={addCabinet}
               selectedInstanceId={selectedInstanceId}
-              onSelectInstance={setSelectedInstanceId}
+              onSelectInstance={selectInstanceAndOpenSheet}
           />
         </div>
       </div>
