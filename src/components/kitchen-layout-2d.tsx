@@ -1,5 +1,5 @@
 'use client';
-import type { PlacedCabinet } from '@/lib/types';
+import type { PlacedCabinet, CabinetComponent } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { cabinetData } from '@/lib/cabinets';
 import React from 'react';
@@ -11,7 +11,86 @@ interface KitchenLayout2DProps {
     onSelectInstance: (id: string | null) => void;
 }
 
-const PIXELS_PER_METER = 120;
+const PIXELS_PER_MM = 0.2;
+const MELAMINE_THICKNESS = 18;
+
+const CabinetFrontElevation = ({
+    cabinet,
+    isSelected,
+    onSelect,
+}: {
+    cabinet: PlacedCabinet;
+    isSelected: boolean;
+    onSelect: (id: string) => void;
+}) => {
+    const cabinetWidthPx = cabinet.width * PIXELS_PER_MM;
+    const cabinetHeightPx = cabinet.height * PIXELS_PER_MM;
+
+    const cabinetInfo = cabinetData.find(c => c.id === cabinet.cabinetId);
+
+    const renderComponents = (components: CabinetComponent[], parentHeight: number) => {
+        // Special case for side-by-side doors
+        const treatAsHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && components.length > 1 && components.every(c => c.type === 'door');
+        const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity') && components.some(c => c.type === 'door');
+
+        if (treatAsHorizontalDoors || isVanityTwoDoor) {
+            const doorCount = isVanityTwoDoor ? 2 : components.length;
+            return (
+                <div className="flex h-full w-full">
+                    {Array.from({ length: doorCount }).map((_, i) => (
+                        <div key={i} className="h-full flex-1 border-r border-foreground/40 last:border-r-0" />
+                    ))}
+                </div>
+            )
+        }
+        
+        // Default: vertical stack of components
+        return (
+            <div className="flex flex-col-reverse h-full w-full">
+                {components.map(comp => {
+                    const compHeightPercent = (comp.height / parentHeight) * 100;
+                    return (
+                        <div 
+                            key={comp.id} 
+                            style={{ height: `${compHeightPercent}%`}}
+                            className="w-full border-t border-foreground/40 first:border-t-0"
+                        />
+                    )
+                })}
+            </div>
+        )
+    };
+
+    return (
+        <div 
+            className={cn(
+                "flex flex-col items-center gap-2 cursor-pointer p-3 rounded-lg transition-colors",
+                isSelected ? "bg-accent/10 ring-2 ring-accent" : "hover:bg-accent/5"
+            )}
+            onClick={(e) => {
+                e.stopPropagation();
+                onSelect(cabinet.instanceId);
+            }}
+        >
+            <div
+                style={{
+                    width: cabinetWidthPx,
+                    height: cabinetHeightPx,
+                }}
+                className="bg-transparent border-2 border-foreground/60 flex items-center justify-center"
+            >
+                {/* Carcass visuals are implied by the main border. This div is for interior components. */}
+                {renderComponents(cabinet.components, cabinet.height)}
+            </div>
+
+            <div className="text-center w-full" style={{ maxWidth: cabinetWidthPx }}>
+                <p className="text-sm font-medium truncate">{cabinetInfo?.name || cabinet.cabinetId}</p>
+                <p className="text-xs text-muted-foreground">{`${cabinet.width}x${cabinet.height}mm`}</p>
+            </div>
+        </div>
+    )
+}
+
 
 export function KitchenLayout2D({
     placedCabinets,
@@ -20,104 +99,25 @@ export function KitchenLayout2D({
 }: KitchenLayout2DProps) {
     return (
         <div 
-            className="flex-1 bg-muted/20 overflow-auto relative p-4 flex items-center justify-center"
+            className="flex-1 bg-muted/20 overflow-auto p-4"
             onClick={() => onSelectInstance(null)}
         >
-            <div 
-                className="relative bg-background rounded-md"
-                style={{
-                    width: 6 * PIXELS_PER_METER,
-                    height: 6 * PIXELS_PER_METER,
-                    backgroundImage: 'linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px)',
-                    backgroundSize: '20px 20px',
-                }}
-            >
-                {/* Walls */}
-                <div className="absolute -inset-2 border border-foreground/30 rounded-lg" />
-                
-                {placedCabinets.map(cabinet => {
-                    const isSelected = cabinet.instanceId === selectedInstanceId;
-                    const isCorner = cabinet.cabinetId === 'base-corner-900';
-                    
-                    const cabinetWidthPx = (cabinet.width / 1000) * PIXELS_PER_METER;
-                    const cabinetDepthPx = (cabinet.depth / 1000) * PIXELS_PER_METER;
-                    
-                    const style: React.CSSProperties = {
-                        left: `calc(50% + ${cabinet.position[0] * PIXELS_PER_METER}px)`,
-                        top: `calc(50% + ${cabinet.position[2] * PIXELS_PER_METER}px)`, // use Z for top
-                        transform: `translate(-50%, -50%) rotate(${cabinet.rotation[1]}rad)`,
-                        width: cabinetWidthPx,
-                        height: cabinetDepthPx,
-                    };
-                    
-                    const treatAsHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && cabinet.components.length > 1 && cabinet.components.every(c => c.type === 'door');
-                    const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity') && cabinet.components.some(c => c.type === 'door');
-
-                    let content;
-
-                    if (treatAsHorizontalDoors) {
-                         content = (
-                            <div className="w-full h-full flex items-stretch">
-                                {cabinet.components.map((comp, index) => (
-                                    <div key={comp.id} className={cn(
-                                        "h-full flex-1",
-                                        index < cabinet.components.length - 1 && "border-r-2 border-foreground/50"
-                                    )}>
-                                    </div>
-                                ))}
-                            </div>
-                        );
-                    } else if (isVanityTwoDoor) {
-                        content = (
-                            <div className="w-full h-full flex items-stretch">
-                                <div className="h-full flex-1 border-r-2 border-foreground/50" />
-                                <div className="h-full flex-1" />
-                            </div>
-                        );
-                    } else {
-                        content = (
-                            <div className="w-full h-full relative">
-                                <div className="absolute bottom-0 left-0 w-full h-[3px] bg-foreground/50" />
-                            </div>
-                        );
-                    }
-
-                    return (
-                        <div
+            {placedCabinets.length === 0 ? (
+                 <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <p>Añade gabinetes para ver sus alzados aquí.</p>
+                </div>
+            ) : (
+                <div className="flex flex-row flex-wrap items-start justify-center gap-x-6 gap-y-8">
+                    {placedCabinets.map(cabinet => (
+                        <CabinetFrontElevation
                             key={cabinet.instanceId}
-                            className={cn(
-                                'absolute bg-background/80 border-2 text-card-foreground shadow-sm cursor-pointer transition-all',
-                                isSelected ? 'border-primary z-10' : 'border-foreground/70'
-                            )}
-                            style={style}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectInstance(cabinet.instanceId)
-                            }}
-                        >
-                            {content}
-
-                           {isSelected && (
-                                <>
-                                    {/* Width dimension */}
-                                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-foreground bg-background px-1 rounded whitespace-nowrap select-none">{cabinet.width}mm</div>
-                                    <div className="absolute bottom-0 left-0 w-full h-0 border-t border-dashed border-foreground/50 translate-y-6">
-                                        <div className="absolute left-0 -top-1 w-0 h-2 border-l border-foreground/50"></div>
-                                        <div className="absolute right-0 -top-1 w-0 h-2 border-l border-foreground/50"></div>
-                                    </div>
-                                    
-                                    {/* Depth dimension */}
-                                    <div className="absolute -right-7 top-1/2 -translate-y-1/2 rotate-90 text-xs font-semibold text-foreground bg-background px-1 rounded whitespace-nowrap select-none">{cabinet.depth}mm</div>
-                                     <div className="absolute top-0 right-0 h-full w-0 border-l border-dashed border-foreground/50 translate-x-6">
-                                        <div className="absolute top-0 -left-1 h-0 w-2 border-t border-foreground/50"></div>
-                                        <div className="absolute bottom-0 -left-1 h-0 w-2 border-t border-foreground/50"></div>
-                                    </div>
-                                </>
-                           )}
-                        </div>
-                    );
-                })}
-            </div>
+                            cabinet={cabinet}
+                            isSelected={cabinet.instanceId === selectedInstanceId}
+                            onSelect={onSelectInstance}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
