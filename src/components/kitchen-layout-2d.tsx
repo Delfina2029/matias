@@ -35,28 +35,42 @@ export function KitchenLayout2D({
                 <div className="absolute -inset-2 border-2 border-foreground/30 rounded-lg" />
                 
                 {placedCabinets.map(cabinet => {
-                    const cabinetWidth = (cabinet.width / 1000) * PIXELS_PER_METER;
-                    const cabinetDepth = (cabinet.depth / 1000) * PIXELS_PER_METER;
-                    
                     const cabinetInfo = cabinetData.find(c => c.id === cabinet.cabinetId);
-                    
                     const isSelected = cabinet.instanceId === selectedInstanceId;
+                    const isCorner = cabinet.cabinetId === 'base-corner-900';
+                    
+                    const style: React.CSSProperties = {
+                        left: `calc(50% + ${cabinet.position[0] * PIXELS_PER_METER}px)`,
+                        top: `calc(50% + ${cabinet.position[2] * PIXELS_PER_METER}px)`, // use Z for top
+                        transform: `translate(-50%, -50%) rotate(${cabinet.rotation[1]}rad)`
+                    };
+
+                    if (isCorner && cabinet.depth2) {
+                        const wallSpace = (cabinet.width / 1000) * PIXELS_PER_METER;
+                        // Use cabinet.width for wall space as per data structure
+                        const depth1p = (cabinet.depth / cabinet.width) * 100;
+                        const depth2p = (cabinet.depth2 / cabinet.width) * 100;
+
+                        style.width = wallSpace;
+                        style.height = wallSpace;
+                        // This polygon assumes the cabinet is in a top-left corner, opening towards bottom-right
+                        style.clipPath = `polygon(0% 0%, 100% 0%, 100% ${depth2p}%, ${depth1p}% ${depth2p}%, ${depth1p}% 100%, 0% 100%)`;
+                    } else {
+                        const cabinetWidth = (cabinet.width / 1000) * PIXELS_PER_METER;
+                        const cabinetDepth = (cabinet.depth / 1000) * PIXELS_PER_METER;
+                        style.width = cabinetWidth;
+                        style.height = cabinetDepth;
+                    }
 
                     return (
                         <div
                             key={cabinet.instanceId}
                             className={cn(
-                                'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-[10px] text-center p-1 cursor-pointer hover:bg-secondary transition-all rounded-sm',
+                                'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-[10px] text-center p-1 cursor-pointer hover:bg-secondary transition-all',
+                                isCorner ? 'rounded-none' : 'rounded-sm',
                                 isSelected && 'ring-4 ring-accent z-10 bg-accent/20'
                             )}
-                            style={{
-                                width: cabinetWidth,
-                                height: cabinetDepth,
-                                // Position relative to center of parent, adjusted for object center
-                                left: `calc(50% + ${cabinet.position[0] * PIXELS_PER_METER}px)`,
-                                top: `calc(50% + ${cabinet.position[2] * PIXELS_PER_METER}px)`, // use Z for top
-                                transform: `translate(-50%, -50%) rotate(${cabinet.rotation[1]}rad)`
-                            }}
+                            style={style}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onSelectInstance(cabinet.instanceId)
