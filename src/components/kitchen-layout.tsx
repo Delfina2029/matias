@@ -10,7 +10,7 @@ import {
 } from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Button } from './ui/button';
-import { Trash2, Edit, RotateCcw, Move, LayoutGrid, View as ViewIcon } from 'lucide-react';
+import { Trash2, Edit, RotateCcw, Move, LayoutGrid, View as ViewIcon, Sparkles, Loader2 } from 'lucide-react';
 import * as THREE from 'three';
 import { KitchenLayout2D } from './kitchen-layout-2d';
 
@@ -187,7 +187,7 @@ const Scene = memo(function Scene({
   transformMode,
   onSelectInstance,
   onUpdateTransform,
-}: Omit<KitchenLayoutProps, 'onClearLayout' | 'onRemoveCabinet'> & { transformMode: 'translate' | 'rotate' }) {
+}: Omit<KitchenLayoutProps, 'onClearLayout' | 'onRemoveCabinet' | 'onGenerateRender' | 'isRendering'> & { transformMode: 'translate' | 'rotate' }) {
   const controlRef = useRef<any>(null);
   const orbitControlsRef = useRef<any>(null);
   const sceneRef = useRef<THREE.Group>(null);
@@ -381,13 +381,13 @@ const Scene = memo(function Scene({
 });
 
 export function KitchenLayout(props: KitchenLayoutProps) {
-  const { onClearLayout, onSelectInstance, selectedInstanceId, onRemoveCabinet } = props;
+  const { onClearLayout, onSelectInstance, selectedInstanceId, onRemoveCabinet, onGenerateRender, isRendering } = props;
   const [transformMode, setTransformMode] = useState<'translate' | 'rotate'>('translate');
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('3d');
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
 
   return (
     <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm relative">
-      <div className="p-2 border-b flex justify-between items-center">
+      <div className="p-2 border-b flex justify-between items-center flex-wrap gap-2">
         <div className="flex items-center gap-4">
             <h2 className="text-lg font-headline pl-2">Diseñador</h2>
             <div className="flex items-center rounded-md bg-muted p-1">
@@ -455,6 +455,21 @@ export function KitchenLayout(props: KitchenLayoutProps) {
           </Button>
 
           <div className="h-6 w-px bg-border mx-1" />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onGenerateRender}
+            disabled={isRendering || props.placedCabinets.length === 0}
+            title="Generar una imagen fotorrealista con IA"
+          >
+            {isRendering ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4 mr-2" />
+            )}
+            Render con IA
+          </Button>
 
           <Button
             variant="ghost"
@@ -500,4 +515,6 @@ interface KitchenLayoutProps {
       rotation: [number, number, number];
     }
   ) => void;
+  onGenerateRender: () => void;
+  isRendering: boolean;
 }

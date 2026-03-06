@@ -10,7 +10,19 @@ import { Header } from '@/components/layout/header';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { PanelLeft, PanelRight } from 'lucide-react';
+import { PanelLeft, PanelRight, Sparkles, Loader2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { renderKitchen } from '@/ai/flows/render-kitchen-flow';
+import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 export function KitchenBuilder() {
   const [placedCabinets, setPlacedCabinets] = useState<PlacedCabinet[]>([]);
@@ -25,6 +37,59 @@ export function KitchenBuilder() {
   const isMobile = useIsMobile();
   const [leftSheetOpen, setLeftSheetOpen] = useState(false);
   const [rightSheetOpen, setRightSheetOpen] = useState(false);
+
+  // New state for AI rendering
+  const [isRendering, setIsRendering] = useState(false);
+  const [renderResultUrl, setRenderResultUrl] = useState<string | null>(null);
+  const [isRenderDialogOpen, setIsRenderDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleGenerateRender = async () => {
+    if (placedCabinets.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Diseño Vacío',
+        description: 'Añade al menos un gabinete para generar un render.',
+      });
+      return;
+    }
+
+    setIsRendering(true);
+    try {
+      const renderInput = {
+        placedCabinets: placedCabinets.map(cab => ({
+            cabinetId: cab.cabinetId,
+            type: cab.type,
+            width: cab.width,
+            height: cab.height,
+        })),
+        appearance,
+      };
+
+      const result = await renderKitchen(renderInput);
+      
+      if (result.imageUrl) {
+        setRenderResultUrl(result.imageUrl);
+        setIsRenderDialogOpen(true);
+        toast({
+          title: '¡Render Generado!',
+          description: 'La IA ha creado una imagen de tu cocina.',
+        });
+      } else {
+        throw new Error('La IA no devolvió una imagen.');
+      }
+
+    } catch (error) {
+      console.error("AI render failed:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error de Renderizado',
+        description: 'No se pudo generar la imagen. Por favor, inténtalo de nuevo.',
+      });
+    } finally {
+      setIsRendering(false);
+    }
+  };
 
   const addCabinet = (cabinetId: string) => {
     const cabinetInfo = cabinetData.find((c) => c.id === cabinetId);
@@ -180,6 +245,8 @@ export function KitchenBuilder() {
                     onSelectInstance={selectInstanceAndOpenSheet}
                     onUpdateTransform={handleUpdateCabinetTransform}
                     onRemoveCabinet={removeCabinet}
+                    onGenerateRender={handleGenerateRender}
+                    isRendering={isRendering}
                 />
             </main>
         </div>
@@ -202,6 +269,8 @@ export function KitchenBuilder() {
               onSelectInstance={setSelectedInstanceId}
               onUpdateTransform={handleUpdateCabinetTransform}
               onRemoveCabinet={removeCabinet}
+              onGenerateRender={handleGenerateRender}
+              isRendering={isRendering}
           />
         </div>
         <div className="h-full min-h-0">
@@ -217,6 +286,24 @@ export function KitchenBuilder() {
           />
         </div>
       </div>
+      <AlertDialog open={isRenderDialogOpen} onOpenChange={setIsRenderDialogOpen}>
+        <AlertDialogContent className="max-w-4xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Render de Cocina Generado por IA</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta es una representación fotorrealista de tu diseño.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="mt-4 rounded-lg overflow-hidden border">
+            {renderResultUrl && (
+              <Image src={renderResultUrl} alt="Render de cocina generado por IA" width={1200} height={800} className="w-full h-auto" />
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cerrar</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
