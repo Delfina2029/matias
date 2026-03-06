@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -49,6 +49,8 @@ export function EditorSidebar({
     selectedInstanceId,
     onSelectInstance
 }: EditorSidebarProps) {
+    const [activeTab, setActiveTab] = useState('edit');
+    
     const editingCabinet = useMemo(() => {
         return placedCabinets.find(c => c.instanceId === selectedInstanceId) || null;
     }, [selectedInstanceId, placedCabinets]);
@@ -88,18 +90,6 @@ export function EditorSidebar({
         onSelectInstance(null);
     }
     
-    if (editingCabinet) {
-        return (
-            <Card className="h-full flex flex-col">
-                 <CabinetEditorPanel
-                    cabinet={editingCabinet}
-                    onUpdate={onUpdateCabinet}
-                    onClose={handleCloseEditor}
-                />
-            </Card>
-        )
-    }
-
     return (
         <Card className="h-full flex flex-col">
             <Tabs defaultValue="edit" className="flex-1 flex flex-col">
@@ -117,7 +107,14 @@ export function EditorSidebar({
                 </TabsContent>
 
                 <TabsContent value="edit" className="flex-1 overflow-hidden m-0">
-                   <ScrollArea className="h-full p-4 pt-2">
+                   {editingCabinet ? (
+                        <CabinetEditorPanel
+                            cabinet={editingCabinet}
+                            onUpdate={onUpdateCabinet}
+                            onClose={handleCloseEditor}
+                        />
+                   ) : (
+                    <ScrollArea className="h-full p-4 pt-2">
                         <div className="space-y-3">
                             {placedCabinets.length === 0 ? (
                                 <p className="text-sm text-muted-foreground text-center py-8">Añade gabinetes al diseño para empezar.</p>
@@ -154,6 +151,7 @@ export function EditorSidebar({
                             )}
                         </div>
                     </ScrollArea>
+                   )}
                 </TabsContent>
 
                 <TabsContent value="list" className="flex-1 overflow-hidden m-0">

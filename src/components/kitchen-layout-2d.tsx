@@ -11,7 +11,7 @@ interface KitchenLayout2DProps {
     onSelectInstance: (id: string | null) => void;
 }
 
-const PIXELS_PER_METER = 40;
+const PIXELS_PER_METER = 100;
 
 export function KitchenLayout2D({
     placedCabinets,
@@ -26,9 +26,9 @@ export function KitchenLayout2D({
             <div 
                 className="relative bg-background border-2 rounded-md"
                 style={{
-                    // A 10m x 10m virtual space
-                    width: 15 * PIXELS_PER_METER,
-                    height: 15 * PIXELS_PER_METER,
+                    // A 6m x 6m virtual space
+                    width: 6 * PIXELS_PER_METER,
+                    height: 6 * PIXELS_PER_METER,
                 }}
             >
                 {/* Walls */}
@@ -66,7 +66,7 @@ export function KitchenLayout2D({
                         <div
                             key={cabinet.instanceId}
                             className={cn(
-                                'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-[10px] text-center p-1 cursor-pointer hover:bg-secondary transition-all',
+                                'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-xs text-center p-1 cursor-pointer hover:bg-secondary transition-all',
                                 isCorner ? 'rounded-none' : 'rounded-sm',
                                 isSelected && 'ring-4 ring-accent z-10 bg-accent/20'
                             )}
