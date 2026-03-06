@@ -70,10 +70,9 @@ export function KitchenLayout2D({
                             <div className="w-full h-full flex items-stretch">
                                 {cabinet.components.map((comp, index) => (
                                     <div key={comp.id} className={cn(
-                                        "h-full flex-1 flex items-center justify-center text-[8px] leading-tight overflow-hidden p-px",
+                                        "h-full flex-1",
                                         index < cabinet.components.length - 1 && "border-r border-card-foreground/50"
                                     )}>
-                                        <span className="truncate">{comp.type}</span>
                                     </div>
                                 ))}
                             </div>
@@ -86,21 +85,15 @@ export function KitchenLayout2D({
 
                                     const innerContent = isVanityTwoDoor ? (
                                         <div className="w-full h-full flex items-stretch">
-                                            <div className="h-full flex-1 flex items-center justify-center border-r border-card-foreground/50">
-                                                <span className="truncate">door</span>
-                                            </div>
-                                            <div className="h-full flex-1 flex items-center justify-center">
-                                                <span className="truncate">door</span>
-                                            </div>
+                                            <div className="h-full flex-1 border-r border-card-foreground/50" />
+                                            <div className="h-full flex-1" />
                                         </div>
-                                    ) : (
-                                        <span className="truncate">{comp.type}</span>
-                                    );
+                                    ) : null;
 
                                     return (
                                         <div key={comp.id}
                                             className={cn(
-                                                "w-full flex items-center justify-center text-[8px] leading-tight overflow-hidden p-px",
+                                                "w-full",
                                                 index < cabinet.components.length - 1 && "border-b border-card-foreground/50"
                                             )}
                                             style={{ height: `${(comp.height / cabinet.height) * 100}%` }}
@@ -112,7 +105,7 @@ export function KitchenLayout2D({
                             </div>
                         );
                     } else {
-                        content = <span className="truncate select-none text-xs m-auto">{cabinetInfo?.name}</span>;
+                        content = null;
                     }
 
 
@@ -121,7 +114,7 @@ export function KitchenLayout2D({
                             key={cabinet.instanceId}
                             className={cn(
                                 'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-xs text-center cursor-pointer hover:bg-secondary transition-all',
-                                isCorner ? 'rounded-none p-1' : 'rounded-sm p-0.5',
+                                isCorner ? 'rounded-none' : 'rounded-sm',
                                 isSelected && 'ring-4 ring-accent z-10 bg-accent/20'
                             )}
                             style={style}
