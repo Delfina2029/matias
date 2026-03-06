@@ -93,8 +93,10 @@ export function KitchenBuilder() {
 
   const selectInstanceAndOpenSheet = (id: string | null) => {
     setSelectedInstanceId(id);
-    if (id && isMobile) {
-        setRightSheetOpen(true);
+    if (id) {
+        if (isMobile) {
+            setRightSheetOpen(true);
+        }
     }
   }
 
@@ -192,7 +194,7 @@ export function KitchenBuilder() {
 
   if (isMobile) {
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <div className="flex flex-col min-h-screen bg-background">
             <Header>
                 <div className="flex items-center justify-between w-full">
                     <Sheet open={leftSheetOpen} onOpenChange={setLeftSheetOpen}>
@@ -238,7 +240,7 @@ export function KitchenBuilder() {
                 </div>
             </Header>
 
-            <main className="flex-1 p-2 md:p-4 overflow-hidden">
+            <main className="flex-1 p-2 md:p-4">
                 <KitchenLayout
                     placedCabinets={placedCabinets}
                     onClearLayout={clearLayout}
@@ -256,9 +258,9 @@ export function KitchenBuilder() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-screen">
       <Header />
-      <div className="grid grid-cols-[320px_1fr_450px] gap-4 p-4 flex-1 overflow-hidden">
+      <div className="grid grid-cols-[320px_1fr_450px] gap-4 p-4 flex-1">
         <div className="h-full min-h-0">
           <CabinetSelector onSelectCabinet={addCabinet} />
         </div>

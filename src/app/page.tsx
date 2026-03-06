@@ -2,7 +2,7 @@ import { KitchenBuilder } from '@/components/kitchen-builder';
 
 export default function Home() {
   return (
-    <div className="h-screen w-screen overflow-hidden bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <KitchenBuilder />
     </div>
   );
