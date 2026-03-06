@@ -11,7 +11,7 @@ interface KitchenLayout2DProps {
     onSelectInstance: (id: string | null) => void;
 }
 
-const PIXELS_PER_METER = 100;
+const PIXELS_PER_METER = 120;
 
 export function KitchenLayout2D({
     placedCabinets,
@@ -24,98 +24,70 @@ export function KitchenLayout2D({
             onClick={() => onSelectInstance(null)}
         >
             <div 
-                className="relative bg-background border-2 rounded-md"
+                className="relative bg-background rounded-md"
                 style={{
-                    // A 6m x 6m virtual space
                     width: 6 * PIXELS_PER_METER,
                     height: 6 * PIXELS_PER_METER,
+                    backgroundImage: 'linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px)',
+                    backgroundSize: '20px 20px',
                 }}
             >
                 {/* Walls */}
-                <div className="absolute -inset-2 border-2 border-foreground/30 rounded-lg" />
+                <div className="absolute -inset-2 border border-foreground/30 rounded-lg" />
                 
                 {placedCabinets.map(cabinet => {
-                    const cabinetInfo = cabinetData.find(c => c.id === cabinet.cabinetId);
                     const isSelected = cabinet.instanceId === selectedInstanceId;
                     const isCorner = cabinet.cabinetId === 'base-corner-900';
+                    
+                    const cabinetWidthPx = (cabinet.width / 1000) * PIXELS_PER_METER;
+                    const cabinetDepthPx = (cabinet.depth / 1000) * PIXELS_PER_METER;
                     
                     const style: React.CSSProperties = {
                         left: `calc(50% + ${cabinet.position[0] * PIXELS_PER_METER}px)`,
                         top: `calc(50% + ${cabinet.position[2] * PIXELS_PER_METER}px)`, // use Z for top
-                        transform: `translate(-50%, -50%) rotate(${cabinet.rotation[1]}rad)`
+                        transform: `translate(-50%, -50%) rotate(${cabinet.rotation[1]}rad)`,
+                        width: cabinetWidthPx,
+                        height: cabinetDepthPx,
                     };
-
-                    if (isCorner && cabinet.depth2) {
-                        const wallSpace = (cabinet.width / 1000) * PIXELS_PER_METER;
-                        // Use cabinet.width for wall space as per data structure
-                        const depth1p = (cabinet.depth / cabinet.width) * 100;
-                        const depth2p = (cabinet.depth2 / cabinet.width) * 100;
-
-                        style.width = wallSpace;
-                        style.height = wallSpace;
-                        // This polygon assumes the cabinet is in a top-left corner, opening towards bottom-right
-                        style.clipPath = `polygon(0% 0%, 100% 0%, 100% ${depth2p}%, ${depth1p}% ${depth2p}%, ${depth1p}% 100%, 0% 100%)`;
-                    } else {
-                        const cabinetWidth = (cabinet.width / 1000) * PIXELS_PER_METER;
-                        const cabinetDepth = (cabinet.depth / 1000) * PIXELS_PER_METER;
-                        style.width = cabinetWidth;
-                        style.height = cabinetDepth;
-                    }
-
+                    
                     const treatAsHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && cabinet.components.length > 1 && cabinet.components.every(c => c.type === 'door');
+                    const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity') && cabinet.components.some(c => c.type === 'door');
 
                     let content;
+
                     if (treatAsHorizontalDoors) {
                          content = (
                             <div className="w-full h-full flex items-stretch">
                                 {cabinet.components.map((comp, index) => (
                                     <div key={comp.id} className={cn(
                                         "h-full flex-1",
-                                        index < cabinet.components.length - 1 && "border-r border-card-foreground/50"
+                                        index < cabinet.components.length - 1 && "border-r-2 border-foreground/50"
                                     )}>
                                     </div>
                                 ))}
                             </div>
                         );
-                    } else if (cabinet.components && cabinet.components.length > 0) {
+                    } else if (isVanityTwoDoor) {
                         content = (
-                             <div className="w-full h-full flex flex-col">
-                                {cabinet.components.map((comp, index) => {
-                                    const isVanityTwoDoor = comp.type === 'door' && cabinet.cabinetId.startsWith('vanity');
-
-                                    const innerContent = isVanityTwoDoor ? (
-                                        <div className="w-full h-full flex items-stretch">
-                                            <div className="h-full flex-1 border-r border-card-foreground/50" />
-                                            <div className="h-full flex-1" />
-                                        </div>
-                                    ) : null;
-
-                                    return (
-                                        <div key={comp.id}
-                                            className={cn(
-                                                "w-full",
-                                                index < cabinet.components.length - 1 && "border-b border-card-foreground/50"
-                                            )}
-                                            style={{ height: `${(comp.height / cabinet.height) * 100}%` }}
-                                        >
-                                            {innerContent}
-                                        </div>
-                                    );
-                                })}
+                            <div className="w-full h-full flex items-stretch">
+                                <div className="h-full flex-1 border-r-2 border-foreground/50" />
+                                <div className="h-full flex-1" />
                             </div>
                         );
                     } else {
-                        content = null;
+                        content = (
+                            <div className="w-full h-full relative">
+                                <div className="absolute bottom-0 left-0 w-full h-[3px] bg-foreground/50" />
+                            </div>
+                        );
                     }
-
 
                     return (
                         <div
                             key={cabinet.instanceId}
                             className={cn(
-                                'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-xs text-center cursor-pointer hover:bg-secondary transition-all',
-                                isCorner ? 'rounded-none' : 'rounded-sm',
-                                isSelected && 'ring-4 ring-accent z-10 bg-accent/20'
+                                'absolute bg-background/80 border-2 text-card-foreground shadow-sm cursor-pointer transition-all',
+                                isSelected ? 'border-primary z-10' : 'border-foreground/70'
                             )}
                             style={style}
                             onClick={(e) => {
@@ -123,7 +95,25 @@ export function KitchenLayout2D({
                                 onSelectInstance(cabinet.instanceId)
                             }}
                         >
-                           {content}
+                            {content}
+
+                           {isSelected && (
+                                <>
+                                    {/* Width dimension */}
+                                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-foreground bg-background px-1 rounded whitespace-nowrap select-none">{cabinet.width}mm</div>
+                                    <div className="absolute bottom-0 left-0 w-full h-0 border-t border-dashed border-foreground/50 translate-y-6">
+                                        <div className="absolute left-0 -top-1 w-0 h-2 border-l border-foreground/50"></div>
+                                        <div className="absolute right-0 -top-1 w-0 h-2 border-l border-foreground/50"></div>
+                                    </div>
+                                    
+                                    {/* Depth dimension */}
+                                    <div className="absolute -right-7 top-1/2 -translate-y-1/2 rotate-90 text-xs font-semibold text-foreground bg-background px-1 rounded whitespace-nowrap select-none">{cabinet.depth}mm</div>
+                                     <div className="absolute top-0 right-0 h-full w-0 border-l border-dashed border-foreground/50 translate-x-6">
+                                        <div className="absolute top-0 -left-1 h-0 w-2 border-t border-foreground/50"></div>
+                                        <div className="absolute bottom-0 -left-1 h-0 w-2 border-t border-foreground/50"></div>
+                                    </div>
+                                </>
+                           )}
                         </div>
                     );
                 })}
