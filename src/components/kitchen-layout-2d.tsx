@@ -46,8 +46,8 @@ export function KitchenLayout2D({
                         <div
                             key={cabinet.instanceId}
                             className={cn(
-                                'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-[10px] text-center p-1 cursor-pointer hover:ring-2 hover:ring-accent/80 transition-all rounded-sm',
-                                isSelected && 'ring-2 ring-accent z-10'
+                                'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-[10px] text-center p-1 cursor-pointer hover:bg-secondary transition-all rounded-sm',
+                                isSelected && 'ring-4 ring-accent z-10 bg-accent/20'
                             )}
                             style={{
                                 width: cabinetWidth,

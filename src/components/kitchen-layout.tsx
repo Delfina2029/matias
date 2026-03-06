@@ -325,21 +325,36 @@ const Scene = memo(function Scene({
 
 
       <Suspense fallback={null}>
-        {placedCabinets.map((cabinet) => (
-            <group 
-                key={cabinet.instanceId} 
-                name={cabinet.instanceId}
-                position={cabinet.position}
-                rotation={cabinet.rotation}
-                onClick={(e) => handleObjectClick(e, cabinet.instanceId)} 
-                onDoubleClick={(e) => handleObjectDoubleClick(e, cabinet.instanceId)}
-            >
-                <Cabinet
-                    cabinet={cabinet}
-                    appearance={appearance}
-                />
-            </group>
-        ))}
+        {placedCabinets.map((cabinet) => {
+            const isSelected = selectedInstanceId === cabinet.instanceId;
+            return (
+                <group 
+                    key={cabinet.instanceId} 
+                    name={cabinet.instanceId}
+                    position={cabinet.position}
+                    rotation={cabinet.rotation}
+                    onClick={(e) => handleObjectClick(e, cabinet.instanceId)} 
+                    onDoubleClick={(e) => handleObjectDoubleClick(e, cabinet.instanceId)}
+                >
+                    <Cabinet
+                        cabinet={cabinet}
+                        appearance={appearance}
+                    />
+                     {isSelected && (
+                        <DreiBox
+                            scale={SCALE}
+                            args={[
+                                (cabinet.width / 1000) + 0.02, 
+                                (cabinet.height / 1000) + 0.02, 
+                                (cabinet.depth / 1000) + 0.02
+                            ]}
+                        >
+                            <meshStandardMaterial color={'hsl(var(--accent))'} emissive={'hsl(var(--accent))'} emissiveIntensity={0.4} wireframe />
+                        </DreiBox>
+                    )}
+                </group>
+            )
+        })}
       </Suspense>
 
       {selectedObject && (

@@ -154,7 +154,7 @@ export function KitchenBuilder() {
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="right" className="p-0 w-[320px] max-w-[90vw]">
-                            <SheetTitle className="sr-only">Panel de Edición</SheetTitle>
+                             <SheetTitle className="sr-only">Panel de Edición</SheetTitle>
                             <SheetDescription className="sr-only">Edita las propiedades de los gabinetes, gestiona la lista de corte y ajusta la apariencia del diseño.</SheetDescription>
                             <EditorSidebar
                                 placedCabinets={placedCabinets}
@@ -162,6 +162,7 @@ export function KitchenBuilder() {
                                 onAppearanceChange={setAppearance}
                                 onRemoveCabinet={removeCabinet}
                                 onUpdateCabinet={handleUpdateCabinet}
+                                onAddCabinet={addCabinet}
                                 selectedInstanceId={selectedInstanceId}
                                 onSelectInstance={selectInstanceAndOpenSheet}
                             />
@@ -188,7 +189,7 @@ export function KitchenBuilder() {
   return (
     <div className="flex flex-col h-screen">
       <Header />
-      <div className="grid grid-cols-[380px_1fr_450px] gap-4 p-4 flex-1 overflow-hidden">
+      <div className="grid grid-cols-[320px_1fr_450px] gap-4 p-4 flex-1 overflow-hidden">
         <div className="h-full min-h-0">
           <CabinetSelector onSelectCabinet={addCabinet} />
         </div>
@@ -210,6 +211,7 @@ export function KitchenBuilder() {
               onAppearanceChange={setAppearance}
               onRemoveCabinet={removeCabinet}
               onUpdateCabinet={handleUpdateCabinet}
+              onAddCabinet={addCabinet}
               selectedInstanceId={selectedInstanceId}
               onSelectInstance={setSelectedInstanceId}
           />
