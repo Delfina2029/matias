@@ -169,8 +169,8 @@ const columnaCabinets: Cabinet[] = [
 
 const vanitoryCabinets: Cabinet[] = [
     {
-      id: 'vanity-600-hanging-shelf',
-      name: 'Vanitory Colgante 600mm',
+      id: 'vanity-600-hanging-1d1o',
+      name: 'Vanitory Colgante (1 Cajón, 1 Hueco)',
       type: 'base', // 'base' so it gets a countertop in 3D view
       icon: VanitoryHangingIcon,
       width: 600,
@@ -181,6 +181,33 @@ const vanitoryCabinets: Cabinet[] = [
         { type: 'opening', height: 260 },
         { type: 'drawer', height: 200 },
       ]
+    },
+    {
+      id: 'vanity-600-hanging-2d',
+      name: 'Vanitory Colgante (2 Cajones)',
+      type: 'base',
+      icon: VanitoryHangingIcon,
+      width: 600,
+      height: 460,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'drawer', height: 230 },
+        { type: 'drawer', height: 230 },
+      ],
+    },
+    {
+      id: 'vanity-600-hanging-2p',
+      name: 'Vanitory Colgante (2 Puertas)',
+      type: 'base',
+      icon: VanitoryHangingIcon,
+      width: 600,
+      height: 460,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'door', height: 460 },
+      ],
     },
     {
       id: 'vanity-600-patas',
