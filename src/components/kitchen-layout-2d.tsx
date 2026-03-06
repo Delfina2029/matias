@@ -12,7 +12,6 @@ interface KitchenLayout2DProps {
 }
 
 const PIXELS_PER_MM = 0.2;
-const MELAMINE_THICKNESS = 18;
 
 const CabinetFrontElevation = ({
     cabinet,
@@ -31,14 +30,14 @@ const CabinetFrontElevation = ({
     const renderComponents = (components: CabinetComponent[], parentHeight: number) => {
         // Special case for side-by-side doors
         const treatAsHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && components.length > 1 && components.every(c => c.type === 'door');
-        const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity') && components.some(c => c.type === 'door');
+        const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity') && components.length === 1 && components[0].type === 'door';
 
         if (treatAsHorizontalDoors || isVanityTwoDoor) {
             const doorCount = isVanityTwoDoor ? 2 : components.length;
             return (
-                <div className="flex h-full w-full">
+                <div className="flex h-full w-full p-1.5 gap-1">
                     {Array.from({ length: doorCount }).map((_, i) => (
-                        <div key={i} className="h-full flex-1 border-r border-foreground/40 last:border-r-0" />
+                        <div key={i} className="h-full flex-1 bg-background border border-foreground/30 rounded-sm" />
                     ))}
                 </div>
             )
@@ -46,15 +45,16 @@ const CabinetFrontElevation = ({
         
         // Default: vertical stack of components
         return (
-            <div className="flex flex-col-reverse h-full w-full">
+            <div className="flex flex-col-reverse h-full w-full p-1.5 gap-1">
                 {components.map(comp => {
                     const compHeightPercent = (comp.height / parentHeight) * 100;
                     return (
                         <div 
                             key={comp.id} 
                             style={{ height: `${compHeightPercent}%`}}
-                            className="w-full border-t border-foreground/40 first:border-t-0"
-                        />
+                            className="w-full bg-background border border-foreground/30 rounded-sm flex items-center justify-center"
+                        >
+                        </div>
                     )
                 })}
             </div>
@@ -77,9 +77,8 @@ const CabinetFrontElevation = ({
                     width: cabinetWidthPx,
                     height: cabinetHeightPx,
                 }}
-                className="bg-transparent border-2 border-foreground/60 flex items-center justify-center"
+                className="bg-card border-2 border-foreground/60 flex items-center justify-center"
             >
-                {/* Carcass visuals are implied by the main border. This div is for interior components. */}
                 {renderComponents(cabinet.components, cabinet.height)}
             </div>
 
