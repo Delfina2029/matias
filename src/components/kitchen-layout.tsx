@@ -10,8 +10,9 @@ import {
 } from '@react-three/drei';
 import type { PlacedCabinet, Appearance } from '@/lib/types';
 import { Button } from './ui/button';
-import { Trash2, Edit, RotateCcw, Move } from 'lucide-react';
+import { Trash2, Edit, RotateCcw, Move, LayoutGrid, View as ViewIcon } from 'lucide-react';
 import * as THREE from 'three';
+import { KitchenLayout2D } from './kitchen-layout-2d';
 
 const SCALE = 1.5; // Visual scale factor
 
@@ -366,32 +367,58 @@ const Scene = memo(function Scene({
 
 export function KitchenLayout(props: KitchenLayoutProps) {
   const { onClearLayout, onSelectInstance, selectedInstanceId, onRemoveCabinet } = props;
-  const [transformMode, setTransformMode] =
-    useState<'translate' | 'rotate'>('translate');
+  const [transformMode, setTransformMode] = useState<'translate' | 'rotate'>('translate');
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('3d');
 
   return (
     <div className="h-full flex flex-col bg-card rounded-lg border shadow-sm relative">
       <div className="p-2 border-b flex justify-between items-center">
-        <h2 className="text-lg font-headline pl-2">Diseñador 3D</h2>
+        <div className="flex items-center gap-4">
+            <h2 className="text-lg font-headline pl-2">Diseñador</h2>
+            <div className="flex items-center rounded-md bg-muted p-1">
+                <Button
+                    variant={viewMode === '2d' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setViewMode('2d')}
+                    title="Vista 2D"
+                >
+                    <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button
+                    variant={viewMode === '3d' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setViewMode('3d')}
+                    title="Vista 3D"
+                >
+                    <ViewIcon className="w-4 h-4" />
+                </Button>
+            </div>
+        </div>
         <div className="flex items-center space-x-2">
-          <Button
-            variant={transformMode === 'translate' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => setTransformMode('translate')}
-            disabled={!selectedInstanceId}
-            title="Mover"
-          >
-            <Move className="w-5 h-5" />
-          </Button>
-          <Button
-            variant={transformMode === 'rotate' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => setTransformMode('rotate')}
-            disabled={!selectedInstanceId}
-            title="Rotar"
-          >
-            <RotateCcw className="w-5 h-5" />
-          </Button>
+           {viewMode === '3d' && (
+             <>
+                <Button
+                    variant={transformMode === 'translate' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    onClick={() => setTransformMode('translate')}
+                    disabled={!selectedInstanceId}
+                    title="Mover"
+                >
+                    <Move className="w-5 h-5" />
+                </Button>
+                <Button
+                    variant={transformMode === 'rotate' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    onClick={() => setTransformMode('rotate')}
+                    disabled={!selectedInstanceId}
+                    title="Rotar"
+                >
+                    <RotateCcw className="w-5 h-5" />
+                </Button>
+             </>
+           )}
           <Button
             variant="ghost"
             size="sm"
@@ -399,7 +426,7 @@ export function KitchenLayout(props: KitchenLayoutProps) {
             disabled={!selectedInstanceId}
           >
             <Edit className="w-4 h-4 mr-2" />
-            Editar Medidas
+            Editar
           </Button>
           
           <Button
@@ -425,13 +452,21 @@ export function KitchenLayout(props: KitchenLayoutProps) {
           </Button>
         </div>
       </div>
-      <Canvas
-        shadows
-        camera={{ position: [0, 1.5, 12], fov: 50 }}
-        className="flex-1 bg-muted/20"
-      >
-        <Scene {...props} transformMode={transformMode} />
-      </Canvas>
+      {viewMode === '3d' ? (
+        <Canvas
+            shadows
+            camera={{ position: [0, 1.5, 12], fov: 50 }}
+            className="flex-1 bg-muted/20"
+        >
+            <Scene {...props} transformMode={transformMode} />
+        </Canvas>
+      ) : (
+        <KitchenLayout2D 
+            placedCabinets={props.placedCabinets}
+            selectedInstanceId={props.selectedInstanceId}
+            onSelectInstance={props.onSelectInstance}
+        />
+      )}
     </div>
   );
 }
