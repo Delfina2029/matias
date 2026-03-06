@@ -62,12 +62,66 @@ export function KitchenLayout2D({
                         style.height = cabinetDepth;
                     }
 
+                    const treatAsHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && cabinet.components.length > 1 && cabinet.components.every(c => c.type === 'door');
+
+                    let content;
+                    if (treatAsHorizontalDoors) {
+                         content = (
+                            <div className="w-full h-full flex items-stretch">
+                                {cabinet.components.map((comp, index) => (
+                                    <div key={comp.id} className={cn(
+                                        "h-full flex-1 flex items-center justify-center text-[8px] leading-tight overflow-hidden p-px",
+                                        index < cabinet.components.length - 1 && "border-r border-card-foreground/50"
+                                    )}>
+                                        <span className="truncate">{comp.type}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    } else if (cabinet.components && cabinet.components.length > 0) {
+                        content = (
+                             <div className="w-full h-full flex flex-col">
+                                {cabinet.components.map((comp, index) => {
+                                    const isVanityTwoDoor = comp.type === 'door' && cabinet.cabinetId.startsWith('vanity');
+
+                                    const innerContent = isVanityTwoDoor ? (
+                                        <div className="w-full h-full flex items-stretch">
+                                            <div className="h-full flex-1 flex items-center justify-center border-r border-card-foreground/50">
+                                                <span className="truncate">door</span>
+                                            </div>
+                                            <div className="h-full flex-1 flex items-center justify-center">
+                                                <span className="truncate">door</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <span className="truncate">{comp.type}</span>
+                                    );
+
+                                    return (
+                                        <div key={comp.id}
+                                            className={cn(
+                                                "w-full flex items-center justify-center text-[8px] leading-tight overflow-hidden p-px",
+                                                index < cabinet.components.length - 1 && "border-b border-card-foreground/50"
+                                            )}
+                                            style={{ height: `${(comp.height / cabinet.height) * 100}%` }}
+                                        >
+                                            {innerContent}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    } else {
+                        content = <span className="truncate select-none text-xs m-auto">{cabinetInfo?.name}</span>;
+                    }
+
+
                     return (
                         <div
                             key={cabinet.instanceId}
                             className={cn(
-                                'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-xs text-center p-1 cursor-pointer hover:bg-secondary transition-all',
-                                isCorner ? 'rounded-none' : 'rounded-sm',
+                                'absolute bg-card border-2 text-card-foreground shadow-lg flex items-center justify-center text-xs text-center cursor-pointer hover:bg-secondary transition-all',
+                                isCorner ? 'rounded-none p-1' : 'rounded-sm p-0.5',
                                 isSelected && 'ring-4 ring-accent z-10 bg-accent/20'
                             )}
                             style={style}
@@ -76,7 +130,7 @@ export function KitchenLayout2D({
                                 onSelectInstance(cabinet.instanceId)
                             }}
                         >
-                            <span className="truncate select-none">{cabinetInfo?.name}</span>
+                           {content}
                         </div>
                     );
                 })}
