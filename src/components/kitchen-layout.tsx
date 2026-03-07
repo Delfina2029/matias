@@ -93,8 +93,8 @@ const Cabinet = memo(function Cabinet({
       )}
 
 
-       {/* Countertop for base cabinets */}
-      {cabinet.type === 'base' && !isCorner && (
+       {/* Countertop for base cabinets (excluding vanities) */}
+      {cabinet.type === 'base' && !isCorner && !cabinet.cabinetId.startsWith('vanity') && (
         <mesh position={[0, cabinetHeight / 2 + 0.015, 0]}>
             <boxGeometry args={[cabinetWidth, 0.03, cabinetDepth]} />
             <meshStandardMaterial color={appearance.countertopColor} />

@@ -94,11 +94,8 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     pieces.push({ name: 'Lateral', width: depth, height: cabinetBodyHeight, quantity: 2, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
 
-    if (isHanging) {
-      pieces.push({ name: 'Tapa', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
-    } else {
-       pieces.push({ name: 'Refuerzo', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
-    }
+    // All vanities get top reinforcements for a ceramic sink, not a full top.
+    pieces.push({ name: 'Refuerzo', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL, notes: 'Para frente y fondo' });
 
 
     // Add reinforcements between vertically stacked components
