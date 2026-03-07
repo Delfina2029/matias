@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { PlacedCabinet, Appearance } from '@/lib/types';
+import type { PlacedCabinet, Appearance, Piece } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -55,7 +55,7 @@ export function EditorSidebar({
         return placedCabinets.find(c => c.instanceId === selectedInstanceId) || null;
     }, [selectedInstanceId, placedCabinets]);
 
-    const { aggregatedPieces, cuttingListString } = useMemo(() => {
+    const aggregatedPieces = useMemo(() => {
         const pieceMap = new Map<string, AggregatedPiece>();
 
         placedCabinets.forEach((pc) => {
@@ -82,8 +82,7 @@ export function EditorSidebar({
           if (a.name === b.name) return a.width - b.width;
           return a.name.localeCompare(b.name);
         });
-        const listString = piecesArray.map(p => `${p.quantity}x ${p.name} @ ${p.width}mm x ${p.height}mm (${p.material})`).join('\n');
-        return { aggregatedPieces: piecesArray, cuttingListString: listString };
+        return piecesArray;
     }, [placedCabinets]);
     
     const handleCloseEditor = () => {
@@ -172,7 +171,7 @@ export function EditorSidebar({
                                     ))}
                                 </TableBody>
                             </Table>
-                            <OptimizerForm cuttingListString={cuttingListString} hasCuts={aggregatedPieces.length > 0} />
+                            <OptimizerForm pieces={aggregatedPieces} hasCuts={aggregatedPieces.length > 0} />
                         </div>
                     </ScrollArea>
                 </TabsContent>
