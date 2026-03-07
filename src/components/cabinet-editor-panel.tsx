@@ -366,37 +366,37 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
         pieces.push({
           name: frontName,
-          dimensions: `${(width - 4).toFixed(1)} x ${frontHeight.toFixed(1)} mm`,
+          dimensions: `${frontHeight.toFixed(1)} x ${(width - 4).toFixed(1)} mm`,
           quantity: 1,
         });
 
         pieces.push({
             name: 'Lateral de Cajón Vanitory',
-            dimensions: `${drawerBoxDepth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+            dimensions: `${drawerBoxHeight.toFixed(1)} x ${drawerBoxDepth.toFixed(1)} mm`,
             quantity: 4,
         });
 
         pieces.push({
             name: 'Frente Interno Cajón Vanitory',
-            dimensions: `${drawerBoxWidth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+            dimensions: `${drawerBoxHeight.toFixed(1)} x ${drawerBoxWidth.toFixed(1)} mm`,
             quantity: 1,
         });
 
         pieces.push({
             name: 'Trasero de Cajón Vanitory (Lado)',
-            dimensions: `${sideBoxInnerWidth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+            dimensions: `${drawerBoxHeight.toFixed(1)} x ${sideBoxInnerWidth.toFixed(1)} mm`,
             quantity: 2,
         });
 
         pieces.push({
             name: 'Trasero de Cajón Vanitory (Centro)',
-            dimensions: `${plumbingGap.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+            dimensions: `${drawerBoxHeight.toFixed(1)} x ${plumbingGap.toFixed(1)} mm`,
             quantity: 1,
         });
 
         pieces.push({
             name: 'Fondo de Cajón Vanitory',
-            dimensions: `${sideBoxInnerWidth.toFixed(1)} x ${(drawerBoxDepth - MELAMINE_THICKNESS).toFixed(1)} mm`,
+            dimensions: `${(drawerBoxDepth - MELAMINE_THICKNESS).toFixed(1)} x ${sideBoxInnerWidth.toFixed(1)} mm`,
             quantity: 2,
         });
         return pieces;
@@ -424,22 +424,22 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
     pieces.push({
       name: frontName,
-      dimensions: `${(width - 4).toFixed(1)} x ${frontHeight.toFixed(1)} mm`,
+      dimensions: `${frontHeight.toFixed(1)} x ${(width - 4).toFixed(1)} mm`,
       quantity: 1,
     });
     pieces.push({
       name: 'Lateral de Cajón',
-      dimensions: `${drawerBoxDepth.toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+      dimensions: `${drawerBoxHeight.toFixed(1)} x ${drawerBoxDepth.toFixed(1)} mm`,
       quantity: 2,
     });
     pieces.push({
       name: 'Frente/Trasero de Cajón',
-      dimensions: `${(drawerBoxWidth - (2*MELAMINE_THICKNESS)).toFixed(1)} x ${drawerBoxHeight.toFixed(1)} mm`,
+      dimensions: `${drawerBoxHeight.toFixed(1)} x ${(drawerBoxWidth - (2*MELAMINE_THICKNESS)).toFixed(1)} mm`,
       quantity: 2,
     });
     pieces.push({
       name: 'Fondo de Cajón',
-      dimensions: `${(drawerBoxWidth - (2*MELAMINE_THICKNESS)).toFixed(1)} x ${drawerBoxDepth.toFixed(1)} mm`,
+      dimensions: `${drawerBoxDepth.toFixed(1)} x ${(drawerBoxWidth - (2*MELAMINE_THICKNESS)).toFixed(1)} mm`,
       quantity: 1,
     });
 
@@ -695,7 +695,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                                 <TableRow>
                                                     <TableHead className="h-8 px-2">Cant.</TableHead>
                                                     <TableHead className="h-8 px-2">Pieza</TableHead>
-                                                    <TableHead className="h-8 px-2 text-right">Dimensiones (AnxAl)</TableHead>
+                                                    <TableHead className="h-8 px-2 text-right">Dimensiones (AlxAn)</TableHead>
                                                 </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -745,14 +745,14 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                                             <TableRow>
                                                                 <TableHead className="h-8 px-2">Cant.</TableHead>
                                                                 <TableHead className="h-8 px-2">Pieza</TableHead>
-                                                                <TableHead className="h-8 px-2 text-right">Dimensiones (AnxAl)</TableHead>
+                                                                <TableHead className="h-8 px-2 text-right">Dimensiones (AlxAn)</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
                                                             <TableRow>
                                                                 <TableCell className="font-medium py-1 px-2">{doorQuantity}</TableCell>
                                                                 <TableCell className="py-1 px-2">{doorName}</TableCell>
-                                                                <TableCell className="text-right py-1 px-2">{`${doorWidth.toFixed(1)} x ${doorHeight.toFixed(1)} mm`}</TableCell>
+                                                                <TableCell className="text-right py-1 px-2">{`${doorHeight.toFixed(1)} x ${doorWidth.toFixed(1)} mm`}</TableCell>
                                                             </TableRow>
                                                         </TableBody>
                                                     </Table>

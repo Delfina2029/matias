@@ -164,7 +164,7 @@ export function EditorSidebar({
                                     <TableRow>
                                         <TableHead>Cant</TableHead>
                                         <TableHead>Pieza</TableHead>
-                                        <TableHead>Dimensiones</TableHead>
+                                        <TableHead>Dimensiones (Al x An)</TableHead>
                                         <TableHead>Material</TableHead>
                                         <TableHead className="text-center">Veta</TableHead>
                                     </TableRow>
@@ -176,7 +176,7 @@ export function EditorSidebar({
                                             <TableRow key={index} className={cn(piece.material === BACK_PANEL_MATERIAL && 'text-orange-600 dark:text-orange-400')}>
                                                 <TableCell className="font-medium">{piece.quantity}</TableCell>
                                                 <TableCell>{piece.name}</TableCell>
-                                                <TableCell>{`${piece.width} x ${piece.height} mm`}</TableCell>
+                                                <TableCell>{`${piece.height} x ${piece.width} mm`}</TableCell>
                                                 <TableCell>{piece.material}</TableCell>
                                                 <TableCell className="text-center">
                                                      <Switch
