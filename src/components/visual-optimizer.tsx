@@ -27,6 +27,7 @@ interface VisualOptimizerProps {
 }
 
 const PIXELS_PER_MM = 0.2;
+const SAW_KERF = 5; // The width of the saw blade in mm
 
 const packPieces = (
   piecesToPack: PieceWithRotation[],
@@ -61,32 +62,37 @@ const packPieces = (
     const rotatedW = piece.height;
     const rotatedH = piece.width;
 
+    // Attempt to place in the current row
+    // Try original orientation
     if (currentX + pieceW <= boardWidth && currentY + pieceH <= boardHeight) {
       placed.push({ ...piece, x: currentX, y: currentY, rotated: false });
-      currentX += pieceW;
+      currentX += pieceW + SAW_KERF;
       rowMaxHeight = Math.max(rowMaxHeight, pieceH);
       placedInThisTurn = true;
     } 
+    // Try rotated orientation
     else if (piece.allowRotation && currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
        placed.push({ ...piece, x: currentX, y: currentY, rotated: true });
-       currentX += rotatedW;
+       currentX += rotatedW + SAW_KERF;
        rowMaxHeight = Math.max(rowMaxHeight, rotatedH);
        placedInThisTurn = true;
     }
+    // If it doesn't fit, move to the next row
     else {
       currentX = 0;
-      currentY += rowMaxHeight;
+      currentY += rowMaxHeight + (rowMaxHeight > 0 ? SAW_KERF : 0);
       rowMaxHeight = 0;
 
+      // Try placing again in the new row
       if (currentX + pieceW <= boardWidth && currentY + pieceH <= boardHeight) {
         placed.push({ ...piece, x: currentX, y: currentY, rotated: false });
-        currentX += pieceW;
+        currentX += pieceW + SAW_KERF;
         rowMaxHeight = Math.max(rowMaxHeight, pieceH);
         placedInThisTurn = true;
       }
       else if (piece.allowRotation && currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
         placed.push({ ...piece, x: currentX, y: currentY, rotated: true });
-        currentX += rotatedW;
+        currentX += rotatedW + SAW_KERF;
         rowMaxHeight = Math.max(rowMaxHeight, rotatedH);
         placedInThisTurn = true;
       }
@@ -188,7 +194,7 @@ export function VisualOptimizer({ pieces, boardWidth, boardHeight }: VisualOptim
             <h4 className="font-semibold mb-2 text-destructive">Piezas que no entraron:</h4>
             <ul className="list-disc pl-5 text-destructive space-y-1">
                 {unplaced.map((p, i) => (
-                    <li key={i}>{p.quantity}x {p.name} ({p.width}x{p.height}mm)</li>
+                    <li key={i}>{p.quantity}x {p.name} ({p.height}x{p.width}mm)</li>
                 ))}
             </ul>
           </div>
