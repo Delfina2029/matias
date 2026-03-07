@@ -23,6 +23,7 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   boardDimensions: z.string().min(3, 'Las dimensiones del tablero son requeridas.'),
@@ -83,9 +84,17 @@ export function OptimizerForm({ cuttingListString, hasCuts }: OptimizerFormProps
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Dimensiones del Tablero</FormLabel>
-                <FormControl>
-                  <Input placeholder="ej: 2440mm x 1220mm" {...field} />
-                </FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una dimensión" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="2440mm x 1220mm">2440mm x 1220mm</SelectItem>
+                    <SelectItem value="2750mm x 1830mm">2750mm x 1830mm</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
