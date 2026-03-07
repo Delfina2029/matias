@@ -185,13 +185,27 @@ const Cabinet = memo(function Cabinet({
             );
         }
         
-        // Default single front component
+        if (comp.type === 'drawer') {
+          // Inset drawer front
+          const drawerFrontWidth = interiorWidth - 0.006; // 3mm gap on each side
+          return (
+            <mesh
+              key={comp.id}
+              position={[0, yPos, cabinetDepth / 2 - 0.009]} // Placed inset
+            >
+              <boxGeometry args={[drawerFrontWidth, compHeight - 0.004, 0.018]} />
+              <meshStandardMaterial color={appearance.frontColor} />
+            </mesh>
+          );
+        }
+        
+        // Default single front component (assumed to be a door now)
         return (
           <mesh
             key={comp.id}
-            position={[0, yPos, cabinetDepth / 2 + 0.001]}
+            position={[0, yPos, cabinetDepth / 2 + 0.001]} // Overlay door
           >
-            <boxGeometry args={[cabinetWidth - 0.01, compHeight - 0.01, 0.018]} />
+            <boxGeometry args={[cabinetWidth - 0.004, compHeight - 0.004, 0.018]} />
             <meshStandardMaterial color={appearance.frontColor} />
           </mesh>
         );

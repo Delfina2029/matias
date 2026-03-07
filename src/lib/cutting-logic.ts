@@ -152,7 +152,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
                 frontHeight -= 30;
                 frontName = 'Frente de Cajón (Tirar)';
             }
-            pieces.push({ name: frontName, width: width - 4, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
+            pieces.push({ name: frontName, width: interiorWidth - 6, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
             // Check if it's the top drawer, which needs space for plumbing
             if (isTopDrawer) {
@@ -313,9 +313,11 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         frontName = 'Frente de Cajón (Tirar)';
       }
       
+      const drawerFrontWidth = interiorWidth - 6; // Inset front with 3mm gap each side
+
       pieces.push({
         name: frontName,
-        width: width - 4,
+        width: drawerFrontWidth,
         height: frontHeight,
         quantity: 1,
         material: MELAMINE_MATERIAL
