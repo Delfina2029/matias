@@ -136,7 +136,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             pieces.push({ name: doorName, width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });
         } else if (component.type === 'drawer') {
             const drawerBoxHeight = 100;
-            const drawerBoxDepth = 350; // Standardized depth for ALL vanitory drawers
             const isTopDrawer = index === topDrawerIndex;
 
             // --- Front piece ---
@@ -159,19 +158,21 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             // Check if it's the top drawer, which needs space for plumbing
             if (isTopDrawer) {
                 // U-shaped drawer box for plumbing
+                const drawerBoxDepth = 350;
                 const drawerBoxWidth = interiorWidth - 24;
                 const plumbingGap = 160;
                 const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
 
-                pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 4, material: MELAMINE_MATERIAL });
-                pieces.push({ name: 'Frente Interno Cajón', width: drawerBoxWidth, height: drawerBoxHeight, quantity: 1, material: MELAMINE_MATERIAL, notes: 'Pieza de refuerzo detrás del frente principal' });
-                pieces.push({ name: 'Trasero de Cajón (Lado)', width: sideBoxInnerWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-                pieces.push({ name: 'Trasero de Cajón (Centro)', width: plumbingGap, height: drawerBoxHeight, quantity: 1, material: MELAMINE_MATERIAL, notes: 'Pieza central que une las dos cajas' });
-                pieces.push({ name: 'Fondo de Cajón', width: sideBoxInnerWidth, height: drawerBoxDepth - MELAMINE_THICKNESS, quantity: 2, material: BACK_PANEL_MATERIAL });
+                pieces.push({ name: 'Lateral de Cajón Vanitory', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 4, material: MELAMINE_MATERIAL });
+                pieces.push({ name: 'Frente Interno Cajón Vanitory', width: drawerBoxWidth, height: drawerBoxHeight, quantity: 1, material: MELAMINE_MATERIAL, notes: 'Pieza de refuerzo detrás del frente principal' });
+                pieces.push({ name: 'Trasero de Cajón Vanitory (Lado)', width: sideBoxInnerWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                pieces.push({ name: 'Trasero de Cajón Vanitory (Centro)', width: plumbingGap, height: drawerBoxHeight, quantity: 1, material: MELAMINE_MATERIAL, notes: 'Pieza central que une las dos cajas' });
+                pieces.push({ name: 'Fondo de Cajón Vanitory', width: sideBoxInnerWidth, height: drawerBoxDepth - MELAMINE_THICKNESS, quantity: 2, material: BACK_PANEL_MATERIAL });
 
             } else {
                 // Standard full-depth drawer for lower positions
-                const drawerBoxWidth = interiorWidth - 26;
+                const drawerBoxDepth = 350;
+                const drawerBoxWidth = interiorWidth - 24;
 
                 pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
                 pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });

@@ -192,8 +192,9 @@ const vanitoryCabinets: Cabinet[] = [
       depth: 460,
       pieces: [],
       defaultComponents: [
-        { type: 'drawer', height: 230 },
-        { type: 'drawer', height: 230 },
+        { type: 'drawer', height: 200 },
+        { type: 'drawer', height: 200 },
+        { type: 'opening', height: 60 },
       ],
     },
     {
