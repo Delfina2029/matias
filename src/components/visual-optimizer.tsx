@@ -20,6 +20,7 @@ interface VisualOptimizerProps {
   pieces: AggregatedPiece[];
   boardWidth: number;
   boardHeight: number;
+  allowRotation: boolean;
 }
 
 const PIXELS_PER_MM = 0.2;
@@ -27,7 +28,8 @@ const PIXELS_PER_MM = 0.2;
 const packPieces = (
   piecesToPack: AggregatedPiece[],
   boardWidth: number,
-  boardHeight: number
+  boardHeight: number,
+  allowRotation: boolean
 ): { placed: PlacedPiece[]; unplaced: AggregatedPiece[] } => {
   let allPieces: (Omit<AggregatedPiece, 'quantity'> & { originalId: string })[] = [];
   piecesToPack.forEach((p, i) => {
@@ -63,7 +65,7 @@ const packPieces = (
       rowMaxHeight = Math.max(rowMaxHeight, pieceH);
       placedInThisTurn = true;
     } 
-    else if (currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
+    else if (allowRotation && currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
        placed.push({ ...piece, x: currentX, y: currentY, rotated: true });
        currentX += rotatedW;
        rowMaxHeight = Math.max(rowMaxHeight, rotatedH);
@@ -80,7 +82,7 @@ const packPieces = (
         rowMaxHeight = Math.max(rowMaxHeight, pieceH);
         placedInThisTurn = true;
       }
-      else if (currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
+      else if (allowRotation && currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
         placed.push({ ...piece, x: currentX, y: currentY, rotated: true });
         currentX += rotatedW;
         rowMaxHeight = Math.max(rowMaxHeight, rotatedH);
@@ -107,14 +109,14 @@ const packPieces = (
 };
 
 
-export function VisualOptimizer({ pieces, boardWidth, boardHeight }: VisualOptimizerProps) {
+export function VisualOptimizer({ pieces, boardWidth, boardHeight, allowRotation }: VisualOptimizerProps) {
   if (!pieces || pieces.length === 0) {
     return null;
   }
 
   const { placed, unplaced } = React.useMemo(
-    () => packPieces(pieces, boardWidth, boardHeight),
-    [pieces, boardWidth, boardHeight]
+    () => packPieces(pieces, boardWidth, boardHeight, allowRotation),
+    [pieces, boardWidth, boardHeight, allowRotation]
   );
   
   const placedArea = placed.reduce((acc, p) => acc + p.width * p.height, 0);
