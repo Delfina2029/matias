@@ -227,27 +227,32 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   // 1. Sides
   pieces.push({ name: 'Lateral', width: depth, height: height, quantity: 2, material: MELAMINE_MATERIAL });
   
-  // 2. Bottom and Top
+  // 2. Bottom and Top/Reinforcements for base cabinets
   if (type === 'base') {
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
-    pieces.push({ name: 'Refuerzo', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL });
+    
+    // Always add two top reinforcements (front and back)
+    pieces.push({ name: 'Refuerzo Superior', width: interiorWidth, height: 100, quantity: 2, material: MELAMINE_MATERIAL, notes: 'Para frente y fondo' });
 
-    // Add reinforcements between vertically stacked components
-    const treatAsHorizontalDoors = components.length > 1 && components.every(c => c.type === 'door');
-    if (!treatAsHorizontalDoors && components.length > 1) {
-        const reinforcementCount = components.length - 1;
+    // Add reinforcements between vertically stacked components (drawers or doors)
+    const verticallyStackedFronts = components.filter(c => c.type === 'drawer' || c.type === 'door');
+    // This logic prevents adding vertical separators for horizontally-placed doors
+    const treatAsHorizontalDoors = verticallyStackedFronts.length > 1 && verticallyStackedFronts.every(c => c.type === 'door') && type !== 'tall';
+    
+    if (!treatAsHorizontalDoors && verticallyStackedFronts.length > 1) {
+        const reinforcementCount = verticallyStackedFronts.length - 1;
         if (reinforcementCount > 0) {
             pieces.push({ 
-                name: 'Refuerzo', 
+                name: 'Refuerzo Intermedio', 
                 width: interiorWidth, 
                 height: 100, 
                 quantity: reinforcementCount, 
                 material: MELAMINE_MATERIAL,
-                notes: 'Separación entre componentes'
+                notes: 'Separación entre frentes'
             });
         }
     }
-  } else {
+  } else { // For wall and tall cabinets
     pieces.push({ name: 'Piso', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
     pieces.push({ name: 'Tapa', width: interiorWidth, height: depth, quantity: 1, material: MELAMINE_MATERIAL });
   }
