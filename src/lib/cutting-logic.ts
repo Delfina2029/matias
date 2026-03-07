@@ -143,16 +143,21 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             const isTopDrawer = index === topDrawerIndex;
 
             // --- Front piece ---
-            let frontHeight = component.height - 4;
+            let frontHeight;
             let frontName;
             if (component.handle === 'j-profile') {
-                frontHeight -= 26.8;
+                frontHeight = component.height - 4 - 26.8;
                 frontName = 'Frente de Cajón (Perfil J)';
             } else {
-                frontHeight -= 30;
+                // Deduction for standard pull-handle to achieve user's desired height
+                frontHeight = component.height - 30;
                 frontName = 'Frente de Cajón (Tirar)';
             }
-            pieces.push({ name: frontName, width: interiorWidth - 6, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
+
+            // Width deduction to achieve user's desired width (e.g., 555mm for 600mm cab)
+            const drawerFrontWidth = interiorWidth - 9;
+
+            pieces.push({ name: frontName, width: drawerFrontWidth, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
             // Check if it's the top drawer, which needs space for plumbing
             if (isTopDrawer) {
@@ -282,7 +287,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         doorHeight -= 26.8;
         doorName = 'Puerta (Perfil J)';
       } else {
-        doorHeight -= 30;
         doorName = 'Puerta (Tirar)';
       }
 
@@ -309,7 +313,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         frontHeight -= 26.8;
         frontName = 'Frente de Cajón (Perfil J)';
       } else {
-        frontHeight -= 30;
         frontName = 'Frente de Cajón (Tirar)';
       }
       
