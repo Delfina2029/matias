@@ -26,49 +26,70 @@ const Cabinet = memo(function Cabinet({
   const cabinetWidth = cabinet.width / 1000;
   const cabinetHeight = cabinet.height / 1000;
   const cabinetDepth = cabinet.depth / 1000;
+  const melamineThickness = 0.018;
+  const interiorWidth = cabinetWidth - 2 * melamineThickness;
 
   const isCorner = cabinet.cabinetId === 'base-corner-900';
-  const isPlacar = cabinet.type === 'placar';
-
-  // A single box represents the cabinet carcass visually for simplicity
-  const boxArgs: [number, number, number] = [cabinetWidth, cabinetHeight, cabinetDepth];
 
   return (
     <group scale={SCALE}>
       {/* Carcass */}
-      {isPlacar ? (
-        <>
-            {/* Floor */}
-            <mesh position={[0, -cabinetHeight / 2 + 0.018 / 2, 0]}>
-                <boxGeometry args={[cabinetWidth, 0.018, cabinetDepth]} />
-                <meshStandardMaterial color={appearance.carcassColor} />
-            </mesh>
-            {/* Top */}
-            <mesh position={[0, cabinetHeight / 2 - 0.018 / 2, 0]}>
-                <boxGeometry args={[cabinetWidth, 0.018, cabinetDepth]} />
-                <meshStandardMaterial color={appearance.carcassColor} />
-            </mesh>
-            {/* Left Side */}
-            <mesh position={[-cabinetWidth / 2 + 0.018 / 2, 0, 0]}>
-                <boxGeometry args={[0.018, cabinetHeight - 0.036, cabinetDepth]} />
-                <meshStandardMaterial color={appearance.carcassColor} />
-            </mesh>
-            {/* Right Side */}
-            <mesh position={[cabinetWidth / 2 - 0.018 / 2, 0, 0]}>
-                <boxGeometry args={[0.018, cabinetHeight - 0.036, cabinetDepth]} />
-                <meshStandardMaterial color={appearance.carcassColor} />
-            </mesh>
-            {/* Back */}
-            <mesh position={[0, 0, -cabinetDepth / 2 + 0.003 / 2]}>
-                <boxGeometry args={[cabinetWidth - 0.036, cabinetHeight - 0.036, 0.003]} />
-                <meshStandardMaterial color={appearance.carcassColor} transparent opacity={0.5} />
-            </mesh>
-        </>
-      ) : (
-        <mesh>
-          <boxGeometry args={boxArgs} />
+      {isCorner ? (
+         <mesh>
+          <boxGeometry args={[cabinetWidth, cabinetHeight, cabinetDepth]} />
           <meshStandardMaterial color={appearance.carcassColor} />
         </mesh>
+      ) : (
+        <group>
+            {/* Sides */}
+            <mesh position={[-cabinetWidth / 2 + melamineThickness / 2, 0, 0]}>
+                <boxGeometry args={[melamineThickness, cabinetHeight, cabinetDepth]} />
+                <meshStandardMaterial color={appearance.carcassColor} />
+            </mesh>
+            <mesh position={[cabinetWidth / 2 - melamineThickness / 2, 0, 0]}>
+                <boxGeometry args={[melamineThickness, cabinetHeight, cabinetDepth]} />
+                <meshStandardMaterial color={appearance.carcassColor} />
+            </mesh>
+            
+            {/* Top and Bottom based on type */}
+            {cabinet.type === 'base' ? (
+                <>
+                    {/* Bottom */}
+                    <mesh position={[0, -cabinetHeight / 2 + melamineThickness / 2, 0]}>
+                        <boxGeometry args={[interiorWidth, melamineThickness, cabinetDepth]} />
+                        <meshStandardMaterial color={appearance.carcassColor} />
+                    </mesh>
+                    {/* Top Reinforcements */}
+                    <mesh position={[0, cabinetHeight / 2 - melamineThickness / 2, cabinetDepth / 2 - 0.100 / 2]}>
+                        <boxGeometry args={[interiorWidth, melamineThickness, 0.100]} />
+                        <meshStandardMaterial color={appearance.carcassColor} />
+                    </mesh>
+                    <mesh position={[0, cabinetHeight / 2 - melamineThickness / 2, -cabinetDepth / 2 + 0.100 / 2]}>
+                        <boxGeometry args={[interiorWidth, melamineThickness, 0.100]} />
+                        <meshStandardMaterial color={appearance.carcassColor} />
+                    </mesh>
+                </>
+            ) : ( // For wall, tall, and placar
+                 <>
+                    {/* Bottom */}
+                    <mesh position={[0, -cabinetHeight / 2 + melamineThickness / 2, 0]}>
+                        <boxGeometry args={[interiorWidth, melamineThickness, cabinetDepth]} />
+                        <meshStandardMaterial color={appearance.carcassColor} />
+                    </mesh>
+                    {/* Top */}
+                    <mesh position={[0, cabinetHeight / 2 - melamineThickness / 2, 0]}>
+                        <boxGeometry args={[interiorWidth, melamineThickness, cabinetDepth]} />
+                        <meshStandardMaterial color={appearance.carcassColor} />
+                    </mesh>
+                 </>
+            )}
+
+            {/* Back Panel */}
+             <mesh position={[0, 0, -cabinetDepth / 2 + 0.003 / 2]}>
+                <boxGeometry args={[interiorWidth, cabinetHeight - (cabinet.type === 'base' ? melamineThickness : 2 * melamineThickness), 0.003]} />
+                <meshStandardMaterial color={appearance.carcassColor} transparent opacity={0.5} />
+            </mesh>
+        </group>
       )}
 
 
@@ -81,14 +102,14 @@ const Cabinet = memo(function Cabinet({
       )}
 
       {/* Front Components (Doors/Drawers) or Placar Interior */}
-      {isPlacar ? (
+      {cabinet.type === 'placar' ? (
         cabinet.components.map((comp, index) => {
             const totalHeightSoFar = cabinet.components
               .slice(0, index)
               .reduce((acc, c) => acc + c.height / 1000, 0);
 
             const compHeight = comp.height / 1000;
-            const interiorBottomY = -cabinetHeight / 2 + 0.018; 
+            const interiorBottomY = -cabinetHeight / 2 + melamineThickness; 
             const yPos = interiorBottomY + totalHeightSoFar + compHeight / 2;
             
             if (comp.type === 'shelf') {
@@ -97,7 +118,7 @@ const Cabinet = memo(function Cabinet({
                         key={comp.id}
                         position={[0, yPos, 0]}
                     >
-                        <boxGeometry args={[cabinetWidth - 0.036, compHeight, cabinetDepth - 0.02]} />
+                        <boxGeometry args={[interiorWidth - 0.002, compHeight, cabinetDepth - 0.02]} />
                         <meshStandardMaterial color={appearance.frontColor} />
                     </mesh>
                 );
@@ -110,7 +131,7 @@ const Cabinet = memo(function Cabinet({
                         position={[0, yPos, 0]}
                         rotation={[0, 0, Math.PI / 2]}
                     >
-                        <cylinderGeometry args={[0.012, 0.012, cabinetWidth - 0.05, 16]} />
+                        <cylinderGeometry args={[0.012, 0.012, interiorWidth - 0.01, 16]} />
                         <meshStandardMaterial color="#c0c0c0" metalness={0.8} roughness={0.2} />
                     </mesh>
                 );
