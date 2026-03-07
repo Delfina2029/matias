@@ -30,14 +30,19 @@ const CabinetFrontElevation = ({
     const renderComponents = (components: CabinetComponent[], parentHeight: number) => {
         // Special case for side-by-side doors
         const treatAsHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && components.length > 1 && components.every(c => c.type === 'door');
-        const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity') && components.length === 1 && components[0].type === 'door';
+        const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity') && components.length > 0 && components.every(c => c.type === 'door');
 
         if (treatAsHorizontalDoors || isVanityTwoDoor) {
             const doorCount = isVanityTwoDoor ? 2 : components.length;
             return (
-                <div className="flex h-full w-full p-1.5 gap-1">
+                <div className="flex h-full w-full p-1.5 gap-1.5">
                     {Array.from({ length: doorCount }).map((_, i) => (
-                        <div key={i} className="h-full flex-1 bg-background border border-foreground/30 rounded-sm" />
+                        <div key={i} className="relative h-full flex-1 bg-background border border-foreground/20 rounded-sm shadow-sm">
+                            <div className={cn(
+                                "absolute top-1/2 -translate-y-1/2 h-8 w-1 bg-foreground/40 rounded-full",
+                                doorCount === 2 ? (i === 0 ? "right-1.5" : "left-1.5") : "right-1.5"
+                            )} />
+                        </div>
                     ))}
                 </div>
             )
@@ -45,15 +50,35 @@ const CabinetFrontElevation = ({
         
         // Default: vertical stack of components
         return (
-            <div className="flex flex-col-reverse h-full w-full p-1.5 gap-1">
+            <div className="flex flex-col-reverse h-full w-full p-1.5 gap-1.5">
                 {components.map(comp => {
                     const compHeightPercent = (comp.height / parentHeight) * 100;
+                    
+                    if (comp.type === 'opening') {
+                        return (
+                            <div 
+                                key={comp.id} 
+                                style={{ height: `${compHeightPercent}%`}}
+                                className="w-full bg-muted/40 border-foreground/20 rounded-sm shadow-inner"
+                            />
+                        )
+                    }
+
+                    if (comp.type === 'shelf' || comp.type === 'hanging-rail') return null;
+
                     return (
                         <div 
                             key={comp.id} 
                             style={{ height: `${compHeightPercent}%`}}
-                            className="w-full bg-background border border-foreground/30 rounded-sm flex items-center justify-center"
+                            className="relative w-full bg-background border border-foreground/20 rounded-sm shadow-sm"
                         >
+                            {/* Handle */}
+                            {comp.type === 'drawer' && (
+                                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 bg-foreground/40 rounded-full" />
+                            )}
+                            {comp.type === 'door' && (
+                                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-1 bg-foreground/40 rounded-full" />
+                            )}
                         </div>
                     )
                 })}
@@ -77,7 +102,7 @@ const CabinetFrontElevation = ({
                     width: cabinetWidthPx,
                     height: cabinetHeightPx,
                 }}
-                className="bg-card border-2 border-foreground/60 flex items-center justify-center"
+                className="bg-muted/30 border-2 border-foreground/40 flex items-center justify-center shadow-lg rounded-md"
             >
                 {renderComponents(cabinet.components, cabinet.height)}
             </div>
