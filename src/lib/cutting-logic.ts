@@ -119,7 +119,14 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     }
     
     // Components
-    const topDrawerIndex = components.length > 0 ? components.findIndex((c, i, arr) => c.type === 'drawer' && i === arr.length - 1) : -1;
+    // Find the index of the highest drawer in the stack.
+    let topDrawerIndex = -1;
+    for (let i = components.length - 1; i >= 0; i--) {
+        if (components[i].type === 'drawer') {
+            topDrawerIndex = i;
+            break;
+        }
+    }
 
     components.forEach((component, index) => {
         if (component.type === 'door') {
@@ -136,7 +143,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             pieces.push({ name: doorName, width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });
         } else if (component.type === 'drawer') {
             const drawerBoxHeight = 100;
-            const isTopDrawer = index === topDrawerIndex;
+            const isTopDrawer = index === topDrawerIndex; // Check if the current drawer is the highest one.
 
             // --- Front piece ---
             let frontHeight;
