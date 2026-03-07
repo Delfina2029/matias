@@ -18,20 +18,19 @@ import { LayoutGrid } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { VisualOptimizer } from './visual-optimizer';
 import type { Piece } from '@/lib/types';
-import { Switch } from './ui/switch';
 
 const formSchema = z.object({
   boardDimensions: z.string().min(3, 'Las dimensiones del tablero son requeridas.'),
   materialType: z.string().min(3, 'El tipo de material es requerido.'),
-  respectGrain: z.boolean().default(true),
 });
 
 type OptimizerFormProps = {
   pieces: Piece[];
   hasCuts: boolean;
+  grainSettings: Record<string, boolean>;
 };
 
-export function OptimizerForm({ pieces, hasCuts }: OptimizerFormProps) {
+export function OptimizerForm({ pieces, hasCuts, grainSettings }: OptimizerFormProps) {
   const [showOptimizer, setShowOptimizer] = useState(false);
 
   const availableMaterials = useMemo(() => {
@@ -44,16 +43,24 @@ export function OptimizerForm({ pieces, hasCuts }: OptimizerFormProps) {
     defaultValues: {
       boardDimensions: '2750x1830',
       materialType: availableMaterials[0] || 'Melamina 18mm',
-      respectGrain: true,
     },
   });
 
-  const { boardDimensions, materialType, respectGrain } = form.watch();
+  const { boardDimensions, materialType } = form.watch();
   const [width, height] = boardDimensions.split('x').map(Number);
   
   const piecesForMaterial = useMemo(() => {
     return pieces.filter(p => p.material === materialType);
   }, [pieces, materialType]);
+
+  const piecesForOptimizer = useMemo(() => {
+    return piecesForMaterial.map(p => {
+      const key = `${p.name}|${p.width}|${p.height}|${p.material}`;
+      const respectGrain = grainSettings?.[key] ?? true;
+      return { ...p, allowRotation: !respectGrain };
+    });
+  }, [piecesForMaterial, grainSettings]);
+
 
   function onSubmit() {
     setShowOptimizer(true);
@@ -61,7 +68,7 @@ export function OptimizerForm({ pieces, hasCuts }: OptimizerFormProps) {
 
   useEffect(() => {
     setShowOptimizer(false);
-  }, [boardDimensions, materialType, respectGrain]);
+  }, [boardDimensions, materialType, grainSettings]);
 
   return (
     <div className="space-y-6">
@@ -110,26 +117,6 @@ export function OptimizerForm({ pieces, hasCuts }: OptimizerFormProps) {
               </FormItem>
             )}
           />
-           <FormField
-            control={form.control}
-            name="respectGrain"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-background">
-                <div className="space-y-0.5">
-                  <FormLabel>Respetar Veta</FormLabel>
-                  <FormDescription>
-                    Impide la rotación de piezas para mantener la dirección de la veta.
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
           <Button type="submit" disabled={!hasCuts || piecesForMaterial.length === 0} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
             <LayoutGrid className="mr-2 h-4 w-4" />
             Generar Diagrama de Corte
@@ -141,8 +128,8 @@ export function OptimizerForm({ pieces, hasCuts }: OptimizerFormProps) {
         </form>
       </Form>
       
-      {showOptimizer && hasCuts && piecesForMaterial.length > 0 && (
-        <VisualOptimizer pieces={piecesForMaterial} boardWidth={width} boardHeight={height} allowRotation={!respectGrain} />
+      {showOptimizer && hasCuts && piecesForOptimizer.length > 0 && (
+        <VisualOptimizer pieces={piecesForOptimizer} boardWidth={width} boardHeight={height} />
       )}
     </div>
   );

@@ -16,6 +16,7 @@ import { cabinetData } from '@/lib/cabinets';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
 import { CabinetSelector } from './cabinet-selector';
+import { Switch } from './ui/switch';
 
 
 type EditorSidebarProps = {
@@ -50,6 +51,7 @@ export function EditorSidebar({
     onSelectInstance
 }: EditorSidebarProps) {
     const [activeTab, setActiveTab] = useState('edit');
+    const [piecesGrainSettings, setPiecesGrainSettings] = useState<Record<string, boolean>>({});
     
     const editingCabinet = useMemo(() => {
         return placedCabinets.find(c => c.instanceId === selectedInstanceId) || null;
@@ -160,18 +162,37 @@ export function EditorSidebar({
                                 {placedCabinets.length === 0 && <TableCaption>La lista de corte aparecerá aquí.</TableCaption>}
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Cant</TableHead><TableHead>Pieza</TableHead><TableHead>Dimensiones</TableHead><TableHead>Material</TableHead>
+                                        <TableHead>Cant</TableHead>
+                                        <TableHead>Pieza</TableHead>
+                                        <TableHead>Dimensiones</TableHead>
+                                        <TableHead>Material</TableHead>
+                                        <TableHead className="text-center">Veta</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {aggregatedPieces.map((piece, index) => (
-                                        <TableRow key={index} className={cn(piece.material === BACK_PANEL_MATERIAL && 'text-orange-600 dark:text-orange-400')}>
-                                            <TableCell className="font-medium">{piece.quantity}</TableCell><TableCell>{piece.name}</TableCell><TableCell>{`${piece.width} x ${piece.height} mm`}</TableCell><TableCell>{piece.material}</TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {aggregatedPieces.map((piece, index) => {
+                                        const key = `${piece.name}|${piece.width}|${piece.height}|${piece.material}`;
+                                        return (
+                                            <TableRow key={index} className={cn(piece.material === BACK_PANEL_MATERIAL && 'text-orange-600 dark:text-orange-400')}>
+                                                <TableCell className="font-medium">{piece.quantity}</TableCell>
+                                                <TableCell>{piece.name}</TableCell>
+                                                <TableCell>{`${piece.width} x ${piece.height} mm`}</TableCell>
+                                                <TableCell>{piece.material}</TableCell>
+                                                <TableCell className="text-center">
+                                                     <Switch
+                                                        checked={piecesGrainSettings[key] ?? true}
+                                                        onCheckedChange={(checked) => {
+                                                            setPiecesGrainSettings(prev => ({ ...prev, [key]: checked }));
+                                                        }}
+                                                        aria-label="Respetar veta"
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
                                 </TableBody>
                             </Table>
-                            <OptimizerForm pieces={aggregatedPieces} hasCuts={aggregatedPieces.length > 0} />
+                            <OptimizerForm pieces={aggregatedPieces} hasCuts={aggregatedPieces.length > 0} grainSettings={piecesGrainSettings} />
                         </div>
                     </ScrollArea>
                 </TabsContent>

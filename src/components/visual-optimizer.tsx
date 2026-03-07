@@ -10,28 +10,30 @@ interface AggregatedPiece extends Piece {
   height: number;
 }
 
-interface PlacedPiece extends AggregatedPiece {
+interface PieceWithRotation extends AggregatedPiece {
+  allowRotation: boolean;
+}
+
+interface PlacedPiece extends PieceWithRotation {
   x: number;
   y: number;
   rotated: boolean;
 }
 
 interface VisualOptimizerProps {
-  pieces: AggregatedPiece[];
+  pieces: PieceWithRotation[];
   boardWidth: number;
   boardHeight: number;
-  allowRotation: boolean;
 }
 
 const PIXELS_PER_MM = 0.2;
 
 const packPieces = (
-  piecesToPack: AggregatedPiece[],
+  piecesToPack: PieceWithRotation[],
   boardWidth: number,
   boardHeight: number,
-  allowRotation: boolean
 ): { placed: PlacedPiece[]; unplaced: AggregatedPiece[] } => {
-  let allPieces: (Omit<AggregatedPiece, 'quantity'> & { originalId: string })[] = [];
+  let allPieces: (Omit<PieceWithRotation, 'quantity'> & { originalId: string })[] = [];
   piecesToPack.forEach((p, i) => {
     for (let j = 0; j < p.quantity; j++) {
       // Ignore pieces with no dimensions
@@ -65,7 +67,7 @@ const packPieces = (
       rowMaxHeight = Math.max(rowMaxHeight, pieceH);
       placedInThisTurn = true;
     } 
-    else if (allowRotation && currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
+    else if (piece.allowRotation && currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
        placed.push({ ...piece, x: currentX, y: currentY, rotated: true });
        currentX += rotatedW;
        rowMaxHeight = Math.max(rowMaxHeight, rotatedH);
@@ -82,7 +84,7 @@ const packPieces = (
         rowMaxHeight = Math.max(rowMaxHeight, pieceH);
         placedInThisTurn = true;
       }
-      else if (allowRotation && currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
+      else if (piece.allowRotation && currentX + rotatedW <= boardWidth && currentY + rotatedH <= boardHeight) {
         placed.push({ ...piece, x: currentX, y: currentY, rotated: true });
         currentX += rotatedW;
         rowMaxHeight = Math.max(rowMaxHeight, rotatedH);
@@ -109,14 +111,14 @@ const packPieces = (
 };
 
 
-export function VisualOptimizer({ pieces, boardWidth, boardHeight, allowRotation }: VisualOptimizerProps) {
+export function VisualOptimizer({ pieces, boardWidth, boardHeight }: VisualOptimizerProps) {
   if (!pieces || pieces.length === 0) {
     return null;
   }
 
   const { placed, unplaced } = React.useMemo(
-    () => packPieces(pieces, boardWidth, boardHeight, allowRotation),
-    [pieces, boardWidth, boardHeight, allowRotation]
+    () => packPieces(pieces, boardWidth, boardHeight),
+    [pieces, boardWidth, boardHeight]
   );
   
   const placedArea = placed.reduce((acc, p) => acc + p.width * p.height, 0);
