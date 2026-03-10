@@ -11,7 +11,7 @@ const BACK_PANEL_MATERIAL = 'MDF 3mm';
  */
 export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   // Handle special cases like corner cabinets first
-  if (cabinet.cabinetId === 'base-corner-900') {
+  if (cabinet.cabinetId === 'base-corner') {
     const cornerPieces: Piece[] = [];
     const { width, height, depth, depth2 } = cabinet; // width is wall space
     const bodyDepth1 = depth;
@@ -43,7 +43,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     return cornerPieces;
   }
   
-  if (cabinet.cabinetId.includes('microwave')) {
+  if (cabinet.cabinetId === 'wall-microwave') {
     const pieces: Piece[] = [];
     const { width, height, depth, components } = cabinet;
     const interiorWidth = width - (2 * MELAMINE_THICKNESS);

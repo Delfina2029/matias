@@ -86,35 +86,21 @@ const BACK_PANEL_MATERIAL = 'MDF 3mm';
 // Define cabinets for each category
 const bajoMesadaCabinets: Cabinet[] = [
   {
-    id: 'base-600',
-    name: 'Base 600mm',
+    id: 'base',
+    name: 'Mueble Base',
     type: 'base',
     icon: Box,
     width: 600,
     height: 720,
     depth: 580,
-    pieces: [
-      { name: 'Puerta', width: 596, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
-    ],
+    pieces: [], // Pieces are generated dynamically
   },
   {
-    id: 'base-450',
-    name: 'Base 450mm',
-    type: 'base',
-    icon: Box,
-    width: 450,
-    height: 720,
-    depth: 580,
-    pieces: [
-      { name: 'Puerta', width: 446, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
-    ],
-  },
-  {
-    id: 'base-corner-900',
+    id: 'base-corner',
     name: 'Esquinero Asimétrico',
     type: 'base',
     icon: Pentagon,
-    width: 770,
+    width: 770, // This is wall space, not actual width
     height: 800,
     depth: 600,
     depth2: 300,
@@ -124,19 +110,17 @@ const bajoMesadaCabinets: Cabinet[] = [
 
 const alacenaCabinets: Cabinet[] = [
   {
-    id: 'wall-600',
-    name: 'Alacena 600mm',
+    id: 'wall',
+    name: 'Alacena',
     type: 'wall',
     icon: Archive,
     width: 600,
     height: 600,
     depth: 320,
-    pieces: [
-      { name: 'Puerta', width: 596, height: 596, quantity: 1, material: MELAMINE_MATERIAL },
-    ],
+    pieces: [],
   },
   {
-    id: 'wall-microwave-600',
+    id: 'wall-microwave',
     name: 'Porta Microondas',
     type: 'wall',
     icon: Microwave,
@@ -153,23 +137,24 @@ const alacenaCabinets: Cabinet[] = [
 
 const columnaCabinets: Cabinet[] = [
   {
-    id: 'tall-600',
-    name: 'Columna 600mm',
+    id: 'tall',
+    name: 'Columna',
     type: 'tall',
     icon: Container,
     width: 600,
     height: 2000,
     depth: 580,
-    pieces: [
-      { name: 'Puerta Superior', width: 596, height: 1246, quantity: 1, material: MELAMINE_MATERIAL },
-      { name: 'Puerta Inferior', width: 596, height: 716, quantity: 1, material: MELAMINE_MATERIAL },
-    ],
+    pieces: [],
+    defaultComponents: [
+        { type: 'door', height: 1250 },
+        { type: 'door', height: 750 },
+    ]
   },
 ];
 
 const vanitoryCabinets: Cabinet[] = [
     {
-      id: 'vanity-600-hanging-1d1o',
+      id: 'vanity-hanging-1d1o',
       name: 'Vanitory Colgante (1 Cajón, 1 Hueco)',
       type: 'base', // 'base' so it gets a countertop in 3D view
       icon: VanitoryHangingIcon,
@@ -183,7 +168,7 @@ const vanitoryCabinets: Cabinet[] = [
       ]
     },
     {
-      id: 'vanity-600-patas-1d1o',
+      id: 'vanity-patas-1d1o',
       name: 'Vanitory Patas (1 Cajón, 1 Hueco)',
       type: 'base',
       icon: VanitoryPatasIcon,
@@ -197,7 +182,7 @@ const vanitoryCabinets: Cabinet[] = [
       ]
     },
     {
-      id: 'vanity-600-hanging-2d',
+      id: 'vanity-hanging-2d',
       name: 'Vanitory Colgante (2 Cajones)',
       type: 'base',
       icon: VanitoryHangingIcon,
@@ -212,7 +197,7 @@ const vanitoryCabinets: Cabinet[] = [
       ],
     },
     {
-      id: 'vanity-600-patas-2d',
+      id: 'vanity-patas-2d',
       name: 'Vanitory Patas (2 Cajones)',
       type: 'base',
       icon: VanitoryPatasIcon,
@@ -227,7 +212,7 @@ const vanitoryCabinets: Cabinet[] = [
       ]
     },
     {
-      id: 'vanity-600-hanging-2p',
+      id: 'vanity-hanging-2p',
       name: 'Vanitory Colgante (2 Puertas)',
       type: 'base',
       icon: VanitoryHangingIcon,
@@ -241,7 +226,7 @@ const vanitoryCabinets: Cabinet[] = [
       ],
     },
     {
-      id: 'vanity-600-patas-2p',
+      id: 'vanity-patas-2p',
       name: 'Vanitory Patas (2 Puertas)',
       type: 'base',
       icon: VanitoryPatasIcon,
@@ -255,36 +240,8 @@ const vanitoryCabinets: Cabinet[] = [
       ]
     },
     {
-      id: 'vanity-800-hanging-2p',
-      name: 'Vanitory Colgante 800mm (2 Puertas)',
-      type: 'base',
-      icon: VanitoryHangingIcon,
-      width: 800,
-      height: 460,
-      depth: 460,
-      pieces: [],
-      defaultComponents: [
-        { type: 'door', height: 404 },
-        { type: 'opening', height: 56 },
-      ],
-    },
-    {
-      id: 'vanity-800-patas-2p',
-      name: 'Vanitory 800mm Patas (2 Puertas)',
-      type: 'base',
-      icon: VanitoryPatasIcon,
-      width: 800,
-      height: 840,
-      depth: 460,
-      pieces: [],
-      defaultComponents: [
-        { type: 'door', height: 684 },
-        { type: 'opening', height: 56 },
-      ]
-    },
-    {
-      id: 'vanity-600-patas',
-      name: 'Vanitory 600mm Patas',
+      id: 'vanity-patas',
+      name: 'Vanitory Patas',
       type: 'base',
       icon: VanitoryPatasIcon,
       width: 600,
@@ -296,23 +253,9 @@ const vanitoryCabinets: Cabinet[] = [
         { type: 'drawer', height: 200 },
       ]
     },
-     {
-      id: 'vanity-800-patas',
-      name: 'Vanitory 800mm Patas',
-      type: 'base',
-      icon: VanitoryPatasIcon,
-      width: 800,
-      height: 840,
-      depth: 460,
-      pieces: [], // Will be generated by logic
-      defaultComponents: [
-        { type: 'door', height: 540 },
-        { type: 'drawer', height: 200 },
-      ]
-    },
     {
-      id: 'vanity-600-3-drawers',
-      name: 'Vanitory 600mm 3 Cajones',
+      id: 'vanity-3-drawers',
+      name: 'Vanitory 3 Cajones',
       type: 'base',
       icon: Vanitory3DrawersIcon,
       width: 600,
@@ -329,8 +272,8 @@ const vanitoryCabinets: Cabinet[] = [
 
 const placarCabinets: Cabinet[] = [
     {
-        id: 'placar-module-800',
-        name: 'Módulo Placar 800mm',
+        id: 'placar-module',
+        name: 'Módulo Placar',
         type: 'placar',
         icon: PlacarIcon,
         width: 800,
