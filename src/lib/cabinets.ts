@@ -183,6 +183,20 @@ const vanitoryCabinets: Cabinet[] = [
       ]
     },
     {
+      id: 'vanity-600-patas-1d1o',
+      name: 'Vanitory Patas (1 Cajón, 1 Hueco)',
+      type: 'base',
+      icon: VanitoryPatasIcon,
+      width: 600,
+      height: 840,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'opening', height: 540 },
+        { type: 'drawer', height: 200 },
+      ]
+    },
+    {
       id: 'vanity-600-hanging-2d',
       name: 'Vanitory Colgante (2 Cajones)',
       type: 'base',
@@ -196,6 +210,21 @@ const vanitoryCabinets: Cabinet[] = [
         { type: 'drawer', height: 200 },
         { type: 'opening', height: 60 },
       ],
+    },
+    {
+      id: 'vanity-600-patas-2d',
+      name: 'Vanitory Patas (2 Cajones)',
+      type: 'base',
+      icon: VanitoryPatasIcon,
+      width: 600,
+      height: 840,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'drawer', height: 350 },
+        { type: 'drawer', height: 350 },
+        { type: 'opening', height: 40 },
+      ]
     },
     {
       id: 'vanity-600-hanging-2p',
@@ -212,6 +241,20 @@ const vanitoryCabinets: Cabinet[] = [
       ],
     },
     {
+      id: 'vanity-600-patas-2p',
+      name: 'Vanitory Patas (2 Puertas)',
+      type: 'base',
+      icon: VanitoryPatasIcon,
+      width: 600,
+      height: 840,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'door', height: 684 },
+        { type: 'opening', height: 56 },
+      ]
+    },
+    {
       id: 'vanity-800-hanging-2p',
       name: 'Vanitory Colgante 800mm (2 Puertas)',
       type: 'base',
@@ -224,6 +267,20 @@ const vanitoryCabinets: Cabinet[] = [
         { type: 'door', height: 404 },
         { type: 'opening', height: 56 },
       ],
+    },
+    {
+      id: 'vanity-800-patas-2p',
+      name: 'Vanitory 800mm Patas (2 Puertas)',
+      type: 'base',
+      icon: VanitoryPatasIcon,
+      width: 800,
+      height: 840,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'door', height: 684 },
+        { type: 'opening', height: 56 },
+      ]
     },
     {
       id: 'vanity-600-patas',
@@ -251,19 +308,6 @@ const vanitoryCabinets: Cabinet[] = [
       defaultComponents: [
         { type: 'door', height: 540 },
         { type: 'drawer', height: 200 },
-      ]
-    },
-    {
-      id: 'vanity-800-patas-2p',
-      name: 'Vanitory 800mm Patas (2 Puertas)',
-      type: 'base',
-      icon: VanitoryPatasIcon,
-      width: 800,
-      height: 840,
-      depth: 460,
-      pieces: [],
-      defaultComponents: [
-        { type: 'door', height: 740 },
       ]
     },
     {
