@@ -99,7 +99,8 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
     // Add reinforcements between vertically stacked components
     const frontComponents = components.filter(c => c.type === 'drawer' || c.type === 'door');
-    if (frontComponents.length > 1) {
+    const treatAsHorizontalDoors = frontComponents.length > 1 && frontComponents.every(c => c.type === 'door') && cabinet.type !== 'tall';
+    if (!treatAsHorizontalDoors && frontComponents.length > 1) {
         const reinforcementCount = frontComponents.length - 1;
         if (reinforcementCount > 0) {
             pieces.push({ 
@@ -130,8 +131,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
     components.forEach((component, index) => {
         if (component.type === 'door') {
-            const interiorWidth = width - (2 * MELAMINE_THICKNESS);
-            const doorWidth = (interiorWidth - 10) / 2; // Inset doors with 10mm total gap
+            const doorWidth = (width - (2 * MELAMINE_THICKNESS) - 10) / 2; // Inset doors with 10mm total gap
             let doorHeight = component.height - 4;
             let doorName;
             if (component.handle === 'j-profile') {
@@ -163,7 +163,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             if (isTopDrawer) {
                 // U-shaped drawer box for plumbing
                 const drawerBoxDepth = 350;
-                const drawerBoxWidth = interiorWidth - 24; // 12mm slide clearance on each side
+                const drawerBoxWidth = interiorWidth - 29; // slide clearance
                 const plumbingGap = 160;
                 const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
 
@@ -176,10 +176,10 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             } else {
                 // Standard full-depth drawer for lower positions
                 const drawerBoxDepth = 350;
-                const drawerBoxWidth = 540;
+                const drawerBoxWidth = interiorWidth - 29;
 
                 pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-                pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
                 pieces.push({ name: 'Fondo de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
             }
         }
