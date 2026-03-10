@@ -100,19 +100,21 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     // Add reinforcements between vertically stacked components
     const frontComponents = components.filter(c => c.type === 'drawer' || c.type === 'door');
     const treatAsHorizontalDoors = frontComponents.length > 1 && frontComponents.every(c => c.type === 'door') && cabinet.type !== 'tall';
-    if (!treatAsHorizontalDoors && frontComponents.length > 1) {
-        const reinforcementCount = frontComponents.filter(c => c.type === 'drawer').length - 1;
+    
+    if (!treatAsHorizontalDoors) {
+        const reinforcementCount = frontComponents.length - 1;
         if (reinforcementCount > 0) {
             pieces.push({ 
-                name: 'Refuerzo', 
+                name: 'Refuerzo Intermedio', 
                 width: interiorWidth, 
                 height: 100, 
                 quantity: reinforcementCount, 
                 material: MELAMINE_MATERIAL,
-                notes: 'Separación entre componentes'
+                notes: 'Separación entre frentes'
             });
         }
     }
+
 
     if (!isHanging) {
         // Legs - as a hardware note
@@ -131,7 +133,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
     components.forEach((component, index) => {
         if (component.type === 'door') {
-            const doorWidth = 277;
+            const doorWidth = (interiorWidth - 10) / 2;
             let doorHeight = component.height - 4;
             let doorName;
             if (component.handle === 'j-profile') {
@@ -146,7 +148,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             const isTopDrawer = index === topDrawerIndex; // Check if the current drawer is the highest one.
 
             // --- Front piece ---
-            let frontHeight = 200; // Standard for vanities
+            let frontHeight = component.height - 4;
             let frontName;
             if (component.handle === 'j-profile') {
                 frontHeight -= 26.8;
