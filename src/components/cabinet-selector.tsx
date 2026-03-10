@@ -20,30 +20,25 @@ export function CabinetSelector({ onSelectCabinet }: CabinetSelectorProps) {
             <Accordion type="multiple" className="w-full">
                 {cabinetCategories.map((category) => (
                     <AccordionItem value={category.name} key={category.name}>
-                        <AccordionTrigger className="text-sm font-semibold py-3 hover:no-underline">
+                        <AccordionTrigger className="text-sm font-semibold py-2 hover:no-underline">
                             {category.name}
                         </AccordionTrigger>
                         <AccordionContent>
-                            <div className="space-y-2 pt-2">
+                            <div className="space-y-1 pt-1">
                                 {category.cabinets.map((cabinet) => (
                                     <div
                                         key={cabinet.id}
                                         className="flex items-center justify-between p-2 border rounded-lg bg-background hover:bg-secondary transition-colors"
                                     >
-                                        <div className="flex items-center gap-3">
-                                        <cabinet.icon className="w-6 h-6 text-primary shrink-0" />
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{cabinet.name}</span>
-                                            <span className="text-xs text-muted-foreground">{`${cabinet.width}x${cabinet.height}x${cabinet.depth}mm`}</span>
-                                        </div>
-                                        </div>
+                                        <span className="text-sm font-medium">{cabinet.name}</span>
                                         <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => onSelectCabinet(cabinet.id)}
-                                        aria-label={`Añadir ${cabinet.name}`}
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={() => onSelectCabinet(cabinet.id)}
+                                            aria-label={`Añadir ${cabinet.name}`}
                                         >
-                                        <PlusCircle className="w-5 h-5 text-accent-foreground/80 hover:text-accent-foreground" />
+                                            <PlusCircle className="w-5 h-5 text-accent-foreground/80 hover:text-accent-foreground" />
                                         </Button>
                                     </div>
                                 ))}
