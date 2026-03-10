@@ -17,10 +17,10 @@ export function CabinetSelector({ onSelectCabinet }: CabinetSelectorProps) {
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-3 pt-0">
         <ScrollArea className="h-full pr-3">
-            <Accordion type="multiple" defaultValue={['Bajo Mesada', 'Vanitory', 'Interior de Placar']} className="w-full">
+            <Accordion type="multiple" className="w-full">
                 {cabinetCategories.map((category) => (
                     <AccordionItem value={category.name} key={category.name}>
-                        <AccordionTrigger className="text-base font-semibold py-3 hover:no-underline">
+                        <AccordionTrigger className="text-sm font-semibold py-3 hover:no-underline">
                             {category.name}
                         </AccordionTrigger>
                         <AccordionContent>
@@ -28,10 +28,10 @@ export function CabinetSelector({ onSelectCabinet }: CabinetSelectorProps) {
                                 {category.cabinets.map((cabinet) => (
                                     <div
                                         key={cabinet.id}
-                                        className="flex items-center justify-between p-3 border rounded-lg bg-background hover:bg-secondary transition-colors"
+                                        className="flex items-center justify-between p-2 border rounded-lg bg-background hover:bg-secondary transition-colors"
                                     >
-                                        <div className="flex items-center gap-4">
-                                        <cabinet.icon className="w-8 h-8 text-primary shrink-0" />
+                                        <div className="flex items-center gap-3">
+                                        <cabinet.icon className="w-6 h-6 text-primary shrink-0" />
                                         <div className="flex flex-col">
                                             <span className="font-medium">{cabinet.name}</span>
                                             <span className="text-xs text-muted-foreground">{`${cabinet.width}x${cabinet.height}x${cabinet.depth}mm`}</span>
