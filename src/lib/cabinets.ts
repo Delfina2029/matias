@@ -213,21 +213,6 @@ const vanitoryCabinets: Cabinet[] = [
       ]
     },
     {
-      id: 'vanity-patas-2d',
-      name: 'Vanitory Patas (2 Cajones)',
-      type: 'base',
-      icon: VanitoryPatasIcon,
-      width: 600,
-      height: 840,
-      depth: 460,
-      pieces: [],
-      defaultComponents: [
-        { type: 'drawer', height: 350 },
-        { type: 'drawer', height: 350 },
-        { type: 'opening', height: 40 },
-      ]
-    },
-    {
       id: 'vanity-patas-2p',
       name: 'Vanitory Patas (2 Puertas)',
       type: 'base',
