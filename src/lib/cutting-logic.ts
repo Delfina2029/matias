@@ -68,7 +68,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             doorHeight -= 26.8; 
             doorName = 'Puerta (Perfil J)';
         } else {
-            doorHeight -= 30;
             doorName = 'Puerta (Tirar)';
         }
 
@@ -131,15 +130,15 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
     components.forEach((component, index) => {
         if (component.type === 'door') {
-            const doorWidth = (width - 6) / 2; // Two doors with 2mm gap between and on sides
+            const interiorWidth = width - (2 * MELAMINE_THICKNESS);
+            const doorWidth = (interiorWidth - 10) / 2; // Inset doors with 10mm total gap
             let doorHeight = component.height - 4;
             let doorName;
             if (component.handle === 'j-profile') {
                 doorHeight -= 26.8;
-                doorName = 'Puerta de Vanitory (Perfil J)';
+                doorName = 'Puerta de Vanitory (Perfil J, Interior)';
             } else {
-                doorHeight -= 30;
-                doorName = 'Puerta de Vanitory (Tirar)';
+                doorName = 'Puerta de Vanitory (Interior)';
             }
             pieces.push({ name: doorName, width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });
         } else if (component.type === 'drawer') {
@@ -147,17 +146,16 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             const isTopDrawer = index === topDrawerIndex; // Check if the current drawer is the highest one.
 
             // --- Front piece ---
-            let frontHeight;
+            let frontHeight = component.height - 4;
             let frontName;
             if (component.handle === 'j-profile') {
-                frontHeight = 170;
+                frontHeight -= 26.8;
                 frontName = 'Frente de Cajón (Perfil J)';
             } else {
-                frontHeight = 170;
                 frontName = 'Frente de Cajón (Tirar)';
             }
 
-            const drawerFrontWidth = 555;
+            const drawerFrontWidth = width - 4;
 
             pieces.push({ name: frontName, width: drawerFrontWidth, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
@@ -165,7 +163,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             if (isTopDrawer) {
                 // U-shaped drawer box for plumbing
                 const drawerBoxDepth = 350;
-                const drawerBoxWidth = 540;
+                const drawerBoxWidth = interiorWidth - 24; // 12mm slide clearance on each side
                 const plumbingGap = 160;
                 const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
 
@@ -320,7 +318,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         frontName = 'Frente de Cajón (Tirar)';
       }
       
-      const drawerFrontWidth = interiorWidth - 6; // Inset front with 3mm gap each side
+      const drawerFrontWidth = width - 4;
 
       pieces.push({
         name: frontName,
