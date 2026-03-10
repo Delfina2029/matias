@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { OptimizerForm } from './optimizer-form';
-import { Palette, List, Box, Settings, PlusCircle } from 'lucide-react';
+import { Palette, List, Settings, PlusCircle } from 'lucide-react';
 import { generatePiecesForCabinet } from '@/lib/cutting-logic';
 import { AppearanceEditor } from './appearance-editor';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ import { Button } from './ui/button';
 import { X } from 'lucide-react';
 import { CabinetSelector } from './cabinet-selector';
 import { Switch } from './ui/switch';
+import { Separator } from './ui/separator';
 
 
 type EditorSidebarProps = {
@@ -83,6 +84,39 @@ export function EditorSidebar({
           if (!isABackPanel && isBBackPanel) return -1;
           if (a.name === b.name) return a.width - b.width;
           return a.name.localeCompare(b.name);
+        });
+        return piecesArray;
+    }, [placedCabinets]);
+
+    const summarizedPieces = useMemo(() => {
+        const pieceMap = new Map<string, { width: number; height: number; quantity: number; material: string }>();
+        const allPieces = placedCabinets.flatMap(pc => generatePiecesForCabinet(pc));
+
+        allPieces.forEach((piece) => {
+          const roundedWidth = Math.round(piece.width * 10) / 10;
+          const roundedHeight = Math.round(piece.height * 10) / 10;
+          if (piece.material === 'Hardware' || roundedWidth <= 0 || roundedHeight <= 0) return;
+          
+          const key = `${roundedHeight}|${roundedWidth}|${piece.material}`;
+          const existing = pieceMap.get(key);
+
+          if (existing) {
+            existing.quantity += piece.quantity;
+          } else {
+            pieceMap.set(key, { 
+                width: roundedWidth, 
+                height: roundedHeight, 
+                quantity: piece.quantity, 
+                material: piece.material 
+            });
+          }
+        });
+
+        const piecesArray = Array.from(pieceMap.values());
+        piecesArray.sort((a, b) => {
+            if (a.material !== b.material) return a.material.localeCompare(b.material);
+            if (a.height !== b.height) return b.height - a.height;
+            return b.width - a.width;
         });
         return piecesArray;
     }, [placedCabinets]);
@@ -156,42 +190,74 @@ export function EditorSidebar({
                 </TabsContent>
 
                 <TabsContent value="list" className="flex-1 overflow-hidden m-0">
-                    <ScrollArea className="h-full p-4 pt-2">
-                        <div className="space-y-6">
-                            <Table>
-                                {placedCabinets.length === 0 && <TableCaption>La lista de corte aparecerá aquí.</TableCaption>}
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Cant</TableHead>
-                                        <TableHead>Pieza</TableHead>
-                                        <TableHead>Dimensiones (Al x An)</TableHead>
-                                        <TableHead>Material</TableHead>
-                                        <TableHead className="text-center">Veta</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {aggregatedPieces.map((piece, index) => {
-                                        const key = `${piece.name}|${piece.width}|${piece.height}|${piece.material}`;
-                                        return (
-                                            <TableRow key={index} className={cn(piece.material === BACK_PANEL_MATERIAL && 'text-orange-600 dark:text-orange-400')}>
-                                                <TableCell className="font-medium">{piece.quantity}</TableCell>
-                                                <TableCell>{piece.name}</TableCell>
-                                                <TableCell>{`${piece.height} x ${piece.width} mm`}</TableCell>
-                                                <TableCell>{piece.material}</TableCell>
-                                                <TableCell className="text-center">
-                                                     <Switch
-                                                        checked={piecesGrainSettings[key] ?? true}
-                                                        onCheckedChange={(checked) => {
-                                                            setPiecesGrainSettings(prev => ({ ...prev, [key]: checked }));
-                                                        }}
-                                                        aria-label="Respetar veta"
-                                                    />
-                                                </TableCell>
+                    <ScrollArea className="h-full">
+                        <div className="space-y-6 p-4 pt-2">
+                             <Tabs defaultValue="detailed" className="w-full">
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="detailed">Despiece Detallado</TabsTrigger>
+                                    <TabsTrigger value="summary">Resumen para Fábrica</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="detailed" className="mt-4">
+                                    <Table>
+                                        {aggregatedPieces.length === 0 && <TableCaption>La lista de corte aparecerá aquí.</TableCaption>}
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Cant</TableHead>
+                                                <TableHead>Pieza</TableHead>
+                                                <TableHead>Dimensiones (Al x An)</TableHead>
+                                                <TableHead>Material</TableHead>
+                                                <TableHead className="text-center">Veta</TableHead>
                                             </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {aggregatedPieces.map((piece, index) => {
+                                                const key = `${piece.name}|${piece.width}|${piece.height}|${piece.material}`;
+                                                return (
+                                                    <TableRow key={index} className={cn(piece.material === BACK_PANEL_MATERIAL && 'text-orange-600 dark:text-orange-400', piece.material === 'Hardware' && 'text-muted-foreground')}>
+                                                        <TableCell className="font-medium">{piece.quantity}</TableCell>
+                                                        <TableCell>{piece.name}</TableCell>
+                                                        <TableCell>{piece.material !== 'Hardware' ? `${piece.height} x ${piece.width} mm` : piece.notes || '-'}</TableCell>
+                                                        <TableCell>{piece.material}</TableCell>
+                                                        <TableCell className="text-center">
+                                                            {piece.material !== BACK_PANEL_MATERIAL && piece.material !== 'Hardware' ? (
+                                                                <Switch
+                                                                    checked={piecesGrainSettings[key] ?? true}
+                                                                    onCheckedChange={(checked) => {
+                                                                        setPiecesGrainSettings(prev => ({ ...prev, [key]: checked }));
+                                                                    }}
+                                                                    aria-label="Respetar veta"
+                                                                />
+                                                            ) : 'N/A'}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </TabsContent>
+                                <TabsContent value="summary" className="mt-4">
+                                     <Table>
+                                        {summarizedPieces.length === 0 && <TableCaption>La lista de corte aparecerá aquí.</TableCaption>}
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Cant</TableHead>
+                                                <TableHead>Dimensiones (Al x An)</TableHead>
+                                                <TableHead>Material</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {summarizedPieces.map((piece, index) => (
+                                                <TableRow key={index} className={cn(piece.material === BACK_PANEL_MATERIAL && 'text-orange-600 dark:text-orange-400')}>
+                                                    <TableCell className="font-medium">{piece.quantity}</TableCell>
+                                                    <TableCell>{`${piece.height} x ${piece.width} mm`}</TableCell>
+                                                    <TableCell>{piece.material}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TabsContent>
+                            </Tabs>
+                            <Separator />
                             <OptimizerForm pieces={aggregatedPieces} hasCuts={aggregatedPieces.length > 0} grainSettings={piecesGrainSettings} />
                         </div>
                     </ScrollArea>
