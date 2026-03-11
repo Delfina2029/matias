@@ -149,14 +149,9 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             const isTopDrawer = index === topDrawerIndex; // Check if the current drawer is the highest one.
 
             // --- Front piece ---
-            let frontHeight = component.height - 4;
-            let drawerFrontWidth = width - 4;
-
-            // Special case for 'vanity-hanging-1d1o' and 'vanity-hanging-2d' as requested
-            if (cabinetId === 'vanity-hanging-1d1o' || cabinetId === 'vanity-hanging-2d') {
-                frontHeight = component.height; // No height discount
-                drawerFrontWidth = width - 45; // Specific width calculation
-            }
+            // Universal rule for all vanitory drawer fronts based on user feedback
+            let frontHeight = component.height; // No height discount for vanitories
+            let drawerFrontWidth = width - 45; // Universal width discount
 
             let frontName;
             if (component.handle === 'j-profile') {
@@ -168,11 +163,13 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
             pieces.push({ name: frontName, width: drawerFrontWidth, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
+            // --- Drawer Box ---
+            const drawerBoxWidth = interiorWidth - 29; // Universal clearance for slides
+
             // Check if it's the top drawer, which needs space for plumbing
             if (isTopDrawer) {
                 // U-shaped drawer box for plumbing
                 const drawerBoxDepth = 350;
-                const drawerBoxWidth = interiorWidth - 30; // slide clearance
                 const plumbingGap = 160;
                 const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
 
@@ -184,14 +181,8 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
             } else {
                 // Standard full-depth drawer for lower positions
-                const drawerBoxHeight = 100;
                 const drawerBoxDepth = 350;
-                const drawerBoxWidth = interiorWidth - 30; // For 600mm cab, this is 534mm
 
-                // NEW CONSTRUCTION LOGIC
-                // The user wants a piece of 100x534. This implies the front/back pieces are as wide as the drawer box.
-                // This changes the construction method for these drawers.
-                
                 // Front and Back pieces are the full width of the drawer box
                 pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
                 
