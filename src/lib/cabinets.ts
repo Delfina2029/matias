@@ -1,82 +1,15 @@
-import React from 'react';
 import type { Cabinet } from './types';
-import type { LucideIcon } from 'lucide-react';
-import { Box, Archive, Container, Pentagon, Microwave } from 'lucide-react';
-
-const PlacarIcon: LucideIcon = (props) => {
-    return React.createElement('svg', {
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      strokeWidth: "1.5",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      ...props
-    },
-      React.createElement('rect', { x: "3", y: "3", width: "18", height: "18", rx: "1" }),
-      React.createElement('path', { d: "M3 9h18" }),
-      React.createElement('path', { d: "M3 15h18" }),
-      React.createElement('path', { d: "M9 3v18" })
-    );
-};
-
-const VanitoryPatasIcon: LucideIcon = (props) => {
-    return React.createElement('svg', {
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      strokeWidth: "1.5",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      ...props
-    },
-      React.createElement('path', { d: "M4 21V9a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12" }),
-      React.createElement('path', { d: "M4 21v-2" }),
-      React.createElement('path', { d: "M20 21v-2" }),
-      React.createElement('path', { d: "M4 13h16" }),
-      React.createElement('path', { d: "M12.5 13v-5" }),
-      React.createElement('rect', { x: "5", y: "4", width: "14", height: "4", rx: "1" })
-    );
-};
-  
-const Vanitory3DrawersIcon: LucideIcon = (props) => {
-    return React.createElement('svg', {
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: "1.5",
-        strokeLinecap: "round",
-        strokeLinejoin: "round",
-        ...props
-    },
-        React.createElement('path', { d: "M4 21V9a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v12" }),
-        React.createElement('path', { d: "M4 21v-2" }),
-        React.createElement('path', { d: "M20 21v-2" }),
-        React.createElement('path', { d: "M4 14h16" }),
-        React.createElement('path', { d: "M4 8h16" }),
-        React.createElement('path', { d: "M12.5 8V4" }),
-        React.createElement('path', { d: "M12.5 14v-6" }),
-        React.createElement('path', { d: "M12.5 21v-7" })
-    );
-};
-  
-const VanitoryHangingIcon: LucideIcon = (props) => {
-    return React.createElement('svg', {
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: "1.5",
-        strokeLinecap: "round",
-        strokeLinejoin: "round",
-        ...props
-    },
-        React.createElement('rect', { x: "3", y: "3", width: "18", height: "12", rx: "1" }),
-        React.createElement('path', { d: "M4 10h16" }),
-        React.createElement('path', { d: "M9 10v-6" }),
-        React.createElement('path', { d: "M15 10v-6" }),
-        React.createElement('rect', { x: "4", y: "4", width: "16", height: "6", rx: "0.5" })
-    );
-};
+import { Archive, Container, Microwave, Pentagon } from 'lucide-react';
+import { 
+    BaseCabinetIcon,
+    PlacarModuleIcon,
+    Vanitory2PuertasIcon,
+    VanitoryHanging1D1OIcon,
+    VanitoryHanging2DIcon,
+    VanitoryPatas1D2PIcon,
+    VanitoryPatas2PIcon,
+    VanitoryPatas3DIcon 
+} from './icons';
 
 
 const MELAMINE_THICKNESS = 18;
@@ -89,7 +22,7 @@ const bajoMesadaCabinets: Cabinet[] = [
     id: 'base',
     name: 'Mueble Base',
     type: 'base',
-    icon: Box,
+    icon: BaseCabinetIcon,
     width: 600,
     height: 720,
     depth: 580,
@@ -100,10 +33,10 @@ const bajoMesadaCabinets: Cabinet[] = [
     name: 'Esquinero Asimétrico',
     type: 'base',
     icon: Pentagon,
-    width: 770, // This is wall space, not actual width
-    height: 800,
+    width: 900,
+    height: 720,
     depth: 600,
-    depth2: 300,
+    depth2: 600,
     pieces: [],
   },
 ];
@@ -158,7 +91,7 @@ const vanitoryCabinets: Cabinet[] = [
       id: 'vanity-hanging-1d1o',
       name: 'Vanitory Colgante (1 Cajón, 1 Hueco)',
       type: 'base',
-      icon: VanitoryHangingIcon,
+      icon: VanitoryHanging1D1OIcon,
       width: 600,
       height: 460,
       depth: 460,
@@ -172,7 +105,7 @@ const vanitoryCabinets: Cabinet[] = [
       id: 'vanity-hanging-2d',
       name: 'Vanitory Colgante (2 Cajones)',
       type: 'base',
-      icon: VanitoryHangingIcon,
+      icon: VanitoryHanging2DIcon,
       width: 600,
       height: 460,
       depth: 460,
@@ -187,8 +120,22 @@ const vanitoryCabinets: Cabinet[] = [
       id: 'vanity-hanging-2p',
       name: 'Vanitory Colgante (2 Puertas)',
       type: 'base',
-      icon: VanitoryHangingIcon,
+      icon: Vanitory2PuertasIcon,
       width: 600,
+      height: 460,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'door', height: 404 },
+        { type: 'opening', height: 56 },
+      ],
+    },
+    {
+      id: 'vanity-hanging-800-2p',
+      name: 'Vanitory Colgante 800mm (2 Puertas)',
+      type: 'base',
+      icon: Vanitory2PuertasIcon,
+      width: 800,
       height: 460,
       depth: 460,
       pieces: [],
@@ -202,13 +149,42 @@ const vanitoryCabinets: Cabinet[] = [
       id: 'vanity-patas-1d1o',
       name: 'Vanitory Patas (1 Cajón, 1 Hueco)',
       type: 'base',
-      icon: VanitoryPatasIcon,
+      icon: VanitoryHanging1D1OIcon,
       width: 600,
       height: 840,
       depth: 460,
       pieces: [],
       defaultComponents: [
-        { type: 'opening', height: 540 },
+        { type: 'opening', height: 400 },
+        { type: 'drawer', height: 340 },
+      ]
+    },
+    {
+      id: 'vanity-patas-3d',
+      name: 'Vanitory Patas (3 Cajones)',
+      type: 'base',
+      icon: VanitoryPatas3DIcon,
+      width: 600,
+      height: 840,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'drawer', height: 246 },
+        { type: 'drawer', height: 246 },
+        { type: 'drawer', height: 246 },
+      ]
+    },
+    {
+      id: 'vanity-patas-1d2p',
+      name: 'Vanitory Patas (1 Cajón, 2 Puertas)',
+      type: 'base',
+      icon: VanitoryPatas1D2PIcon,
+      width: 600,
+      height: 840,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'door', height: 540 },
         { type: 'drawer', height: 200 },
       ]
     },
@@ -216,7 +192,7 @@ const vanitoryCabinets: Cabinet[] = [
       id: 'vanity-patas-2p',
       name: 'Vanitory Patas (2 Puertas)',
       type: 'base',
-      icon: VanitoryPatasIcon,
+      icon: VanitoryPatas2PIcon,
       width: 600,
       height: 840,
       depth: 460,
@@ -227,32 +203,17 @@ const vanitoryCabinets: Cabinet[] = [
       ]
     },
     {
-      id: 'vanity-patas',
-      name: 'Vanitory Patas (1 Cajón, 2 Puertas)',
+      id: 'vanity-patas-800-2p',
+      name: 'Vanitory 800mm Patas (2 Puertas)',
       type: 'base',
-      icon: VanitoryPatasIcon,
-      width: 600,
+      icon: VanitoryPatas2PIcon,
+      width: 800,
       height: 840,
       depth: 460,
-      pieces: [], // Will be generated by logic
+      pieces: [],
       defaultComponents: [
-        { type: 'door', height: 540 },
-        { type: 'drawer', height: 200 },
-      ]
-    },
-    {
-      id: 'vanity-3-drawers',
-      name: 'Vanitory Patas (3 Cajones)',
-      type: 'base',
-      icon: Vanitory3DrawersIcon,
-      width: 600,
-      height: 840,
-      depth: 460,
-      pieces: [], // Will be generated by logic
-      defaultComponents: [
-        { type: 'drawer', height: 246 },
-        { type: 'drawer', height: 246 },
-        { type: 'drawer', height: 246 },
+        { type: 'door', height: 684 },
+        { type: 'opening', height: 56 },
       ]
     },
 ];
@@ -262,7 +223,7 @@ const placarCabinets: Cabinet[] = [
         id: 'placar-module',
         name: 'Módulo Placar',
         type: 'placar',
-        icon: PlacarIcon,
+        icon: PlacarModuleIcon,
         width: 800,
         height: 1800,
         depth: 500,

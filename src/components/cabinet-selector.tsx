@@ -29,9 +29,12 @@ export function CabinetSelector({ onSelectCabinet }: CabinetSelectorProps) {
                                         key={cabinet.id}
                                         className="flex items-center justify-between py-1.5 px-2 border rounded-md bg-background hover:bg-secondary transition-colors"
                                     >
-                                        <span className="text-sm">{cabinet.name}</span>
+                                        <div className="flex items-center">
+                                            { cabinet.icon && <cabinet.icon className="w-6 h-6 mr-3 text-primary shrink-0" /> }
+                                            <span className="text-sm">{cabinet.name}</span>
+                                        </div>
                                         <Button
-                                            variant="outline"
+                                            variant="ghost"
                                             size="sm"
                                             className="h-7 px-2 text-xs"
                                             onClick={() => onSelectCabinet(cabinet.id)}
