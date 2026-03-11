@@ -99,11 +99,10 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
     // Add reinforcements between vertically stacked components
     const frontComponents = components.filter(c => c.type === 'drawer' || c.type === 'door');
-    const treatAsHorizontalDoors = frontComponents.length > 1 && frontComponents.every(c => c.type === 'door') && cabinet.type !== 'tall';
     
     // Logic for reinforcements between components (simplified)
     const reinforcementCount = frontComponents.length - 1;
-    if (!treatAsHorizontalDoors && reinforcementCount > 0) {
+    if (reinforcementCount > 0) {
       pieces.push({
         name: 'Refuerzo Intermedio',
         width: interiorWidth,
@@ -150,10 +149,10 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             let frontHeight = component.height - 4;
             let drawerFrontWidth = width - 4;
 
-            // Special case for 'vanity-hanging-1d1o' as requested
-            if (cabinetId === 'vanity-hanging-1d1o') {
+            // Special case for 'vanity-hanging-1d1o' and 'vanity-hanging-2d' as requested
+            if (cabinetId === 'vanity-hanging-1d1o' || cabinetId === 'vanity-hanging-2d') {
                 frontHeight = component.height; // No height discount
-                drawerFrontWidth = width - 45; // Specific width calculation for 555mm on a 600mm cabinet
+                drawerFrontWidth = width - 45; // Specific width calculation
             }
 
             let frontName;
