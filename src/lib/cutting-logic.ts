@@ -147,11 +147,20 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         } else if (component.type === 'drawer') {
             const drawerBoxHeight = 100;
             const isTopDrawer = index === topDrawerIndex; // Check if the current drawer is the highest one.
+            const drawerBoxWidth = interiorWidth - 29; // Universal clearance for slides
 
             // --- Front piece ---
-            // Universal rule for all vanitory drawer fronts based on user feedback
-            let frontHeight = component.height; // No height discount for vanitories
-            let drawerFrontWidth = width - 45; // Universal width discount
+            let frontHeight = component.height;
+            let drawerFrontWidth = width - 45;
+            
+            // Specific overrides for certain models
+            if (cabinetId === 'vanity-hanging-1d1o') {
+                frontHeight = 170;
+                drawerFrontWidth = width - 45;
+            } else if (cabinetId === 'vanity-hanging-2d') {
+                frontHeight = 170;
+                drawerFrontWidth = width - 45;
+            }
 
             let frontName;
             if (component.handle === 'j-profile') {
@@ -164,9 +173,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             pieces.push({ name: frontName, width: drawerFrontWidth, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
             // --- Drawer Box ---
-            const drawerBoxWidth = interiorWidth - 29; // Universal clearance for slides
-
-            // Check if it's the top drawer, which needs space for plumbing
             if (isTopDrawer) {
                 // U-shaped drawer box for plumbing
                 const drawerBoxDepth = 350;
@@ -183,13 +189,13 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
                 // Standard full-depth drawer for lower positions
                 const drawerBoxDepth = 350;
 
-                // Front and Back pieces are the full width of the drawer box
-                pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                // Side pieces are full depth, per user request.
+                pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
                 
-                // Side pieces fit BETWEEN the front and back pieces
-                pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth - (2 * MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                // Front and back pieces fit BETWEEN the side pieces to accommodate full-depth sides.
+                pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
                 
-                // Bottom piece fits inside the box formed by all four sides
+                // Bottom piece fits inside the box formed by all four sides.
                 pieces.push({ name: 'Fondo de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxDepth - (2 * MELAMINE_THICKNESS), quantity: 1, material: BACK_PANEL_MATERIAL });
             }
         }
