@@ -148,9 +148,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             const drawerBoxHeight = 100;
             const isTopDrawer = index === topDrawerIndex;
             
-            // Universal drawer box external width calculation
-            const drawerBoxWidth = interiorWidth - 29;
-
             // --- Front piece ---
             let frontHeight = component.height;
             let drawerFrontWidth = width - 4;
@@ -180,6 +177,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             if (isTopDrawer) {
                 // U-shaped drawer box for plumbing
                 const drawerBoxDepth = 350;
+                const drawerBoxWidth = interiorWidth - 29; // Universal drawer box external width calculation
                 const plumbingGap = 160;
                 const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
 
@@ -191,17 +189,20 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
             } else {
                 // Standard drawer for lower positions
-                const drawerBoxDepth = 350;
+                const drawerBoxDepth = 350; // Final assembled depth
 
-                // Side pieces are full depth.
-                pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-                
-                // Front and back pieces fit BETWEEN the side pieces.
-                const frontBackPieceWidth = drawerBoxWidth - (2 * MELAMINE_THICKNESS);
+                // Front/Back pieces determine the width. User wants this to be interiorWidth - 29.
+                const frontBackPieceWidth = interiorWidth - 29;
                 pieces.push({ name: 'Frente/Trasero de Cajón', width: frontBackPieceWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+
+                // Side pieces fit BETWEEN the front/back pieces. Their depth is the total depth minus front/back thickness.
+                const sidePieceDepth = drawerBoxDepth - (2 * MELAMINE_THICKNESS);
+                pieces.push({ name: 'Lateral de Cajón', width: sidePieceDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
                 
-                // Bottom piece fits inside the full box.
-                pieces.push({ name: 'Fondo de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxDepth - (2 * MELAMINE_THICKNESS), quantity: 1, material: BACK_PANEL_MATERIAL });
+                // Bottom piece fits inside all four vertical pieces.
+                const bottomWidth = frontBackPieceWidth - (2 * MELAMINE_THICKNESS);
+                const bottomDepth = sidePieceDepth;
+                pieces.push({ name: 'Fondo de Cajón', width: bottomWidth, height: bottomDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
             }
         }
     });
