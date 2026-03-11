@@ -146,21 +146,12 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             pieces.push({ name: doorName, width: doorWidth, height: doorHeight, quantity: 2, material: MELAMINE_MATERIAL });
         } else if (component.type === 'drawer') {
             const drawerBoxHeight = 100;
-            const isTopDrawer = index === topDrawerIndex; // Check if the current drawer is the highest one.
-            const drawerBoxWidth = interiorWidth - 29; // Universal clearance for slides
+            const isTopDrawer = index === topDrawerIndex;
+            const drawerBoxWidth = interiorWidth - 29;
 
             // --- Front piece ---
             let frontHeight = component.height;
             let drawerFrontWidth = width - 45;
-            
-            // Specific overrides for certain models
-            if (cabinetId === 'vanity-hanging-1d1o') {
-                frontHeight = 170;
-                drawerFrontWidth = width - 45;
-            } else if (cabinetId === 'vanity-hanging-2d') {
-                frontHeight = 170;
-                drawerFrontWidth = width - 45;
-            }
 
             let frontName;
             if (component.handle === 'j-profile') {
@@ -168,6 +159,10 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
                 frontName = 'Frente de Cajón (Perfil J)';
             } else {
                 frontName = 'Frente de Cajón (Tirar)';
+            }
+
+            if(component.height === 170) {
+                // Special height for these specific drawers.
             }
 
             pieces.push({ name: frontName, width: drawerFrontWidth, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
