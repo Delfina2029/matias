@@ -99,18 +99,20 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
     // Add reinforcements between vertically stacked components
     const frontComponents = components.filter(c => c.type === 'drawer' || c.type === 'door');
-    
-    // Logic for reinforcements between components (simplified)
-    const reinforcementCount = frontComponents.length - 1;
-    if (reinforcementCount > 0) {
-      pieces.push({
-        name: 'Refuerzo Intermedio',
-        width: interiorWidth,
-        height: 100,
-        quantity: reinforcementCount,
-        material: MELAMINE_MATERIAL,
-        notes: 'Separación entre frentes'
-      });
+    const treatAsHorizontalDoors = frontComponents.length > 1 && frontComponents.every(c => c.type === 'door');
+
+    if (!treatAsHorizontalDoors && frontComponents.length > 1) {
+      const reinforcementCount = frontComponents.length - 1;
+      if (reinforcementCount > 0) {
+        pieces.push({
+          name: 'Refuerzo Intermedio',
+          width: interiorWidth,
+          height: 100,
+          quantity: reinforcementCount,
+          material: MELAMINE_MATERIAL,
+          notes: 'Separación entre frentes'
+        });
+      }
     }
 
 
@@ -131,6 +133,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
     components.forEach((component, index) => {
         if (component.type === 'door') {
+            // For a 2-door vanity, each door is half the interior width minus a small gap
             const doorWidth = (interiorWidth - 10) / 2;
             let doorHeight = component.height - 4;
             let doorName;
@@ -181,12 +184,22 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
             } else {
                 // Standard full-depth drawer for lower positions
+                const drawerBoxHeight = 100;
                 const drawerBoxDepth = 350;
-                const drawerBoxWidth = interiorWidth - 30;
+                const drawerBoxWidth = interiorWidth - 30; // For 600mm cab, this is 534mm
 
-                pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-                pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-                pieces.push({ name: 'Fondo de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
+                // NEW CONSTRUCTION LOGIC
+                // The user wants a piece of 100x534. This implies the front/back pieces are as wide as the drawer box.
+                // This changes the construction method for these drawers.
+                
+                // Front and Back pieces are the full width of the drawer box
+                pieces.push({ name: 'Frente/Trasero de Cajón', width: drawerBoxWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                
+                // Side pieces fit BETWEEN the front and back pieces
+                pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth - (2 * MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                
+                // Bottom piece fits inside the box formed by all four sides
+                pieces.push({ name: 'Fondo de Cajón', width: drawerBoxWidth - (2 * MELAMINE_THICKNESS), height: drawerBoxDepth - (2 * MELAMINE_THICKNESS), quantity: 1, material: BACK_PANEL_MATERIAL });
             }
         }
     });
