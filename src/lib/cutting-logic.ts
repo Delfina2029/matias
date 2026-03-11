@@ -82,7 +82,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
   }
 
   if (cabinet.cabinetId.startsWith('vanity')) {
-    const { width, height, depth, components } = cabinet;
+    const { width, height, depth, components, cabinetId } = cabinet;
     const pieces: Piece[] = [];
     const interiorWidth = width - (2 * MELAMINE_THICKNESS);
     
@@ -101,18 +101,17 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
     const frontComponents = components.filter(c => c.type === 'drawer' || c.type === 'door');
     const treatAsHorizontalDoors = frontComponents.length > 1 && frontComponents.every(c => c.type === 'door') && cabinet.type !== 'tall';
     
-    if (!treatAsHorizontalDoors) {
-        const reinforcementCount = frontComponents.length - 1;
-        if (reinforcementCount > 0) {
-            pieces.push({ 
-                name: 'Refuerzo Intermedio', 
-                width: interiorWidth, 
-                height: 100, 
-                quantity: reinforcementCount, 
-                material: MELAMINE_MATERIAL,
-                notes: 'Separación entre frentes'
-            });
-        }
+    // Logic for reinforcements between components (simplified)
+    const reinforcementCount = frontComponents.length - 1;
+    if (!treatAsHorizontalDoors && reinforcementCount > 0) {
+      pieces.push({
+        name: 'Refuerzo Intermedio',
+        width: interiorWidth,
+        height: 100,
+        quantity: reinforcementCount,
+        material: MELAMINE_MATERIAL,
+        notes: 'Separación entre frentes'
+      });
     }
 
 
@@ -149,6 +148,14 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
 
             // --- Front piece ---
             let frontHeight = component.height - 4;
+            let drawerFrontWidth = width - 4;
+
+            // Special case for 'vanity-hanging-1d1o' as requested
+            if (cabinetId === 'vanity-hanging-1d1o') {
+                frontHeight = component.height; // No height discount
+                drawerFrontWidth = width - 45; // Specific width calculation for 555mm on a 600mm cabinet
+            }
+
             let frontName;
             if (component.handle === 'j-profile') {
                 frontHeight -= 26.8;
@@ -156,8 +163,6 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
             } else {
                 frontName = 'Frente de Cajón (Tirar)';
             }
-
-            const drawerFrontWidth = width - 4;
 
             pieces.push({ name: frontName, width: drawerFrontWidth, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
