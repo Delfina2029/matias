@@ -30,6 +30,8 @@ const Cabinet = memo(function Cabinet({
   const interiorWidth = cabinetWidth - 2 * melamineThickness;
 
   const isCorner = cabinet.cabinetId === 'base-corner-900';
+  const isInsetVanity = cabinet.cabinetId === 'vanity-patas-1d2p';
+
 
   return (
     <group scale={SCALE}>
@@ -152,17 +154,18 @@ const Cabinet = memo(function Cabinet({
         // Special rendering for two-door vanitory
         const isVanityTwoDoor = comp.type === 'door' && cabinet.cabinetId.startsWith('vanity');
         if (isVanityTwoDoor) {
-             const singleDoorWidth = (cabinetWidth - 0.015) / 2;
+             const singleDoorWidth = isInsetVanity ? ((interiorWidth - 0.006) / 2) : ((cabinetWidth - 0.015) / 2);
+             const zPos = isInsetVanity ? cabinetDepth / 2 - 0.009 : cabinetDepth / 2 + 0.001;
              return (
                  <React.Fragment key={comp.id}>
                     {/* Left Door */}
-                    <mesh position={[-singleDoorWidth/2 - 0.0025, yPos, cabinetDepth / 2 + 0.001]}>
-                        <boxGeometry args={[singleDoorWidth, compHeight - 0.01, 0.018]} />
+                    <mesh position={[-singleDoorWidth/2 - 0.0015, yPos, zPos]}>
+                        <boxGeometry args={[singleDoorWidth, compHeight - 0.004, 0.018]} />
                         <meshStandardMaterial color={appearance.frontColor} />
                     </mesh>
                      {/* Right Door */}
-                    <mesh position={[singleDoorWidth/2 + 0.0025, yPos, cabinetDepth / 2 + 0.001]}>
-                        <boxGeometry args={[singleDoorWidth, compHeight - 0.01, 0.018]} />
+                    <mesh position={[singleDoorWidth/2 + 0.0015, yPos, zPos]}>
+                        <boxGeometry args={[singleDoorWidth, compHeight - 0.004, 0.018]} />
                         <meshStandardMaterial color={appearance.frontColor} />
                     </mesh>
                  </React.Fragment>
@@ -187,7 +190,7 @@ const Cabinet = memo(function Cabinet({
         
         if (comp.type === 'drawer') {
           // Inset drawer front
-          const drawerFrontWidth = interiorWidth - 0.006; // 3mm gap on each side
+          const drawerFrontWidth = isInsetVanity ? interiorWidth - 0.004 : interiorWidth - 0.006;
           return (
             <mesh
               key={comp.id}

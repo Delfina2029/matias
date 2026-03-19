@@ -134,47 +134,59 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
         if (component.type === 'door') {
             const isTwoDoor = cabinetId.endsWith('2p') || cabinetId.endsWith('1d2p');
             const doorCount = isTwoDoor ? 2 : 1;
-            const doorWidth = (width - (2 * doorCount) - 2) / doorCount;
-            let doorHeight = component.height - 4;
+            let doorWidth;
             let doorName;
-            if (component.handle === 'j-profile') {
-                doorHeight -= 26.8;
-                doorName = 'Puerta de Vanitory (Perfil J)';
+
+            if (cabinetId === 'vanity-patas-1d2p') {
+                doorWidth = (interiorWidth - 6) / 2;
+                doorName = 'Puerta Interior';
             } else {
+                doorWidth = (width - (2 * doorCount) - 2) / doorCount;
                 doorName = 'Puerta de Vanitory';
             }
+
+            let doorHeight = component.height - 4;
+            if (component.handle === 'j-profile') {
+                doorHeight -= 26.8;
+                doorName = doorName.replace('Puerta', 'Puerta (Perfil J)');
+            }
             pieces.push({ name: doorName, width: doorWidth, height: doorHeight, quantity: doorCount, material: MELAMINE_MATERIAL });
+
         } else if (component.type === 'drawer') {
-            const drawerBoxHeight = 100;
             const isTopDrawer = index === topDrawerIndex;
-            
-            // --- Front piece ---
             let frontHeight = component.height;
-            let drawerFrontWidth = width - 4;
+            let drawerFrontWidth;
             let frontName;
 
-            const isSpecialFront = ['vanity-hanging-1d1o', 'vanity-hanging-2d'].includes(cabinetId);
-
-            if(isSpecialFront) {
-                frontHeight = 170; // Specific height for these drawers
-                drawerFrontWidth = width - 45;
+            if (cabinetId === 'vanity-patas-1d2p') {
+                drawerFrontWidth = interiorWidth - 4;
+                frontHeight -= 4;
+                frontName = 'Frente de Cajón Interior';
             } else {
-                 frontHeight = component.height - 4;
-                 drawerFrontWidth = width - 4;
+                 const isSpecialFront = ['vanity-hanging-1d1o', 'vanity-hanging-2d'].includes(cabinetId);
+
+                if(isSpecialFront) {
+                    frontHeight = 170; // Specific height for these drawers
+                    drawerFrontWidth = width - 45;
+                } else {
+                    frontHeight -= 4;
+                    drawerFrontWidth = width - 4;
+                }
+                frontName = 'Frente de Cajón (Tirar)';
             }
 
 
             if (component.handle === 'j-profile') {
                 frontHeight -= 26.8;
-                frontName = 'Frente de Cajón (Perfil J)';
-            } else {
-                frontName = 'Frente de Cajón (Tirar)';
+                frontName = frontName.includes('Interior') ? 'Frente de Cajón Interior (Perfil J)' : 'Frente de Cajón (Perfil J)';
             }
 
             pieces.push({ name: frontName, width: drawerFrontWidth, height: frontHeight, quantity: 1, material: MELAMINE_MATERIAL });
 
             // --- Drawer Box ---
-            if (isTopDrawer) {
+            const drawerBoxHeight = 100;
+
+            if (isTopDrawer && cabinetId !== 'vanity-patas-1d2p') {
                 // U-shaped drawer box for plumbing
                 const drawerBoxDepth = 350;
                 const drawerBoxWidth = interiorWidth - 29; // Universal drawer box external width calculation
@@ -188,21 +200,13 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet): Piece[] {
                 pieces.push({ name: 'Fondo de Cajón Vanitory', width: sideBoxInnerWidth, height: drawerBoxDepth - MELAMINE_THICKNESS, quantity: 2, material: BACK_PANEL_MATERIAL });
 
             } else {
-                // Standard drawer for lower positions
-                const drawerBoxDepth = 350; // Final assembled depth
-
-                // Front/Back pieces determine the width. User wants this to be interiorWidth - 29.
+                // Standard drawer for lower positions or the inset vanity
+                const drawerBoxDepth = 350;
                 const frontBackPieceWidth = interiorWidth - 29;
-                pieces.push({ name: 'Frente/Trasero de Cajón', width: frontBackPieceWidth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
-
-                // Side pieces fit BETWEEN the front/back pieces. Their depth is the total depth minus front/back thickness.
-                const sidePieceDepth = drawerBoxDepth - (2 * MELAMINE_THICKNESS);
-                pieces.push({ name: 'Lateral de Cajón', width: sidePieceDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
                 
-                // Bottom piece fits inside all four vertical pieces.
-                const bottomWidth = frontBackPieceWidth - (2 * MELAMINE_THICKNESS);
-                const bottomDepth = sidePieceDepth;
-                pieces.push({ name: 'Fondo de Cajón', width: bottomWidth, height: bottomDepth, quantity: 1, material: BACK_PANEL_MATERIAL });
+                pieces.push({ name: 'Lateral de Cajón', width: drawerBoxDepth, height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                pieces.push({ name: 'Frente/Trasero de Cajón', width: frontBackPieceWidth - (2*MELAMINE_THICKNESS), height: drawerBoxHeight, quantity: 2, material: MELAMINE_MATERIAL });
+                pieces.push({ name: 'Fondo de Cajón', width: frontBackPieceWidth - (2*MELAMINE_THICKNESS), height: drawerBoxDepth - (2*MELAMINE_THICKNESS), quantity: 1, material: BACK_PANEL_MATERIAL });
             }
         }
     });
