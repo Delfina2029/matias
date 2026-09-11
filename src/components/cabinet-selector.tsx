@@ -3,19 +3,26 @@ import { cabinetCategories } from '@/lib/cabinets';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { SketchUploadButton } from './sketch-upload-button';
 
 type CabinetSelectorProps = {
   onSelectCabinet: (cabinetId: string) => void;
+  onAddCustomCabinet?: (customData: any) => void;
 };
 
-export function CabinetSelector({ onSelectCabinet }: CabinetSelectorProps) {
+export function CabinetSelector({ onSelectCabinet, onAddCustomCabinet }: CabinetSelectorProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="font-headline text-lg">Seleccionar Gabinetes</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden p-3 pt-0">
-        <ScrollArea className="h-full pr-3">
+      <CardContent className="flex-1 overflow-hidden p-3 pt-0 flex flex-col">
+        {onAddCustomCabinet && (
+            <div className="mb-2">
+                <SketchUploadButton onSuccess={onAddCustomCabinet} />
+            </div>
+        )}
+        <ScrollArea className="flex-1 pr-3 min-h-0">
             <Accordion type="multiple" className="w-full">
                 {cabinetCategories.map((category) => (
                     <AccordionItem value={category.name} key={category.name}>

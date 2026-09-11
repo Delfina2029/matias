@@ -13,6 +13,7 @@ type AppearanceEditorProps = {
 
 const WOOD_COLORS = [
   { name: 'Blanco', color: '#f8f9fa' },
+  { name: 'Camelia de Faplac', color: '#CDAC80' },
   { name: 'Roble Claro', color: '#D2B48C' },
   { name: 'Nogal', color: '#6F4E37' },
   { name: 'Gris Grafito', color: '#555555' },
@@ -21,6 +22,9 @@ const WOOD_COLORS = [
 const CARCASS_COLORS = [
     { name: 'Blanco', color: '#e9ecef' },
     { name: 'Gris', color: '#adb5bd' },
+    { name: 'Camelia de Faplac', color: '#CDAC80' },
+    { name: 'Roble Claro', color: '#D2B48C' },
+    { name: 'Nogal', color: '#6F4E37' },
 ];
 
 const COUNTERTOP_COLORS = [
@@ -48,6 +52,28 @@ export function AppearanceEditor({ appearance, setAppearance }: AppearanceEditor
   return (
     <div className="space-y-6">
       <div>
+        <h4 className="font-semibold mb-3">Estilo de Frentes</h4>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={appearance.frontStyle !== 'inset' ? 'default' : 'outline'}
+            onClick={() => setAppearance({ ...appearance, frontStyle: 'overlay' })}
+            className="w-full text-xs"
+          >
+            Superpuesto (Estándar)
+          </Button>
+          <Button
+            type="button"
+            variant={appearance.frontStyle === 'inset' ? 'default' : 'outline'}
+            onClick={() => setAppearance({ ...appearance, frontStyle: 'inset' })}
+            className="w-full text-xs"
+          >
+            Embutido (Dentro del mueble)
+          </Button>
+        </div>
+      </div>
+
+      <div>
         <h4 className="font-semibold mb-3">Color de Frentes (Puertas/Cajones)</h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {WOOD_COLORS.map((c) => (
@@ -56,7 +82,7 @@ export function AppearanceEditor({ appearance, setAppearance }: AppearanceEditor
               name={c.name}
               color={c.color}
               isSelected={appearance.frontColor === c.color}
-              onClick={() => setAppearance({ ...appearance, frontColor: c.color })}
+              onClick={() => setAppearance({ ...appearance, frontColor: c.color, frontColorName: c.name })}
             />
           ))}
         </div>
@@ -70,7 +96,7 @@ export function AppearanceEditor({ appearance, setAppearance }: AppearanceEditor
               name={c.name}
               color={c.color}
               isSelected={appearance.carcassColor === c.color}
-              onClick={() => setAppearance({ ...appearance, carcassColor: c.color })}
+              onClick={() => setAppearance({ ...appearance, carcassColor: c.color, carcassColorName: c.name })}
             />
           ))}
         </div>
@@ -84,7 +110,7 @@ export function AppearanceEditor({ appearance, setAppearance }: AppearanceEditor
               name={c.name}
               color={c.color}
               isSelected={appearance.countertopColor === c.color}
-              onClick={() => setAppearance({ ...appearance, countertopColor: c.color })}
+              onClick={() => setAppearance({ ...appearance, countertopColor: c.color, countertopColorName: c.name })}
             />
           ))}
         </div>

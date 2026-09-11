@@ -1,21 +1,50 @@
 import React from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { LucideProps } from 'lucide-react';
 
-export const BaseCabinetIcon: LucideIcon = (props) => (
+export const Base1DoorIcon = (props: LucideProps) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
-    <rect x="3" y="6" width="18" height="14" rx="1" />
-    <path d="M3 6h18" />
+    <rect x="4" y="6" width="16" height="16" rx="1" />
+    <path d="M7 13v2" />
   </svg>
 );
 
-export const PlacarModuleIcon: LucideIcon = (props) => (
+export const Base2DoorsIcon = (props: LucideProps) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <rect x="4" y="6" width="16" height="16" rx="1" />
+    <path d="M12 6v16" />
+    <path d="M10 13v2" />
+    <path d="M14 13v2" />
+  </svg>
+);
+
+export const Base2DrawersIcon = (props: LucideProps) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <rect x="4" y="6" width="16" height="16" rx="1" />
+    <path d="M4 14h16" />
+    <path d="M10 10h4" />
+    <path d="M10 18h4" />
+  </svg>
+);
+
+export const Base3DrawersIcon = (props: LucideProps) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <rect x="4" y="6" width="16" height="16" rx="1" />
+    <path d="M4 11.3h16" />
+    <path d="M4 16.6h16" />
+    <path d="M10 8.6h4" />
+    <path d="M10 14h4" />
+    <path d="M10 19.3h4" />
+  </svg>
+);
+
+export const PlacarModuleIcon= (props: LucideProps) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
     <rect x="4" y="4" width="16" height="16" rx="1" />
     <path d="M12 4v16" />
   </svg>
 );
 
-export const VanitoryHanging1D1OIcon: LucideIcon = (props) => (
+export const VanitoryHanging1D1OIcon= (props: LucideProps) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
     <rect x="4" y="4" width="16" height="16" rx="1" />
     <path d="M4 15h16" />
@@ -23,7 +52,7 @@ export const VanitoryHanging1D1OIcon: LucideIcon = (props) => (
   </svg>
 );
 
-export const VanitoryHanging2DIcon: LucideIcon = (props) => (
+export const VanitoryHanging2DIcon= (props: LucideProps) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
     <rect x="4" y="4" width="16" height="16" rx="1" />
     <path d="M4 12h16" />
@@ -32,14 +61,14 @@ export const VanitoryHanging2DIcon: LucideIcon = (props) => (
   </svg>
 );
 
-export const Vanitory2PuertasIcon: LucideIcon = (props) => (
+export const Vanitory2PuertasIcon= (props: LucideProps) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
     <rect x="4" y="4" width="16" height="16" rx="1" />
     <path d="M12 4v16" />
   </svg>
 );
 
-export const VanitoryPatas3DIcon: LucideIcon = (props) => (
+export const VanitoryPatas3DIcon= (props: LucideProps) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
     <rect x="4" y="4" width="16" height="14" rx="1" />
     <path d="M4 9h16" />
@@ -52,7 +81,7 @@ export const VanitoryPatas3DIcon: LucideIcon = (props) => (
   </svg>
 );
 
-export const VanitoryPatas1D2PIcon: LucideIcon = (props) => (
+export const VanitoryPatas1D2PIcon= (props: LucideProps) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
     <rect x="4" y="4" width="16" height="14" rx="1" />
     <path d="M4 9h16" />
@@ -63,7 +92,7 @@ export const VanitoryPatas1D2PIcon: LucideIcon = (props) => (
   </svg>
 );
 
-export const VanitoryPatas2PIcon: LucideIcon = (props) => (
+export const VanitoryPatas2PIcon= (props: LucideProps) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
     <rect x="4" y="4" width="16" height="14" rx="1" />
     <path d="M12 4v14" />

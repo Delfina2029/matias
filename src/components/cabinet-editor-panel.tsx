@@ -3,10 +3,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { PlacedCabinet, CabinetComponent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
+import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus, ArrowLeft, ArrowUp, ArrowDown, RailSymbol, DoorOpen, HardHat, Box } from 'lucide-react';
+import { X, Plus, ArrowLeft, ArrowUp, ArrowDown, RailSymbol, DoorOpen, HardHat, Box, RotateCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Table,
@@ -24,15 +25,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ScrollArea } from './ui/scroll-area';
 import { cabinetData } from '@/lib/cabinets';
 import { cn } from '@/lib/utils';
+import { 
+  calculateComponentDimensions, 
+  calculateDrawerBoxDimensions,
+  MELAMINE_THICKNESS as CABINET_MELAMINE_THICKNESS,
+  GENERAL_GAP
+} from '@/lib/cabinet-utils';
+import { generatePiecesForCabinet } from '@/lib/cutting-logic';
+import { TechnicalView2D } from './technical-view-2d';
 
+
+import type { Appearance } from '@/lib/types';
 
 type CabinetEditorPanelProps = {
   cabinet: PlacedCabinet;
+  appearance: Appearance;
   onUpdate: (cabinet: PlacedCabinet) => void;
   onClose: () => void;
+  viewMode: 'plan' | '2d' | '3d' | 'technical';
+  setViewMode: (mode: 'plan' | '2d' | '3d' | 'technical') => void;
+  hoveredPieceName: string | null;
+  onHoverPiece: (name: string | null) => void;
 };
 
 type ActiveTool = 'drawer' | 'shelf' | 'door' | 'hanging-rail';
@@ -41,22 +56,62 @@ type ActiveTool = 'drawer' | 'shelf' | 'door' | 'hanging-rail';
 const MELAMINE_THICKNESS = 18;
 const VISUAL_EDITOR_HEIGHT_PX = 400;
 
-export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditorPanelProps) {
+const typeLabels: Record<string, string> = {
+    'opening': 'Hueco',
+    'shelf': 'Estante',
+    'drawer': 'Cajón',
+    'door': 'Puerta',
+    'hanging-rail': 'Barral'
+};
+
+export function CabinetEditorPanel({ 
+    cabinet, 
+    appearance,
+    onUpdate, 
+    onClose,
+    viewMode,
+    setViewMode,
+    hoveredPieceName,
+    onHoverPiece
+}: CabinetEditorPanelProps) {
   const [dimensions, setDimensions] = useState({
     width: cabinet.width,
+    width2: cabinet.width2 || cabinet.width,
     height: cabinet.height,
     depth: cabinet.depth,
     depth2: cabinet.depth2 || cabinet.depth,
   });
+  const [useJProfileDiscounts, setUseJProfileDiscounts] = useState(cabinet.useJProfileDiscounts || false);
+  const [useLegs, setUseLegs] = useState(cabinet.useLegs || false);
+  const [hasInnerShelf, setHasInnerShelf] = useState(cabinet.hasInnerShelf || false);
+  const [invertSide, setInvertSide] = useState(cabinet.invertSide || false);
+  const [rotation, setRotation] = useState<[number, number, number]>(cabinet.rotation || [0, 0, 0]);
   const [components, setComponents] = useState<CabinetComponent[]>(cabinet.components || []);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ActiveTool | null>(null);
   const [selectedComponentPosition, setSelectedComponentPosition] = useState(0);
   const [positionInput, setPositionInput] = useState('');
+  const [positionXInput, setPositionXInput] = useState('');
+  const [activeDragTool, setActiveDragTool] = useState<ActiveTool | null>(null);
 
+  const handleDragStart = (event: DragStartEvent) => {
+      setActiveDragTool(event.active.data.current?.type as ActiveTool);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+      setActiveDragTool(null);
+      const { active, over } = event;
+      
+      if (over && over.data.current?.type === 'opening') {
+          const toolType = active.data.current?.type as ActiveTool;
+          const openingId = over.data.current?.id as string;
+          addComponentInOpening(openingId, toolType);
+          toast({ title: 'Componente Añadido', description: `Se ha añadido un ${typeLabels[toolType]} correctamente.`});
+      }
+  };
 
   const { toast } = useToast();
-  const isCornerCabinet = cabinet.cabinetId === 'base-corner-900';
+  const isCornerCabinet = cabinet.cabinetId === 'base-corner';
   const isPlacar = cabinet.type === 'placar';
 
   const cabinetInfo = useMemo(() => cabinetData.find(c => c.id === cabinet.cabinetId), [cabinet.cabinetId]);
@@ -64,11 +119,17 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   useEffect(() => {
     setDimensions({
         width: cabinet.width,
+        width2: cabinet.width2 || cabinet.width,
         height: cabinet.height,
         depth: cabinet.depth,
         depth2: cabinet.depth2 || cabinet.depth,
     });
     setComponents(cabinet.components || []);
+    setUseJProfileDiscounts(cabinet.useJProfileDiscounts || false);
+    setUseLegs(cabinet.useLegs || false);
+    setHasInnerShelf(cabinet.hasInnerShelf || false);
+    setInvertSide(cabinet.invertSide || false);
+    setRotation(cabinet.rotation || [0, 0, 0]);
     setSelectedComponentId(null);
   }, [cabinet]);
 
@@ -85,29 +146,100 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         // Add the base offset to get the absolute position from the cabinet floor.
         const newPosition = positionInComponentList + baseOffset;
         setSelectedComponentPosition(newPosition);
-        setPositionInput(String(Math.round(newPosition)));
+        setPositionInput(String(Math.round(components[index].positionY !== undefined ? components[index].positionY! : newPosition)));
+        setPositionXInput(String(Math.round(components[index].positionX || 0)));
       }
     } else {
         setPositionInput('');
+        setPositionXInput('');
     }
   }, [selectedComponentId, components, cabinet.type]);
 
   const handleDimensionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const numValue = Number(value);
-    setDimensions((prev) => ({ ...prev, [name]: numValue }));
+    setDimensions((prev) => ({ ...prev, [name]: Number(value) }));
+  };
+
+  const handleHeightBlur = () => {
+    const newHeight = dimensions.height;
+    const currentTotal = components.reduce((sum, c) => sum + c.height, 0);
+
+    // Scale components to fill the new cabinet height
+    if (currentTotal > 0 && Math.abs(newHeight - currentTotal) > 0.1) {
+        const factor = newHeight / currentTotal;
+        setComponents(prev => prev.map(c => ({
+            ...c,
+            height: Math.round(c.height * factor * 10) / 10
+        })));
+    }
   };
   
   const handleUpdateComponent = (id: string, newProps: Partial<CabinetComponent>) => {
     setComponents(prev => prev.map(c => c.id === id ? { ...c, ...newProps } : c));
   };
 
+  const cabinetPieces = useMemo(() => {
+    return generatePiecesForCabinet({ 
+        ...cabinet, 
+        ...dimensions, 
+        components, 
+        useJProfileDiscounts, 
+        useLegs, 
+        hasInnerShelf,
+        invertSide, 
+        rotation 
+    }, appearance);
+  }, [cabinet, dimensions, components, useJProfileDiscounts, useLegs, hasInnerShelf, invertSide, rotation, appearance]);
+
   const handleSave = () => {
-    onUpdate({ ...cabinet, ...dimensions, components });
+    onUpdate({ ...cabinet, ...dimensions, components, useJProfileDiscounts, useLegs, hasInnerShelf, invertSide, rotation });
     toast({
       title: 'Gabinete Actualizado',
       description: 'Los componentes del gabinete han sido guardados.',
     });
+  };
+
+  const handleQuickAddPlacarComponent = (toolType: ActiveTool) => {
+      let height = 18;
+      let positionY = 400; // Default 400mm from bottom
+      let positionX = undefined;
+
+      if (toolType === 'drawer') {
+          height = 200;
+          positionY = 400;
+      } else if (toolType === 'hanging-rail') {
+          height = 30;
+          positionY = dimensions.height - 150; // Near top
+      } else if (toolType === 'vertical-divider') {
+          height = 400;
+          positionY = 0; // Floor
+          positionX = 0; // Left side default
+      }
+
+      const interiorWidth = dimensions.width - (2 * CABINET_MELAMINE_THICKNESS);
+      if (toolType === 'vertical-divider') {
+          positionX = interiorWidth / 2; // Center
+      }
+
+      const newComp: CabinetComponent = {
+          id: Math.random().toString(36).substring(7),
+          type: toolType,
+          height,
+          positionY,
+      };
+
+      if (positionX !== undefined) {
+          newComp.positionX = positionX;
+      }
+
+      const newComponents = [...components, newComp];
+      setComponents(newComponents);
+      onUpdate({ ...cabinet, ...dimensions, components: newComponents, useJProfileDiscounts, useLegs, hasInnerShelf, invertSide, rotation });
+      
+      toast({
+          title: 'Componente Añadido',
+          description: `Se añadió al placard. Seleccionalo en el 3D para ajustarlo.`
+      });
   };
 
   const addComponentInOpening = (openingId: string, type: ActiveTool) => {
@@ -115,8 +247,6 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
     if (!opening) return;
 
     let newCompHeight: number;
-    let newCompType: CabinetComponent['type'] = type;
-
     if (type === 'shelf') {
         newCompHeight = MELAMINE_THICKNESS;
     } else if (type === 'hanging-rail') {
@@ -137,13 +267,14 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         const currentOpening = prev[openingIndex];
         
         let newComp: CabinetComponent;
+        const compId = `comp_${Date.now()}`;
         if (type === 'shelf') {
-            newComp = { id: `comp_${Date.now()}`, type: 'shelf', height: MELAMINE_THICKNESS };
+            newComp = { id: compId, type: 'shelf', height: MELAMINE_THICKNESS };
         } else if (type === 'hanging-rail') {
-            newComp = { id: `comp_${Date.now()}`, type: 'hanging-rail', height: 80 };
+            newComp = { id: compId, type: 'hanging-rail', height: 80 };
         } else { // drawer or door
             const defaultHeight = Math.max(150, currentOpening.height / 2);
-            newComp = { id: `comp_${Date.now()}`, type: type, height: defaultHeight };
+            newComp = { id: compId, type: type, height: defaultHeight };
         }
 
         if (currentOpening.height < newComp.height + 10) return prev;
@@ -166,21 +297,27 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
   const handleDoorConfig = (doorCount: number) => {
     setSelectedComponentId(null);
     setActiveTool(null);
+    const effectiveHeight = useLegs && cabinet.type === 'base' ? dimensions.height - 100 : dimensions.height;
+    
+    // For corner cabinets, doors always come in pairs (2 leaves forming the L shape)
+    if (isCornerCabinet) {
+        setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: effectiveHeight, numDoors: 2 }]);
+        return;
+    }
+
     if (doorCount === 1) {
-        setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: dimensions.height }]);
+        setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: effectiveHeight, numDoors: 1 }]);
     } else if (doorCount === 2) {
-        if (cabinet.type === 'tall' || isCornerCabinet || cabinet.cabinetId.startsWith('vanity')) return;
-        setComponents([
-            { id: `comp_${Date.now()}_1`, type: 'door', height: dimensions.height },
-            { id: `comp_${Date.now()}_2`, type: 'door', height: dimensions.height }
-        ]);
+        if (cabinet.type === 'tall') return;
+        setComponents([{ id: `comp_${Date.now()}`, type: 'door', height: effectiveHeight, numDoors: 2 }]);
     }
   };
 
   const handleStartWithDrawers = () => {
       setSelectedComponentId(null);
       setActiveTool(null);
-      setComponents([{ id: `comp_${Date.now()}`, type: 'opening', height: dimensions.height }]);
+      const effectiveHeight = useLegs && cabinet.type === 'base' ? dimensions.height - 100 : dimensions.height;
+      setComponents([{ id: `comp_${Date.now()}`, type: 'opening', height: effectiveHeight }]);
       toast({ title: "Espacio Creado", description: "Ahora usa la barra de herramientas para añadir cajones."});
   };
 
@@ -214,6 +351,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         
         newComponents.splice(index, 1);
 
+        // Merge adjacent openings if we removed a component
         if (prevComp?.type === 'opening' && nextComp?.type === 'opening') {
             const mergedOpeningHeight = prevComp.height + componentToRemove.height + nextComp.height;
             const mergedOpening: CabinetComponent = { ...prevComp, height: mergedOpeningHeight, id: `comp_open_${Date.now()}` };
@@ -229,7 +367,8 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
         }
 
         if (newComponents.length === 0) {
-            return [{ id: `comp_open_${Date.now()}`, type: 'opening', height: dimensions.height }];
+            const effectiveHeight = useLegs && cabinet.type === 'base' ? dimensions.height - 100 : dimensions.height;
+            return [{ id: `comp_open_${Date.now()}`, type: 'opening', height: effectiveHeight }];
         }
 
         return newComponents;
@@ -238,6 +377,31 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
     if (selectedComponentId === id) {
         setSelectedComponentId(null);
     }
+  };
+
+  const handleConvertToOpening = (id: string) => {
+    setComponents(prev => prev.map(c => c.id === id ? { ...c, type: 'opening' } : c));
+    // Optional: merge if adjacent
+    setTimeout(() => handleRemoveComponent('dummy_call_to_trigger_merging'), 0); // Not ideal but triggered by logic
+    // Actually let's just do it cleanly:
+    setComponents(prev => {
+        const index = prev.findIndex(c => c.id === id);
+        if (index === -1) return prev;
+        const newComps = prev.map(c => c.id === id ? { ...c, type: 'opening' as const } : c);
+        
+        // Merge check
+        const finalComps: CabinetComponent[] = [];
+        for (let i = 0; i < newComps.length; i++) {
+            const current = newComps[i];
+            const last = finalComps[finalComps.length - 1];
+            if (last && last.type === 'opening' && current.type === 'opening') {
+                last.height += current.height;
+            } else {
+                finalComps.push({ ...current });
+            }
+        }
+        return finalComps;
+    });
   };
 
   const handleMoveComponent = (index: number, direction: 'up' | 'down') => {
@@ -271,6 +435,11 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
       return false;
     }
   
+    if (isPlacarModule) {
+        setComponents(prev => prev.map(c => c.id === id ? { ...c, positionY: newPosition } : c));
+        return true;
+    }
+
     const prevIndex = components.findIndex(c => c.id === id);
     if (prevIndex <= 0 || prevIndex >= components.length - 1) {
       return false;
@@ -330,8 +499,19 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
     return true;
   };
   
-  const internalHeight = isPlacar ? dimensions.height - (2 * MELAMINE_THICKNESS) : dimensions.height;
-  const totalComponentsHeight = components.reduce((sum, c) => sum + c.height, 0);
+  const effectiveCabinetHeight = useLegs && cabinet.type === 'base' ? dimensions.height - 100 : dimensions.height;
+  const internalHeight = isPlacar ? effectiveCabinetHeight - (2 * CABINET_MELAMINE_THICKNESS) : effectiveCabinetHeight;
+  
+  const hasGlobalHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && components.length > 1 && components.every(c => c.type === 'door');
+  
+  const totalComponentsHeight = useMemo(() => {
+    if (hasGlobalHorizontalDoors) {
+        // For horizontal doors, they all share the same vertical space (usually full height)
+        return Math.max(...components.map(c => c.height), 0);
+    }
+    return components.reduce((sum, c) => sum + c.height, 0);
+  }, [components, hasGlobalHorizontalDoors]);
+
   const remainingHeight = internalHeight - totalComponentsHeight;
 
   const selectedComponent = components.find(c => c.id === selectedComponentId);
@@ -342,121 +522,148 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
       return [];
     }
 
-    if (cabinet.cabinetId.startsWith('vanity')) {
-        const component = selectedComponent;
-        const { width } = dimensions;
-        const pieces: {name: string, dimensions: string, quantity: number}[] = [];
+    const { width, depth } = dimensions;
+    const pieces: { name: string, dimensions: string, quantity: number }[] = [];
+    const interiorWidth = width - (2 * CABINET_MELAMINE_THICKNESS);
+    const compIndex = components.findIndex(c => c.id === selectedComponent.id);
 
-        const interiorWidth = width - (2 * MELAMINE_THICKNESS);
-        const drawerBoxHeight = 100;
-        const drawerBoxDepth = 350;
-        const drawerBoxWidth = interiorWidth - 24;
-        const plumbingGap = 160;
-        const sideBoxInnerWidth = (drawerBoxWidth - plumbingGap) / 2;
-        
-        let frontHeight = component.height - 4;
-        let frontName;
-        if (component.handle === 'j-profile') {
-            frontHeight -= 26.8;
-            frontName = 'Frente de Cajón (Perfil J)';
-        } else {
-            frontHeight -= 30;
-            frontName = 'Frente de Cajón (Tirar)';
-        }
+    // Use unified utility for front dimensions
+    const front = calculateComponentDimensions(
+        cabinet.type, 
+        cabinet.cabinetId, 
+        selectedComponent, 
+        compIndex, 
+        width,
+        1,
+        useJProfileDiscounts,
+        useLegs,
+        appearance.frontStyle,
+        dimensions.height
+    );
 
-        pieces.push({
-          name: frontName,
-          dimensions: `${frontHeight.toFixed(1)} x ${(width - 4).toFixed(1)} mm`,
-          quantity: 1,
-        });
+    pieces.push({
+      name: front.name,
+      dimensions: `${front.height.toFixed(1)} x ${front.width.toFixed(1)} mm`,
+      quantity: 1,
+    });
 
+    // Use unified utility for drawer box
+    const box = calculateDrawerBoxDimensions(
+        cabinet.type,
+        cabinet.cabinetId,
+        interiorWidth,
+        depth,
+        compIndex === 0, // Assuming index 0 is top
+        useLegs
+    );
+
+    if (box.type === 'u-shape') {
         pieces.push({
             name: 'Lateral de Cajón Vanitory',
-            dimensions: `${drawerBoxHeight.toFixed(1)} x ${drawerBoxDepth.toFixed(1)} mm`,
+            dimensions: `${box.height.toFixed(1)} x ${box.depth.toFixed(1)} mm`,
             quantity: 4,
         });
-
         pieces.push({
             name: 'Frente Interno Cajón Vanitory',
-            dimensions: `${drawerBoxHeight.toFixed(1)} x ${drawerBoxWidth.toFixed(1)} mm`,
+            dimensions: `${box.height.toFixed(1)} x ${box.width.toFixed(1)} mm`,
             quantity: 1,
         });
-
         pieces.push({
             name: 'Trasero de Cajón Vanitory (Lado)',
-            dimensions: `${drawerBoxHeight.toFixed(1)} x ${sideBoxInnerWidth.toFixed(1)} mm`,
+            dimensions: `${box.height.toFixed(1)} x ${box.sideBoxInnerWidth?.toFixed(1)} mm`,
             quantity: 2,
         });
-
         pieces.push({
             name: 'Trasero de Cajón Vanitory (Centro)',
-            dimensions: `${drawerBoxHeight.toFixed(1)} x ${plumbingGap.toFixed(1)} mm`,
+            dimensions: `${box.height.toFixed(1)} x ${box.plumbingGap?.toFixed(1)} mm`,
             quantity: 1,
         });
-
         pieces.push({
             name: 'Fondo de Cajón Vanitory',
-            dimensions: `${(drawerBoxDepth - MELAMINE_THICKNESS).toFixed(1)} x ${sideBoxInnerWidth.toFixed(1)} mm`,
+            dimensions: `${(box.depth - CABINET_MELAMINE_THICKNESS).toFixed(1)} x ${box.sideBoxInnerWidth?.toFixed(1)} mm`,
             quantity: 2,
         });
-        return pieces;
-    }
-
-    // Original logic for standard drawers
-    const component = selectedComponent;
-    const { width, depth } = dimensions;
-    const pieces: {name: string, dimensions: string, quantity: number}[] = [];
-
-    const interiorWidth = width - (2 * MELAMINE_THICKNESS);
-    const drawerBoxHeight = 100;
-    const drawerBoxWidth = interiorWidth - 26;
-    const drawerBoxDepth = depth - 30;
-    
-    let frontHeight = component.height - 4;
-    let frontName;
-    if (component.handle === 'j-profile') {
-        frontHeight -= 26.8;
-        frontName = 'Frente de Cajón (Perfil J)';
     } else {
-        frontHeight -= 30;
-        frontName = 'Frente de Cajón (Tirar)';
+        pieces.push({
+            name: 'Lateral de Cajón',
+            dimensions: `${box.height.toFixed(1)} x ${box.depth.toFixed(1)} mm`,
+            quantity: 2,
+        });
+        pieces.push({
+            name: 'Frente/Trasero de Cajón',
+            dimensions: `${box.height.toFixed(1)} x ${(box.width - (2 * CABINET_MELAMINE_THICKNESS)).toFixed(1)} mm`,
+            quantity: 2,
+        });
+        pieces.push({
+            name: 'Fondo de Cajón',
+            dimensions: `${box.depth.toFixed(1)} x ${(box.width - (2 * CABINET_MELAMINE_THICKNESS)).toFixed(1)} mm`,
+            quantity: 1,
+        });
     }
-
-    pieces.push({
-      name: frontName,
-      dimensions: `${frontHeight.toFixed(1)} x ${(width - 4).toFixed(1)} mm`,
-      quantity: 1,
-    });
-    pieces.push({
-      name: 'Lateral de Cajón',
-      dimensions: `${drawerBoxHeight.toFixed(1)} x ${drawerBoxDepth.toFixed(1)} mm`,
-      quantity: 2,
-    });
-    pieces.push({
-      name: 'Frente/Trasero de Cajón',
-      dimensions: `${drawerBoxHeight.toFixed(1)} x ${(drawerBoxWidth - (2*MELAMINE_THICKNESS)).toFixed(1)} mm`,
-      quantity: 2,
-    });
-    pieces.push({
-      name: 'Fondo de Cajón',
-      dimensions: `${drawerBoxDepth.toFixed(1)} x ${(drawerBoxWidth - (2*MELAMINE_THICKNESS)).toFixed(1)} mm`,
-      quantity: 1,
-    });
 
     return pieces;
-  }, [selectedComponent, dimensions, cabinet.cabinetId]);
+  }, [selectedComponent, dimensions, cabinet.cabinetId, cabinet.type, components, useJProfileDiscounts, useLegs]);
 
-  const ToolButton = ({ tool, children }: {tool: ActiveTool, children: React.ReactNode}) => (
-    <Button
-        variant={activeTool === tool ? 'secondary' : 'outline'}
-        className="w-full justify-start"
-        onClick={() => setActiveTool(current => current === tool ? null : tool)}
-    >
+  const DraggableTool = ({ tool, children, disabled }: {tool: ActiveTool, children: React.ReactNode, disabled?: boolean}) => {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: `tool-${tool}`,
+        data: { type: tool },
+        disabled
+    });
+    return (
+        <Button
+            ref={setNodeRef}
+            {...listeners}
+            {...attributes}
+            variant={activeTool === tool ? 'secondary' : 'outline'}
+            className={cn("w-full justify-start", isDragging ? "opacity-50" : "", disabled ? "cursor-not-allowed opacity-50" : "cursor-grab")}
+            disabled={disabled}
+            onClick={() => setActiveTool(current => current === tool ? null : tool)}
+        >
+            {children}
+        </Button>
+    );
+  };
+
+  const HTML5DraggableTool = ({ tool, children }: { tool: ActiveTool, children: React.ReactNode }) => {
+    return (
+      <div
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData('application/vnd.cabinet-component', tool);
+          e.dataTransfer.effectAllowed = 'copy';
+        }}
+        className="w-full flex justify-start items-center cursor-grab bg-background border hover:bg-accent rounded-md px-4 py-2 text-sm font-medium transition-colors"
+      >
         {children}
-    </Button>
-  );
+      </div>
+    );
+  };
+
+  const DroppableOpening = ({ id, visualHeight, visualWidth, children, onClick }: any) => {
+      const { isOver, setNodeRef } = useDroppable({
+          id: id,
+          data: { type: 'opening', id }
+      });
+
+      return (
+          <div
+              ref={setNodeRef}
+              onClick={onClick}
+              className={cn(
+                  "border relative group cursor-pointer transition-all flex flex-col",
+                  "bg-background hover:bg-accent border-muted-foreground/30",
+                  isOver ? "bg-green-100 border-green-500 border-dashed border-2 ring-2 ring-green-500 ring-offset-2 scale-[1.01] z-20" : ""
+              )}
+              style={{ height: `${visualHeight}%`, width: `${visualWidth}%` }}
+          >
+              {children}
+          </div>
+      )
+  };
 
   return (
+    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
      <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-3 border-b">
             <div className="flex items-center gap-3">
@@ -466,33 +673,103 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                 </Button>
                 <div>
                     <h4 className="font-semibold leading-tight">Editar {cabinetInfo?.name}</h4>
-                    <p className="text-xs text-muted-foreground">{cabinet.width}x{cabinet.height}x{cabinet.depth}mm</p>
+                    <p className="text-xs text-muted-foreground">{dimensions.width}x{dimensions.height}x{dimensions.depth}mm</p>
                 </div>
             </div>
             <Button size="sm" onClick={handleSave}>Guardar Cambios</Button>
         </div>
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
             <div className="p-4 space-y-6">
                 <div>
-                    <h4 className="font-medium mb-2 text-sm">Dimensiones Generales</h4>
+                    <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-sm">Dimensiones Generales</h4>
+                        {cabinet.type === 'base' && !cabinet.cabinetId.startsWith('vanity') && (
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="global-j-switch" className="text-xs">Descuento Perfil J / Dedos</Label>
+                                    <Switch 
+                                        id="global-j-switch" 
+                                        checked={useJProfileDiscounts} 
+                                        onCheckedChange={setUseJProfileDiscounts}
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="legs-switch" className="text-xs">Patas (10cm)</Label>
+                                    <Switch 
+                                        id="legs-switch" 
+                                        checked={useLegs} 
+                                        onCheckedChange={(checked) => {
+                                            setUseLegs(checked);
+                                        }}
+                                    />
+                                </div>
+                                {(cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p') && (
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="shelf-switch" className="text-xs">Estante Interno</Label>
+                                        <Switch 
+                                            id="shelf-switch" 
+                                            checked={hasInnerShelf} 
+                                            onCheckedChange={setHasInnerShelf}
+                                        />
+                                    </div>
+                                )}
+                                {cabinet.cabinetId === 'base-blind-corner' && (
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="invert-side-switch" className="text-xs">Invertir Lado (Ciego Der)</Label>
+                                        <Switch 
+                                            id="invert-side-switch" 
+                                            checked={invertSide} 
+                                            onCheckedChange={setInvertSide}
+                                        />
+                                    </div>
+                                )}
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-8 text-[10px]"
+                                    onClick={() => {
+                                        const newRotation: [number, number, number] = [
+                                            rotation[0],
+                                            rotation[1] + (Math.PI / 2),
+                                            rotation[2]
+                                        ];
+                                        setRotation(newRotation);
+                                    }}
+                                >
+                                    <RotateCw className="w-3 h-3 mr-1" />
+                                    Girar 90°
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                     <div className="grid gap-4 py-4">
                         {isCornerCabinet ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <Label htmlFor="width">Espacio en Pared (mm)</Label>
-                                <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-2">
+                            {/* Row 1: Left Arm (Arm A) */}
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-destructive font-medium mb-0.5">ancho A</span>
+                                <Label htmlFor="width2" className="mb-1.5">Ancho (mm)</Label>
+                                <Input id="width2" name="width2" type="number" value={dimensions.width2} onChange={handleDimensionChange} />
                             </div>
-                            <div>
-                                <Label htmlFor="height">Alto (mm)</Label>
-                                <Input id="height" name="height" type="number" value={dimensions.height} onChange={handleDimensionChange} />
+                            <div className="flex flex-col justify-end">
+                                <Label htmlFor="height" className="mb-1.5">Alto (mm)</Label>
+                                <Input id="height" name="height" type="number" value={dimensions.height} onChange={handleDimensionChange} onBlur={handleHeightBlur} />
                             </div>
-                            <div>
-                                <Label htmlFor="depth">Profundidad Cuerpo 1 (mm)</Label>
-                                <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} />
-                            </div>
-                            <div>
-                                <Label htmlFor="depth2">Profundidad Cuerpo 2 (mm)</Label>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] text-destructive font-medium mb-0.5">profundidad b</span>
+                                <Label htmlFor="depth2" className="mb-1.5">Profundidad (mm)</Label>
                                 <Input id="depth2" name="depth2" type="number" value={dimensions.depth2} onChange={handleDimensionChange} />
+                            </div>
+                            
+                            {/* Row 2: Top Arm (Arm B) */}
+                            <div className="flex flex-col">
+                                <Input id="width" name="width" type="number" value={dimensions.width} onChange={handleDimensionChange} />
+                                <span className="text-[10px] text-destructive font-medium mt-1">ancho b</span>
+                            </div>
+                            <div className="hidden sm:block"></div> {/* Spacer for Alto */}
+                            <div className="flex flex-col">
+                                <Input id="depth" name="depth" type="number" value={dimensions.depth} onChange={handleDimensionChange} />
+                                <span className="text-[10px] text-destructive font-medium mt-1">profundidad a</span>
                             </div>
                         </div>
                         ) : (
@@ -518,104 +795,212 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
                 <div className="space-y-4">
                     <h4 className="font-medium text-sm text-center">Personalizar Componentes</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-6 items-start">
-                        {/* Toolbar */}
-                        <div className="space-y-3 sticky top-4">
-                            <h5 className="font-semibold text-sm px-2">Añadir Componente</h5>
-                            <div className="flex flex-col space-y-2">
-                                {isPlacar ? (
-                                    <>
-                                        <ToolButton tool="shelf"><HardHat className="mr-2 h-4 w-4" />Estante</ToolButton>
-                                        <ToolButton tool="hanging-rail"><RailSymbol className="mr-2 h-4 w-4" />Barral</ToolButton>
-                                        <Button variant="outline" className="w-full justify-start text-muted-foreground" disabled><Box className="mr-2 h-4 w-4" />Parante</Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <ToolButton tool="shelf"><HardHat className="mr-2 h-4 w-4" />Estante</ToolButton>
-                                        <ToolButton tool="drawer"><Box className="mr-2 h-4 w-4" />Cajón</ToolButton>
-                                        <ToolButton tool="door"><DoorOpen className="mr-2 h-4 w-4" />Puerta</ToolButton>
-                                    </>
-                                )}
-                            </div>
-                             <Separator className="my-4"/>
-                             <h5 className="font-semibold text-sm px-2">Config. Rápida</h5>
-                             <div className="space-y-2">
-                                <Button variant="outline" className="w-full justify-start" onClick={() => handleDoorConfig(1)}>1 Puerta</Button>
-                                <Button variant="outline" className="w-full justify-start" disabled={cabinet.type === 'tall' || isCornerCabinet || cabinet.cabinetId.startsWith('vanity')} onClick={() => handleDoorConfig(2)}>2 Puertas</Button>
-                                <Button variant="outline" className="w-full justify-start" onClick={handleStartWithDrawers}><Plus className="mr-2 h-4 w-4" />Empezar con Huecos</Button>
-                             </div>
-                        </div>
+                    <div className="flex flex-col gap-6 items-center">
+                          <div className="w-full max-w-2xl grid grid-cols-1 gap-6">
+                            {isPlacar ? (
+                              <div className="space-y-4 bg-muted/30 p-4 rounded-lg border">
+                                  <h5 className="font-semibold text-sm">Paleta de Accesorios (Arrastrar o Hacer Clic)</h5>
+                                  <p className="text-xs text-muted-foreground mb-4">
+                                      Hacé clic en un elemento para agregarlo rápidamente, o arrastralo y soltalo directamente sobre el interior del placard en el modelo 3D.
+                                  </p>
+                                  <div className="flex flex-col gap-3">
+                                      <HTML5DraggableTool tool="shelf" onClick={() => handleQuickAddPlacarComponent('shelf')}>
+                                          <span className="flex-1">Estante (18mm)</span>
+                                          <span className="text-[10px] text-muted-foreground font-semibold bg-secondary/50 px-2 py-1 rounded">CLIC O ARRASTRAR</span>
+                                      </HTML5DraggableTool>
+                                      <HTML5DraggableTool tool="hanging-rail" onClick={() => handleQuickAddPlacarComponent('hanging-rail')}>
+                                          <span className="flex-1">Barral de Colgar</span>
+                                          <span className="text-[10px] text-muted-foreground font-semibold bg-secondary/50 px-2 py-1 rounded">CLIC O ARRASTRAR</span>
+                                      </HTML5DraggableTool>
+                                      <HTML5DraggableTool tool="drawer" onClick={() => handleQuickAddPlacarComponent('drawer')}>
+                                          <span className="flex-1">Cajón (200mm)</span>
+                                          <span className="text-[10px] text-muted-foreground font-semibold bg-secondary/50 px-2 py-1 rounded">CLIC O ARRASTRAR</span>
+                                      </HTML5DraggableTool>
+                                      <HTML5DraggableTool tool="vertical-divider" onClick={() => handleQuickAddPlacarComponent('vertical-divider')}>
+                                          <span className="flex-1">Divisor Vertical (18mm)</span>
+                                          <span className="text-[10px] text-muted-foreground font-semibold bg-secondary/50 px-2 py-1 rounded">CLIC O ARRASTRAR</span>
+                                      </HTML5DraggableTool>
+                                  </div>
+                              </div>
+                            ) : (
+                            <div className="space-y-4">
+                                {/* Interactive 2D Layout or Technical View */}
+                                <div className="flex items-center justify-between">
+                                    <h5 className="font-semibold text-sm">Visualización 2D</h5>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="h-7 text-xs"
+                                        onClick={() => setViewMode(viewMode === 'technical' ? '2d' : 'technical')}
+                                    >
+                                        {viewMode === 'technical' ? 'Ver Maqueta' : 'Ver Vista Técnica / Despiece'}
+                                    </Button>
+                                </div>
+                                <div className="flex flex-col items-center justify-end w-full bg-secondary/10 rounded-md border p-4" style={{ height: `${VISUAL_EDITOR_HEIGHT_PX + 40}px` }}>
+                                    <div className="relative w-full bg-secondary/30 rounded-md border-2 border-dashed transition-all" style={{ height: `${(effectiveCabinetHeight / dimensions.height) * VISUAL_EDITOR_HEIGHT_PX}px` }}>
+                                        <div className={cn(
+                                            "absolute inset-0 flex",
+                                            hasGlobalHorizontalDoors ? "flex-row" : "flex-col-reverse"
+                                        )}>
+                                            {components.map((comp, index) => {
+                                                const visualHeight = hasGlobalHorizontalDoors ? 100 : (comp.height / internalHeight) * 100;
+                                                const visualWidth = hasGlobalHorizontalDoors ? (100 / components.length) : 100;
+                                                const isSelected = selectedComponentId === comp.id;
+                                                const nDoors = comp.numDoors || 1;
+                                                const compLabel = typeLabels[comp.type] || comp.type;
 
-                         <div className="grid grid-cols-1 gap-6">
-                            {/* Interactive 2D Layout */}
-                            <div className="space-y-2">
-                                <h5 className="font-semibold text-center text-sm">Maqueta 2D (Interior)</h5>
-                                <div className="relative w-full bg-secondary/30 rounded-md border-2 border-dashed" style={{ height: `${VISUAL_EDITOR_HEIGHT_PX}px` }}>
-                                    <div className="absolute inset-0 flex flex-col-reverse">
-                                        {components.map((comp, index) => {
-                                            const visualHeight = (comp.height / internalHeight) * 100;
-                                            const isSelected = selectedComponentId === comp.id;
+                                                const content = (
+                                                    <>
+                                                        {Array.from({ length: nDoors }).map((_, i) => (
+                                                            <div 
+                                                                key={i} 
+                                                                className={cn(
+                                                                    "h-full flex items-center justify-center text-[10px] font-bold text-muted-foreground select-none overflow-hidden w-full",
+                                                                    nDoors > 1 && i < nDoors - 1 ? "border-r border-dashed" : ""
+                                                                )}
+                                                                style={{ width: nDoors > 1 ? `${100 / nDoors}%` : '100%' }}
+                                                            >
+                                                                {i === 0 && (
+                                                                    <div className="flex flex-col items-center text-center p-1 w-full">
+                                                                        <span className="uppercase whitespace-nowrap">{compLabel}</span>
+                                                                        <span>{Math.round(comp.height)}mm</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
 
-                                            return (
-                                                <div
-                                                    key={comp.id}
-                                                    style={{ height: `${visualHeight}%` }}
-                                                    className={cn(
-                                                        "w-full flex items-center justify-center text-xs relative transition-all",
-                                                        comp.type === 'shelf' ? 'bg-amber-200 dark:bg-amber-800' :
-                                                        comp.type === 'hanging-rail' ? 'bg-slate-400 dark:bg-slate-600' :
-                                                        'bg-secondary/80',
-                                                        isSelected && "ring-2 ring-accent z-10",
-                                                        comp.type === 'opening' && 'hover:bg-green-500/10',
-                                                        (activeTool && comp.type === 'opening') ? 'cursor-copy ring-2 ring-green-500 ring-offset-2' : 'cursor-pointer'
-                                                    )}
-                                                    onClick={() => {
+                                                        {isSelected && comp.type !== 'opening' && !hasGlobalHorizontalDoors && (
+                                                            <div className="absolute top-1 right-1 z-30 flex items-center gap-1 bg-background/80 p-1 rounded-md shadow-sm">
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === components.length -1} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'down')}}><ArrowUp className="h-4 w-4"/></Button>
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === 0} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'up')}}><ArrowDown className="h-4 w-4"/></Button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+
+                                                const commonProps = {
+                                                    onMouseEnter: () => onHoverPiece(comp.type === 'door' ? 'Puerta' : comp.type === 'drawer' ? 'Frente de Cajón' : null),
+                                                    onMouseLeave: () => onHoverPiece(null),
+                                                    onClick: (e: any) => {
+                                                        e.stopPropagation();
                                                         if (activeTool && comp.type === 'opening') {
                                                             addComponentInOpening(comp.id, activeTool);
                                                             setActiveTool(null);
                                                         } else {
                                                             setSelectedComponentId(comp.id)
                                                         }
-                                                    }}
-                                                >
-                                                    <span className={cn(
-                                                        'text-muted-foreground mix-blend-multiply dark:mix-blend-normal',
-                                                        isSelected && 'font-bold text-accent-foreground'
-                                                    )}>
-                                                        {comp.type === 'shelf' ? '' :
-                                                         comp.type === 'hanging-rail' ? 'Barral' :
-                                                         comp.type === 'opening' ? `Hueco (${comp.height.toFixed(0)}mm)` : `${comp.type} (${comp.height.toFixed(0)}mm)`}
-                                                    </span>
+                                                    }
+                                                };
 
-                                                    {isSelected && comp.type !== 'opening' && (
-                                                        <div className="absolute top-1 right-1 z-20 flex items-center gap-1 bg-background/80 p-1 rounded-md">
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === components.length -1} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'down')}}><ArrowUp className="h-4 w-4"/></Button>
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6" disabled={index === 0} onClick={(e) => {e.stopPropagation(); handleMoveComponent(index, 'up')}}><ArrowDown className="h-4 w-4"/></Button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )
-                                        })}
+                                                if (comp.type === 'opening') {
+                                                    return (
+                                                        <DroppableOpening
+                                                            key={comp.id}
+                                                            id={comp.id}
+                                                            visualHeight={visualHeight}
+                                                            visualWidth={visualWidth}
+                                                            {...commonProps}
+                                                        >
+                                                            {content}
+                                                        </DroppableOpening>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <div
+                                                        key={comp.id}
+                                                        {...commonProps}
+                                                        className={cn(
+                                                            "border relative group cursor-pointer transition-colors flex",
+                                                            isSelected ? "bg-primary/20 border-primary border-2 z-10" : "bg-background hover:bg-accent border-muted-foreground/30",
+                                                            nDoors > 1 ? "flex-row" : "flex-col"
+                                                        )}
+                                                        style={{ 
+                                                            height: `${visualHeight}%`,
+                                                            width: `${visualWidth}%`,
+                                                        }}
+                                                    >
+                                                        {content}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
+                                    
+                                    {useLegs && cabinet.type === 'base' && (
+                                        <div className="flex justify-around w-full" style={{ height: `${(100 / dimensions.height) * VISUAL_EDITOR_HEIGHT_PX}px` }}>
+                                            <div className="w-4 bg-muted-foreground/40 rounded-b-sm" />
+                                            <div className="w-4 bg-muted-foreground/40 rounded-b-sm" />
+                                            <div className="w-4 bg-muted-foreground/40 rounded-b-sm" />
+                                            <div className="w-4 bg-muted-foreground/40 rounded-b-sm" />
+                                        </div>
+                                    )}
                                 </div>
-                                {components.length > 0 && !isCornerCabinet && (
-                                    <div className="text-xs text-muted-foreground space-y-1 pt-2">
-                                        <div className="flex justify-between"><span>Suma de alturas:</span> <span>{totalComponentsHeight.toFixed(1)}mm</span></div>
-                                        <div className={`flex justify-between font-medium ${Math.abs(remainingHeight) > 0.1 ? 'text-destructive' : ''}`}><span>Espacio restante:</span> <span>{remainingHeight.toFixed(1)}mm</span></div>
-                                    </div>
-                                )}
-                            </div>
 
-                            {/* Controls & Editor */}
-                            <div className="space-y-4 sticky top-4">
+                                {/* Full Piece List Table */}
+                                <div className="mt-4 p-4 bg-secondary/5 border rounded-lg">
+                                    <h6 className="text-sm font-semibold mb-3">Lista de Piezas (Interactiva)</h6>
+                                    <Table className="text-xs">
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-[50px] font-bold">Cant.</TableHead>
+                                                <TableHead className="font-bold">Pieza</TableHead>
+                                                <TableHead className="text-right font-bold">Al x An (mm)</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {cabinetPieces.filter(p => p.material !== 'Herrajes').map((piece, idx) => {
+                                                const isHighlighted = hoveredPieceName === piece.name || piece.name.includes(hoveredPieceName || '___');
+                                                
+                                                return (
+                                                    <TableRow 
+                                                        key={`${piece.name}-${idx}`}
+                                                        onMouseEnter={() => onHoverPiece(piece.name)}
+                                                        onMouseLeave={() => onHoverPiece(null)}
+                                                        className={cn(
+                                                            "transition-colors",
+                                                            isHighlighted ? "bg-primary/20" : ""
+                                                        )}
+                                                    >
+                                                        <TableCell className="font-medium p-2 text-center">{piece.quantity}</TableCell>
+                                                        <TableCell className="p-2 font-medium">{piece.name}</TableCell>
+                                                        <TableCell className="text-right p-2 text-muted-foreground">{`${piece.height} x ${piece.width}`}</TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                    <p className="text-[10px] text-muted-foreground mt-4 italic text-center">
+                                        Pasa el mouse sobre una pieza para verla resaltada en el dibujo superior.
+                                    </p>
+                                </div>
+                            </div>
+                            )}
+
+                            {/* Active Tools Palette (only for standard cabinets) */}
+                            {!isPlacar && (
+                            <div className="space-y-4">
                                 {selectedComponent ? (
                                     <div className="space-y-4 p-3 border rounded-md bg-background animate-in fade-in-50">
                                         <div className="flex justify-between items-center">
-                                            <h5 className="font-medium">Editar Componente</h5>
-                                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleRemoveComponent(selectedComponent.id)}>
-                                                <X className="h-4 w-4" />
-                                                <span className="sr-only">Quitar</span>
-                                            </Button>
+                                            <h5 className="font-medium">Editar {typeLabels[selectedComponent.type]}</h5>
+                                            <div className="flex gap-1">
+                                                {selectedComponent.type !== 'opening' && (
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="outline" 
+                                                        className="h-8 text-xs" 
+                                                        onClick={() => handleConvertToOpening(selectedComponent.id)}
+                                                        title="Convertir este componente en un espacio vacío para poner otra cosa"
+                                                    >
+                                                        Quitar y dejar Hueco
+                                                    </Button>
+                                                )}
+                                                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleRemoveComponent(selectedComponent.id)}>
+                                                    <X className="h-4 w-4" />
+                                                    <span className="sr-only">Borrar</span>
+                                                </Button>
+                                            </div>
                                         </div>
                                         <div className="space-y-3">
                                             <div className="space-y-1">
@@ -649,25 +1034,71 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                                     <p className="text-xs text-muted-foreground">Distancia hasta la base del componente.</p>
                                                 </div>
                                             )}
+
+                                            {selectedComponent.type === 'vertical-divider' && (
+                                                <div className="space-y-1">
+                                                    <Label htmlFor="comp-position-x">Posición desde Izquierda (mm)</Label>
+                                                    <Input 
+                                                        id="comp-position-x"
+                                                        type="number"
+                                                        value={positionXInput}
+                                                        onChange={(e) => setPositionXInput(e.target.value)}
+                                                        onBlur={(e) => {
+                                                            if (selectedComponent) {
+                                                                handleUpdateComponent(selectedComponent.id, { positionX: Number(e.target.value) });
+                                                            }
+                                                        }}
+                                                    />
+                                                    <p className="text-xs text-muted-foreground">Distancia desde el lado izquierdo del mueble al centro de la madera.</p>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {selectedComponent.type === 'door' && (
-                                            <div className="flex items-center justify-between space-x-2 pt-3 border-t mt-3">
-                                            <Label htmlFor="hinge-type" className="flex flex-col space-y-1">
-                                                <span>Tipo de Apertura</span>
-                                                <span className="font-normal leading-snug text-muted-foreground text-xs">
-                                                    Define cómo se abre la puerta.
-                                                </span>
-                                            </Label>
-                                            <Select onValueChange={(value: 'side' | 'top') => handleUpdateComponent(selectedComponent.id, { hinge: value as 'side' | 'top' })} value={selectedComponent.hinge || 'side'}>
-                                                <SelectTrigger id="hinge-type" className="w-[140px]">
-                                                    <SelectValue placeholder="Seleccionar" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="side">Apertura Lateral</SelectItem>
-                                                    <SelectItem value="top">Hacia Arriba</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between space-x-2 pt-3 border-t">
+                                                    <Label htmlFor="hinge-type" className="flex flex-col space-y-1">
+                                                        <span>Tipo de Apertura</span>
+                                                        <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                                            Apertura lateral o hacia arriba.
+                                                        </span>
+                                                    </Label>
+                                                    <Select onValueChange={(value: 'side' | 'top') => handleUpdateComponent(selectedComponent.id, { hinge: value as 'side' | 'top' })} value={selectedComponent.hinge || 'side'}>
+                                                        <SelectTrigger id="hinge-type" className="w-[140px]">
+                                                            <SelectValue placeholder="Seleccionar" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="side">Lateral</SelectItem>
+                                                            <SelectItem value="top">Hacia Arriba</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="flex items-center justify-between space-x-2 pt-3 border-t">
+                                                    <Label className="flex flex-col space-y-1">
+                                                        <span>Cantidad de Puertas</span>
+                                                        <span className="font-normal leading-snug text-muted-foreground text-xs">
+                                                            ¿1 o 2 puertas lado a lado?
+                                                        </span>
+                                                    </Label>
+                                                    <div className="flex border rounded-md overflow-hidden">
+                                                        <Button 
+                                                            variant={!selectedComponent.numDoors || selectedComponent.numDoors === 1 ? "default" : "ghost"}
+                                                            size="sm"
+                                                            className="rounded-none h-8 px-3"
+                                                            onClick={() => handleUpdateComponent(selectedComponent.id, { numDoors: 1 })}
+                                                        >
+                                                            1
+                                                        </Button>
+                                                        <Button 
+                                                            variant={selectedComponent.numDoors === 2 ? "default" : "ghost"}
+                                                            size="sm"
+                                                            className="rounded-none h-8 px-3 border-l"
+                                                            onClick={() => handleUpdateComponent(selectedComponent.id, { numDoors: 2 })}
+                                                        >
+                                                            2
+                                                        </Button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
                                         
@@ -676,7 +1107,7 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                                 <Label htmlFor="j-profile-switch" className="flex flex-col space-y-1">
                                                     <span>Perfil J</span>
                                                     <span className="font-normal leading-snug text-muted-foreground text-xs">
-                                                        Añade un tirador integrado.
+                                                        Tirador integrado.
                                                     </span>
                                                 </Label>
                                                 <Switch
@@ -712,30 +1143,19 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                         )}
                                         
                                         {selectedComponent.type === 'door' && (() => {
-                                            const treatAsHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && components.length > 1 && components.every(c => c.type === 'door');
-                                            const isVanityTwoDoor = cabinet.cabinetId.startsWith('vanity') && components.filter(c => c.type === 'door').length > 0;
-
-                                            let doorQuantity = 1;
-                                            let doorWidth = dimensions.width - 4;
-
-                                            let doorHeight = selectedComponent.height - 4;
-                                            let doorName;
-
-                                            if (selectedComponent.handle === 'j-profile') {
-                                                doorHeight -= 26.8;
-                                                doorName = 'Puerta (Perfil J)';
-                                            } else {
-                                                doorHeight -= 30;
-                                                doorName = 'Puerta (Tirar)';
-                                            }
-
-                                            if (isVanityTwoDoor) {
-                                                doorQuantity = 2;
-                                                doorWidth = (dimensions.width - 6) / 2;
-                                            } else if (treatAsHorizontalDoors) {
-                                                const numHorizontalDoors = components.length;
-                                                doorWidth = (dimensions.width - (2 * (numHorizontalDoors + 1))) / numHorizontalDoors;
-                                            }
+                                            const compIndex = components.findIndex(c => c.id === selectedComponent.id);
+                                            const door = calculateComponentDimensions(
+                                                cabinet.type,
+                                                cabinet.cabinetId,
+                                                selectedComponent,
+                                                compIndex,
+                                                dimensions.width,
+                                                1, // Utility will use component.numDoors internally
+                                                useJProfileDiscounts,
+                                                useLegs,
+                                                appearance.frontStyle,
+                                                dimensions.height
+                                            );
 
                                             return (
                                                 <div className="space-y-2 pt-3 border-t mt-3">
@@ -750,9 +1170,9 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
                                                         </TableHeader>
                                                         <TableBody>
                                                             <TableRow>
-                                                                <TableCell className="font-medium py-1 px-2">{doorQuantity}</TableCell>
-                                                                <TableCell className="py-1 px-2">{doorName}</TableCell>
-                                                                <TableCell className="text-right py-1 px-2">{`${doorHeight.toFixed(1)} x ${doorWidth.toFixed(1)} mm`}</TableCell>
+                                                                <TableCell className="font-medium py-1 px-2">{selectedComponent.numDoors || 1}</TableCell>
+                                                                <TableCell className="py-1 px-2">{door.name}</TableCell>
+                                                                <TableCell className="text-right py-1 px-2">{`${door.height.toFixed(1)} x ${door.width.toFixed(1)} mm`}</TableCell>
                                                             </TableRow>
                                                         </TableBody>
                                                     </Table>
@@ -762,18 +1182,29 @@ export function CabinetEditorPanel({ cabinet, onUpdate, onClose }: CabinetEditor
 
                                     </div>
                                 ) : (
-                                    <div className="text-center text-sm text-muted-foreground p-4 flex items-center justify-center h-full">
-                                        <p>{activeTool ? `Haz clic en un hueco para añadir un ${activeTool}` : 'Selecciona un componente de la maqueta para editar sus propiedades.'}</p>
+                                    <div className="text-center text-sm text-muted-foreground p-4 flex items-center justify-center h-40 border-2 border-dashed rounded-md">
+                                        <p>{activeTool ? `Haz clic en un hueco para añadir un ${typeLabels[activeTool] || activeTool}` : 'Selecciona un componente para editarlo.'}</p>
                                     </div>
                                 )}
                             </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
-        </ScrollArea>
+        </div>
+        <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }) }}>
+            {activeDragTool ? (
+                <Button variant="secondary" className="w-[180px] justify-start shadow-xl cursor-grabbing">
+                    {activeDragTool === 'shelf' && <HardHat className="mr-2 h-4 w-4" />}
+                    {activeDragTool === 'drawer' && <Box className="mr-2 h-4 w-4" />}
+                    {activeDragTool === 'door' && <DoorOpen className="mr-2 h-4 w-4" />}
+                    {activeDragTool === 'hanging-rail' && <RailSymbol className="mr-2 h-4 w-4" />}
+                    {typeLabels[activeDragTool]}
+                </Button>
+            ) : null}
+        </DragOverlay>
     </div>
+    </DndContext>
   );
 }
-
-    

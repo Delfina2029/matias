@@ -4,10 +4,9 @@ import { useMemo, useState } from 'react';
 import type { PlacedCabinet, Appearance, Piece } from '@/lib/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import { OptimizerForm } from './optimizer-form';
-import { Palette, List, Settings, PlusCircle } from 'lucide-react';
+import { Palette, List, Settings, PlusCircle, Receipt } from 'lucide-react';
 import { generatePiecesForCabinet } from '@/lib/cutting-logic';
 import { AppearanceEditor } from './appearance-editor';
 import { cn } from '@/lib/utils';
@@ -18,6 +17,8 @@ import { X } from 'lucide-react';
 import { CabinetSelector } from './cabinet-selector';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
+import { QuotePanel } from './quote-panel';
+import type { MaterialPrices } from '@/lib/types';
 
 
 type EditorSidebarProps = {
@@ -27,8 +28,14 @@ type EditorSidebarProps = {
   onRemoveCabinet: (instanceId: string) => void;
   onUpdateCabinet: (cabinet: PlacedCabinet) => void;
   onAddCabinet: (cabinetId: string) => void;
+  onAddCustomCabinet: (customData: any) => void;
   selectedInstanceId: string | null;
   onSelectInstance: (instanceId: string | null) => void;
+  prices: MaterialPrices;
+  viewMode: 'plan' | '2d' | '3d' | 'technical';
+  setViewMode: (mode: 'plan' | '2d' | '3d' | 'technical') => void;
+  hoveredPieceName: string | null;
+  onHoverPiece: (name: string | null) => void;
 };
 
 type AggregatedPiece = {
@@ -37,6 +44,8 @@ type AggregatedPiece = {
   height: number;
   quantity: number;
   material: string;
+  notes?: string;
+  canRotate?: boolean;
 };
 
 const BACK_PANEL_MATERIAL = 'MDF 3mm';
@@ -48,8 +57,14 @@ export function EditorSidebar({
     onRemoveCabinet,
     onUpdateCabinet,
     onAddCabinet,
+    onAddCustomCabinet,
     selectedInstanceId,
-    onSelectInstance
+    onSelectInstance,
+    prices,
+    viewMode,
+    setViewMode,
+    hoveredPieceName,
+    onHoverPiece
 }: EditorSidebarProps) {
     const [activeTab, setActiveTab] = useState('edit');
     const [piecesGrainSettings, setPiecesGrainSettings] = useState<Record<string, boolean>>({});
@@ -62,7 +77,7 @@ export function EditorSidebar({
         const pieceMap = new Map<string, AggregatedPiece>();
 
         placedCabinets.forEach((pc) => {
-          const pieces = generatePiecesForCabinet(pc);
+          const pieces = generatePiecesForCabinet(pc, appearance);
           pieces.forEach((piece) => {
             const roundedWidth = Math.round(piece.width * 10) / 10;
             const roundedHeight = Math.round(piece.height * 10) / 10;
@@ -89,15 +104,15 @@ export function EditorSidebar({
     }, [placedCabinets]);
 
     const summarizedPieces = useMemo(() => {
-        const pieceMap = new Map<string, { width: number; height: number; quantity: number; material: string }>();
-        const allPieces = placedCabinets.flatMap(pc => generatePiecesForCabinet(pc));
+        const pieceMap = new Map<string, { width: number; height: number; quantity: number; material: string, canRotate: boolean }>();
+        const allPieces = placedCabinets.flatMap(pc => generatePiecesForCabinet(pc, appearance));
 
         allPieces.forEach((piece) => {
           const roundedWidth = Math.round(piece.width * 10) / 10;
           const roundedHeight = Math.round(piece.height * 10) / 10;
-          if (piece.material === 'Hardware' || roundedWidth <= 0 || roundedHeight <= 0) return;
+          if (piece.material === 'Herrajes' || piece.material === 'Hardware' || roundedWidth <= 0 || roundedHeight <= 0) return;
           
-          const key = `${roundedHeight}|${roundedWidth}|${piece.material}`;
+          const key = `${roundedHeight}|${roundedWidth}|${piece.material}|${!!piece.canRotate}`;
           const existing = pieceMap.get(key);
 
           if (existing) {
@@ -107,7 +122,8 @@ export function EditorSidebar({
                 width: roundedWidth, 
                 height: roundedHeight, 
                 quantity: piece.quantity, 
-                material: piece.material 
+                material: piece.material,
+                canRotate: !!piece.canRotate
             });
           }
         });
@@ -126,30 +142,36 @@ export function EditorSidebar({
     }
     
     return (
-        <Card className="h-full flex flex-col">
-            <Tabs defaultValue="edit" className="flex-1 flex flex-col">
+        <Card className="h-full flex flex-col overflow-hidden">
+            <Tabs defaultValue="edit" className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <CardHeader className="p-3">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="add"><PlusCircle className="w-4 h-4 mr-1"/>Añadir</TabsTrigger>
                         <TabsTrigger value="edit"><Settings className="w-4 h-4 mr-1"/>Editar</TabsTrigger>
                         <TabsTrigger value="list"><List className="w-4 h-4 mr-1"/>Despiece</TabsTrigger>
+                        <TabsTrigger value="quote"><Receipt className="w-4 h-4 mr-1"/>Cotización</TabsTrigger>
                         <TabsTrigger value="appearance"><Palette className="w-4 h-4 mr-1"/>Apariencia</TabsTrigger>
                     </TabsList>
                 </CardHeader>
                 
-                <TabsContent value="add" className="flex-1 overflow-hidden m-0 p-0">
-                    <CabinetSelector onSelectCabinet={onAddCabinet} />
+                <TabsContent value="add" className="flex-1 h-full min-h-0 m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+                    <CabinetSelector onSelectCabinet={onAddCabinet} onAddCustomCabinet={onAddCustomCabinet} />
                 </TabsContent>
 
-                <TabsContent value="edit" className="flex-1 overflow-hidden m-0">
+                <TabsContent value="edit" className="flex-1 h-full min-h-0 m-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
                    {editingCabinet ? (
                         <CabinetEditorPanel
                             cabinet={editingCabinet}
+                            appearance={appearance}
                             onUpdate={onUpdateCabinet}
                             onClose={handleCloseEditor}
+                            viewMode={viewMode}
+                            setViewMode={setViewMode}
+                            hoveredPieceName={hoveredPieceName}
+                            onHoverPiece={onHoverPiece}
                         />
                    ) : (
-                    <ScrollArea className="h-full p-4 pt-2">
+                    <div className="flex-1 overflow-y-auto p-4 pt-2">
                         <div className="space-y-3">
                             {placedCabinets.length === 0 ? (
                                 <p className="text-sm text-muted-foreground text-center py-8">Añade gabinetes al diseño para empezar.</p>
@@ -185,13 +207,12 @@ export function EditorSidebar({
                                 </>
                             )}
                         </div>
-                    </ScrollArea>
+                    </div>
                    )}
                 </TabsContent>
 
-                <TabsContent value="list" className="flex-1 overflow-hidden m-0">
-                    <ScrollArea className="h-full">
-                        <div className="space-y-6 p-4 pt-2">
+                <TabsContent value="list" className="flex-1 h-full min-h-0 m-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+                    <div className="flex-1 overflow-y-auto p-4 pt-2 space-y-6">
                              <Tabs defaultValue="detailed" className="w-full">
                                 <TabsList className="grid w-full grid-cols-2">
                                     <TabsTrigger value="detailed">Despiece Detallado</TabsTrigger>
@@ -221,7 +242,7 @@ export function EditorSidebar({
                                                         <TableCell className="text-center">
                                                             {piece.material !== BACK_PANEL_MATERIAL && piece.material !== 'Hardware' ? (
                                                                 <Switch
-                                                                    checked={piecesGrainSettings[key] ?? true}
+                                                                    checked={piecesGrainSettings[key] ?? !piece.canRotate}
                                                                     onCheckedChange={(checked) => {
                                                                         setPiecesGrainSettings(prev => ({ ...prev, [key]: checked }));
                                                                     }}
@@ -236,13 +257,14 @@ export function EditorSidebar({
                                     </Table>
                                 </TabsContent>
                                 <TabsContent value="summary" className="mt-4">
-                                     <Table>
+                                         <Table>
                                         {summarizedPieces.length === 0 && <TableCaption>La lista de corte aparecerá aquí.</TableCaption>}
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Cant</TableHead>
                                                 <TableHead>Dimensiones (Al x An)</TableHead>
                                                 <TableHead>Material</TableHead>
+                                                <TableHead className="text-center">Gira?</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -251,6 +273,9 @@ export function EditorSidebar({
                                                     <TableCell className="font-medium">{piece.quantity}</TableCell>
                                                     <TableCell>{`${piece.height} x ${piece.width} mm`}</TableCell>
                                                     <TableCell>{piece.material}</TableCell>
+                                                    <TableCell className="text-center font-medium">
+                                                        {piece.canRotate ? 'Sí' : '-'}
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -259,14 +284,17 @@ export function EditorSidebar({
                             </Tabs>
                             <Separator />
                             <OptimizerForm pieces={aggregatedPieces} hasCuts={aggregatedPieces.length > 0} grainSettings={piecesGrainSettings} />
-                        </div>
-                    </ScrollArea>
+                    </div>
                 </TabsContent>
 
-                 <TabsContent value="appearance" className="flex-1 overflow-hidden m-0">
-                    <ScrollArea className="h-full p-4 pt-2">
+                 <TabsContent value="quote" className="flex-1 h-full min-h-0 m-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+                    <QuotePanel placedCabinets={placedCabinets} appearance={appearance} prices={prices} />
+                </TabsContent>
+
+                <TabsContent value="appearance" className="flex-1 h-full min-h-0 m-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+                    <div className="flex-1 overflow-y-auto p-4 pt-2">
                         <AppearanceEditor appearance={appearance} setAppearance={onAppearanceChange} />
-                    </ScrollArea>
+                    </div>
                 </TabsContent>
             </Tabs>
         </Card>

@@ -1,39 +1,183 @@
+'use client';
+
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
+import { CloudUpload, CloudDownload, Settings, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { logout } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
-function Logo({ className }: { className?: string }) {
+function NidelLogo({ className }: { className?: string }) {
   return (
-    <svg
-      className={cn("w-8 h-8 text-primary", className)}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <div
+      className={cn("flex items-center justify-center rounded-xl font-black text-white select-none", className)}
+      style={{
+        width: 38,
+        height: 38,
+        background: "linear-gradient(135deg, #c8a96e, #a07840)",
+        fontSize: 20,
+        boxShadow: "0 2px 12px rgba(200,169,110,0.45)",
+        letterSpacing: "-1px",
+      }}
+      aria-hidden="true"
     >
-      <path d="M3 21h18" />
-      <path d="M3 10h18" />
-      <path d="M4 10v11" />
-      <path d="M20 10v11" />
-      <path d="M8 21v-5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5" />
-      <path d="M4 10V3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v7" />
-    </svg>
+      N
+    </div>
   );
 }
 
+export function Header({
+  children,
+  onOpenMaterials,
+  onOpenSaveCloud,
+  onOpenLoadCloud,
+  onBackToMenu,
+  hideActionButtons,
+}: {
+  children?: ReactNode;
+  onOpenMaterials?: () => void;
+  onOpenSaveCloud?: () => void;
+  onOpenLoadCloud?: () => void;
+  onBackToMenu?: () => void;
+  hideActionButtons?: boolean;
+}) {
+  const { toast } = useToast();
 
-export function Header({ children }: { children?: ReactNode }) {
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo cerrar sesión." });
+    }
+  };
+
   return (
-    <header className="border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {children ? children : (
-            <div className="flex items-center gap-2">
-              <Logo />
-              <h1 className="text-xl font-bold font-headline text-foreground">
+    <header
+      className="sticky top-0 z-20"
+      style={{
+        background: "linear-gradient(180deg, #0f0f18 0%, #13131f 100%)",
+        borderBottom: "1px solid rgba(200,169,110,0.15)",
+        boxShadow: "0 2px 24px rgba(0,0,0,0.4)",
+      }}
+    >
+      <div className="px-4 sm:px-6">
+        <div className="flex items-center justify-between h-[60px]">
+
+          {/* ── Brand ── */}
+          <div className="flex items-center gap-3">
+            <NidelLogo />
+            <div className="leading-tight">
+              <p className="font-bold text-base tracking-tight" style={{ color: "#f0ece4" }}>
+                Nidel Muebles
+              </p>
+              <p className="text-[11px] font-medium" style={{ color: "#7a7a9a" }}>
                 Constructor de Cocinas
-              </h1>
+              </p>
+            </div>
+            {onBackToMenu && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBackToMenu}
+                className="ml-4 flex items-center gap-2 h-8 px-3 text-xs font-semibold rounded-lg border border-[#2a2a4a] hover:bg-[#1a1a2e]"
+                style={{ color: "#a0a0c0" }}
+              >
+                Volver al Menú
+              </Button>
+            )}
+          </div>
+
+          {/* ── Mobile children slot ── */}
+          {children ? (
+            <div className="flex items-center gap-2 ml-auto">{children}</div>
+          ) : !hideActionButtons ? (
+            /* ── Desktop action buttons ── */
+            <div className="flex items-center gap-2">
+              <Button
+                id="header-save-cloud"
+                variant="ghost"
+                size="sm"
+                onClick={onOpenSaveCloud}
+                className="hidden sm:flex items-center gap-2 h-9 px-3 text-xs font-semibold rounded-lg"
+                style={{ color: "#a0a0c0" }}
+                title="Guardar en la Nube"
+              >
+                <CloudUpload className="w-4 h-4" />
+                <span>Guardar</span>
+              </Button>
+
+              <Button
+                id="header-load-cloud"
+                variant="ghost"
+                size="sm"
+                onClick={onOpenLoadCloud}
+                className="hidden sm:flex items-center gap-2 h-9 px-3 text-xs font-semibold rounded-lg"
+                style={{ color: "#a0a0c0" }}
+                title="Cargar de la Nube"
+              >
+                <CloudDownload className="w-4 h-4" />
+                <span>Cargar</span>
+              </Button>
+
+              <div
+                style={{
+                  width: 1,
+                  height: 24,
+                  background: "rgba(200,169,110,0.2)",
+                  margin: "0 4px",
+                }}
+                className="hidden sm:block"
+              />
+
+              <Button
+                id="header-materials"
+                variant="ghost"
+                size="sm"
+                onClick={onOpenMaterials}
+                className="hidden sm:flex items-center gap-2 h-9 px-3 text-xs font-semibold rounded-lg"
+                style={{ color: "#a0a0c0" }}
+                title="Editar Materiales"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Materiales</span>
+              </Button>
+
+              <div
+                style={{
+                  width: 1,
+                  height: 24,
+                  background: "rgba(200,169,110,0.2)",
+                  margin: "0 4px",
+                }}
+              />
+
+              <Button
+                id="header-logout"
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center gap-2 h-9 px-3 text-xs font-semibold rounded-lg transition-all"
+                style={{ color: "#c8a96e" }}
+                title="Cerrar Sesión"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Salir</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                id="header-logout-only"
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center gap-2 h-9 px-3 text-xs font-semibold rounded-lg transition-all"
+                style={{ color: "#c8a96e" }}
+                title="Cerrar Sesión"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Salir</span>
+              </Button>
             </div>
           )}
         </div>

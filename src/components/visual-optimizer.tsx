@@ -18,6 +18,7 @@ interface PlacedPiece extends PieceWithRotation {
   x: number;
   y: number;
   rotated: boolean;
+  originalId: string;
 }
 
 interface VisualOptimizerProps {
@@ -34,7 +35,7 @@ const packPieces = (
   boardWidth: number,
   boardHeight: number,
 ): { placed: PlacedPiece[]; unplaced: AggregatedPiece[] } => {
-  let allPieces: (Omit<PieceWithRotation, 'quantity'> & { originalId: string })[] = [];
+  let allPieces: (PieceWithRotation & { originalId: string })[] = [];
   piecesToPack.forEach((p, i) => {
     for (let j = 0; j < p.quantity; j++) {
       // Ignore pieces with no dimensions

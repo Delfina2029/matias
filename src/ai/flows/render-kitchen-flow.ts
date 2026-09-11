@@ -72,7 +72,7 @@ La escena debe estar estilizada como una fotografía de arquitectura de alta gam
 `;
 
     const { media } = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
+      model: 'googleai/imagen-3.0-generate-002',
       prompt: prompt,
     });
 
