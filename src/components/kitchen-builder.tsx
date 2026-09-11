@@ -99,7 +99,7 @@ function migrateCabinets(cabs: PlacedCabinet[]): PlacedCabinet[] {
   });
 }
 
-export function KitchenBuilder({ onBackToMenu }: { onBackToMenu?: () => void }) {
+export function KitchenBuilder({ onBackToMenu, isFactoryMode = false }: { onBackToMenu?: () => void; isFactoryMode?: boolean }) {
   const [placedCabinets, setPlacedCabinets] = useState<PlacedCabinet[]>([]);
 
   const handlePlacedCabinetsChange = useCallback((newCabinets: PlacedCabinet[]) => {
@@ -183,6 +183,7 @@ export function KitchenBuilder({ onBackToMenu }: { onBackToMenu?: () => void }) 
       perfilJ: 3500,
       tapaTornillo: 10,
       cantoPreencolado: 800,
+      factoryMarkupPercent: 100,
     });
 
     if (typeof window !== 'undefined') {
@@ -224,6 +225,7 @@ export function KitchenBuilder({ onBackToMenu }: { onBackToMenu?: () => void }) 
     perfilJ: 3500,
     tapaTornillo: 10,
     cantoPreencolado: 800,
+    factoryMarkupPercent: 100,
   });
 
   // Load from localStorage on mount
@@ -353,7 +355,7 @@ export function KitchenBuilder({ onBackToMenu }: { onBackToMenu?: () => void }) 
         }));
     }
     
-    if (defaultComponents.length === 0 && cabinetId !== 'base-corner-900' && cabinetInfo.type !== 'placar') {
+    if (defaultComponents.length === 0 && cabinetId !== 'base-corner-900' && cabinetInfo.type !== 'placar' && cabinetId !== 'wall-cube' && cabinetId !== 'base-nicho') {
         defaultComponents.push({
             id: `comp_${Date.now()}_${Math.random()}`,
             type: 'door',
@@ -587,10 +589,12 @@ export function KitchenBuilder({ onBackToMenu }: { onBackToMenu?: () => void }) 
                                 selectedInstanceId={selectedInstanceId}
                                 onSelectInstance={selectInstanceAndOpenSheet}
                                 prices={prices}
+                                onUpdatePrices={handleSavePrices}
                                 viewMode={viewMode}
                                 setViewMode={setViewMode}
                                 hoveredPieceName={hoveredPieceName}
                                 onHoverPiece={setHoveredPieceName}
+                                isFactoryMode={isFactoryMode}
                             />
                         </SheetContent>
                       </Sheet>
@@ -662,12 +666,12 @@ export function KitchenBuilder({ onBackToMenu }: { onBackToMenu?: () => void }) 
   return (
     <div className="flex flex-col h-screen overflow-hidden app-bg">
       <Header 
-        onOpenMaterials={() => setIsMaterialsEditorOpen(true)} 
+        onOpenMaterials={isFactoryMode ? () => setIsMaterialsEditorOpen(true) : undefined} 
         onOpenSaveCloud={() => setIsSaveCloudOpen(true)}
         onOpenLoadCloud={() => setIsLoadCloudOpen(true)}
         onBackToMenu={onBackToMenu}
       />
-      <div className="grid grid-cols-[320px_1fr_450px] gap-3 p-3 flex-1 min-h-0">
+      <div className="grid grid-cols-[320px_1fr_500px] gap-3 p-3 flex-1 min-h-0">
         <div className="h-full min-h-0 panel-premium">
           <CabinetSelector onSelectCabinet={addCabinet} onAddCustomCabinet={addCustomCabinet} />
         </div>
@@ -701,10 +705,12 @@ export function KitchenBuilder({ onBackToMenu }: { onBackToMenu?: () => void }) 
               selectedInstanceId={selectedInstanceId}
               onSelectInstance={selectInstanceAndOpenSheet}
               prices={prices}
+              onUpdatePrices={handleSavePrices}
               viewMode={viewMode}
               setViewMode={setViewMode}
               hoveredPieceName={hoveredPieceName}
               onHoverPiece={setHoveredPieceName}
+              isFactoryMode={isFactoryMode}
           />
         </div>
       </div>

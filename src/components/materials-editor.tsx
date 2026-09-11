@@ -167,6 +167,25 @@ export function MaterialsEditor({ isOpen, onOpenChange, prices, onSave }: Materi
                         idW: "mdfWidth", 
                         idH: "mdfHeight" 
                     })}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 py-4 border-b">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm uppercase">Ganancia de Fábrica</span>
+                          <span className="text-xs text-muted-foreground italic">- porcentaje</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-32 group">
+                          <Input
+                            type="number"
+                            className="text-center h-8 text-sm font-bold border-primary/20 bg-primary/5 pr-6"
+                            value={localPrices.factoryMarkupPercent ?? '100'}
+                            onChange={(e) => handleChange('factoryMarkupPercent', e.target.value)}
+                          />
+                          <span className="absolute right-3 top-2 text-muted-foreground text-xs">%</span>
+                        </div>
+                      </div>
+                    </div>
                 </div>
             </div>
 

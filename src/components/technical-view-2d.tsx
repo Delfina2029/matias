@@ -12,7 +12,7 @@ interface TechnicalView2DProps {
   frontStyle?: 'overlay' | 'inset';
 }
 
-const SCALE = 0.6; // Increased scale for main area
+const SCALE = 0.35; // Adjusted scale for standard layouts
 
 export function TechnicalView2D({ cabinet, hoveredPieceName, onHoverPiece, frontStyle = 'overlay' }: TechnicalView2DProps) {
   const { width, height, depth, useLegs, components } = cabinet;
@@ -55,7 +55,7 @@ export function TechnicalView2D({ cabinet, hoveredPieceName, onHoverPiece, front
             y={(y + h / 2) * SCALE}
             textAnchor="middle"
             dominantBaseline="middle"
-            className="text-[10px] font-bold fill-blue-700 pointer-events-none select-none"
+            className="text-[9px] font-bold fill-blue-700 pointer-events-none select-none"
           >
             {label}
           </text>
@@ -93,7 +93,8 @@ export function TechnicalView2D({ cabinet, hoveredPieceName, onHoverPiece, front
           {/* Componentes (Estantes, Cajones, Puertas) */}
           {(() => {
             let currentYFront = viewH - MELAMINE_THICKNESS;
-            return components.map((comp, idx) => {
+            // Map components copy reversed to lay them from floor (bottom) to top in visual stack
+            return [...components].map((comp, idx) => {
               const compH = comp.height;
               const y = currentYFront - compH;
               currentYFront -= compH;
@@ -133,7 +134,8 @@ export function TechnicalView2D({ cabinet, hoveredPieceName, onHoverPiece, front
           {/* Componentes (Profundidad) */}
           {(() => {
             let currentYSide = viewH - MELAMINE_THICKNESS;
-            return components.map((comp, idx) => {
+            // Map components copy reversed to match frontal visual stack from bottom (floor) to top
+            return [...components].map((comp, idx) => {
               const compH = comp.height;
               const y = currentYSide - compH;
               currentYSide -= compH;

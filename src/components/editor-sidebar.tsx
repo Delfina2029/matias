@@ -32,10 +32,12 @@ type EditorSidebarProps = {
   selectedInstanceId: string | null;
   onSelectInstance: (instanceId: string | null) => void;
   prices: MaterialPrices;
+  onUpdatePrices: (prices: MaterialPrices) => void;
   viewMode: 'plan' | '2d' | '3d' | 'technical';
   setViewMode: (mode: 'plan' | '2d' | '3d' | 'technical') => void;
   hoveredPieceName: string | null;
   onHoverPiece: (name: string | null) => void;
+  isFactoryMode?: boolean;
 };
 
 type AggregatedPiece = {
@@ -61,10 +63,12 @@ export function EditorSidebar({
     selectedInstanceId,
     onSelectInstance,
     prices,
+    onUpdatePrices,
     viewMode,
     setViewMode,
     hoveredPieceName,
-    onHoverPiece
+    onHoverPiece,
+    isFactoryMode = false
 }: EditorSidebarProps) {
     const [activeTab, setActiveTab] = useState('edit');
     const [piecesGrainSettings, setPiecesGrainSettings] = useState<Record<string, boolean>>({});
@@ -145,10 +149,10 @@ export function EditorSidebar({
         <Card className="h-full flex flex-col overflow-hidden">
             <Tabs defaultValue="edit" className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <CardHeader className="p-3">
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className={cn("grid w-full", isFactoryMode ? "grid-cols-5" : "grid-cols-4")}>
                         <TabsTrigger value="add"><PlusCircle className="w-4 h-4 mr-1"/>Añadir</TabsTrigger>
                         <TabsTrigger value="edit"><Settings className="w-4 h-4 mr-1"/>Editar</TabsTrigger>
-                        <TabsTrigger value="list"><List className="w-4 h-4 mr-1"/>Despiece</TabsTrigger>
+                        {isFactoryMode && <TabsTrigger value="list"><List className="w-4 h-4 mr-1"/>Despiece</TabsTrigger>}
                         <TabsTrigger value="quote"><Receipt className="w-4 h-4 mr-1"/>Cotización</TabsTrigger>
                         <TabsTrigger value="appearance"><Palette className="w-4 h-4 mr-1"/>Apariencia</TabsTrigger>
                     </TabsList>
@@ -211,7 +215,7 @@ export function EditorSidebar({
                    )}
                 </TabsContent>
 
-                <TabsContent value="list" className="flex-1 h-full min-h-0 m-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+                {isFactoryMode && <TabsContent value="list" className="flex-1 h-full min-h-0 m-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
                     <div className="flex-1 overflow-y-auto p-4 pt-2 space-y-6">
                              <Tabs defaultValue="detailed" className="w-full">
                                 <TabsList className="grid w-full grid-cols-2">
@@ -285,10 +289,16 @@ export function EditorSidebar({
                             <Separator />
                             <OptimizerForm pieces={aggregatedPieces} hasCuts={aggregatedPieces.length > 0} grainSettings={piecesGrainSettings} />
                     </div>
-                </TabsContent>
+                </TabsContent>}
 
-                 <TabsContent value="quote" className="flex-1 h-full min-h-0 m-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
-                    <QuotePanel placedCabinets={placedCabinets} appearance={appearance} prices={prices} />
+                  <TabsContent value="quote" className="flex-1 h-full min-h-0 m-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+                     <QuotePanel 
+                       placedCabinets={placedCabinets} 
+                       appearance={appearance} 
+                       prices={prices} 
+                       onUpdatePrices={onUpdatePrices}
+                       isFactoryMode={isFactoryMode} 
+                     />
                 </TabsContent>
 
                 <TabsContent value="appearance" className="flex-1 h-full min-h-0 m-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">

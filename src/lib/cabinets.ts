@@ -1,5 +1,5 @@
 import type { Cabinet } from './types';
-import { Archive, Container, Microwave, Pentagon } from 'lucide-react';
+import { Archive, Container, Microwave, Pentagon, Square } from 'lucide-react';
 import { 
     Base1DoorIcon,
     Base2DoorsIcon,
@@ -21,6 +21,21 @@ const BACK_PANEL_MATERIAL = 'MDF 3mm';
 
 const bajoMesadaCabinets: Cabinet[] = [
   {
+    id: 'base-spice',
+    name: 'Bajo Mesada Especiero',
+    type: 'base',
+    description: 'Bajo mesada especiero extraíble',
+    icon: Base1DoorIcon,
+    width: 200,
+    height: 810,
+    depth: 580,
+    pieces: [],
+    defaultComponents: [
+      { type: 'opening', height: 810 }
+    ],
+    imageUrl: '/base-1p.png'
+  },
+  {
     id: 'base-1p',
     name: 'Bajo Mesada 1 Puerta',
     type: 'base',
@@ -30,13 +45,13 @@ const bajoMesadaCabinets: Cabinet[] = [
     depth: 580,
     pieces: [],
     defaultComponents: [
-      // bajo001 - L-shape top reinforcement and 50mm top gap for door
       { type: 'door', height: 810 }
-    ]
+    ],
+    imageUrl: '/base-1p.png'
   },
   {
     id: 'base-2p',
-    name: 'bajo002',
+    name: 'Bajo Mesada 2 Puertas',
     type: 'base',
     description: 'Bajo mesada con dos puertas',
     icon: Base2DoorsIcon,
@@ -46,11 +61,12 @@ const bajoMesadaCabinets: Cabinet[] = [
     pieces: [],
     defaultComponents: [
       { type: 'door', height: 810, numDoors: 2 }
-    ]
+    ],
+    imageUrl: '/base-2p.png'
   },
   {
     id: 'base-2c',
-    name: 'bajo003',
+    name: 'Bajo Mesada 2 Cajones (Ollero)',
     type: 'base',
     description: 'Bajo mesada 2 cajones (Ollero)',
     icon: Base2DrawersIcon,
@@ -61,11 +77,12 @@ const bajoMesadaCabinets: Cabinet[] = [
     defaultComponents: [
       { type: 'drawer', height: 405, drawerBoxHeight: 200 },
       { type: 'drawer', height: 405, drawerBoxHeight: 200 }
-    ]
+    ],
+    imageUrl: '/base-2c.png'
   },
   {
     id: 'base-3c',
-    name: 'bajo004',
+    name: 'Bajo Mesada 3 Cajones',
     type: 'base',
     icon: Base3DrawersIcon,
     width: 600,
@@ -76,7 +93,8 @@ const bajoMesadaCabinets: Cabinet[] = [
       { type: 'drawer', height: 305, drawerBoxHeight: 150 }, // Bottom
       { type: 'drawer', height: 305, drawerBoxHeight: 150 }, // Middle
       { type: 'drawer', height: 200, drawerBoxHeight: 100 }  // Top
-    ]
+    ],
+    imageUrl: '/base-3c.png'
   },
   {
     id: 'base-corner',
@@ -91,7 +109,8 @@ const bajoMesadaCabinets: Cabinet[] = [
     pieces: [],
     defaultComponents: [
       { type: 'door', height: 810, numDoors: 2 }
-    ]
+    ],
+    imageUrl: '/base-corner.png'
   },
   {
     id: 'base-blind-corner',
@@ -105,7 +124,20 @@ const bajoMesadaCabinets: Cabinet[] = [
     defaultComponents: [
       { type: 'door', height: 810 }
     ],
-    notes: 'Mueble rectangular con una sección ciega para rincón.'
+    notes: 'Mueble rectangular con una sección ciega para rincón.',
+    imageUrl: '/base-blind-corner.png'
+  },
+  {
+    id: 'base-nicho',
+    name: 'Nicho Abierto',
+    type: 'base',
+    icon: Square,
+    width: 600,
+    height: 810,
+    depth: 580,
+    pieces: [],
+    defaultComponents: [],
+    imageUrl: '/base-1p.png'
   },
 ];
 
@@ -119,6 +151,19 @@ const alacenaCabinets: Cabinet[] = [
     height: 600,
     depth: 320,
     pieces: [],
+    imageUrl: '/wall.png'
+  },
+  {
+    id: 'wall-cube',
+    name: 'Cubo Abierto',
+    type: 'wall',
+    icon: Square,
+    width: 400,
+    height: 400,
+    depth: 320,
+    pieces: [],
+    defaultComponents: [],
+    imageUrl: '/wall.png'
   },
   {
     id: 'wall-microwave',
@@ -132,7 +177,8 @@ const alacenaCabinets: Cabinet[] = [
     defaultComponents: [
       { type: 'opening', height: 400 },
       { type: 'door', height: 400, hinge: 'top' },
-    ]
+    ],
+    imageUrl: '/wall-microwave.png'
   },
 ];
 
@@ -149,7 +195,8 @@ const columnaCabinets: Cabinet[] = [
     defaultComponents: [
         { type: 'door', height: 1250 },
         { type: 'door', height: 750 },
-    ]
+    ],
+    imageUrl: '/tall.png'
   },
 ];
 
@@ -167,7 +214,8 @@ const vanitoryCabinets: Cabinet[] = [
       defaultComponents: [
         { type: 'opening', height: 230 },
         { type: 'drawer', height: 230 },
-      ]
+      ],
+      imageUrl: '/vanity-hanging-1d1o.png'
     },
     {
       id: 'vanity-hanging-2d',
@@ -182,6 +230,7 @@ const vanitoryCabinets: Cabinet[] = [
         { type: 'drawer', height: 230 },
         { type: 'drawer', height: 230 },
       ],
+      imageUrl: '/vanity-hanging-2d.png'
     },
     {
       id: 'vanity-hanging-2p',
@@ -193,8 +242,25 @@ const vanitoryCabinets: Cabinet[] = [
       depth: 460,
       pieces: [],
       defaultComponents: [
-        { type: 'door', height: 460, numDoors: 2 }
+        { type: 'door', height: 404 },
+        { type: 'opening', height: 56 },
       ],
+      imageUrl: '/vanity-hanging-2p.png'
+    },
+    {
+      id: 'vanity-hanging-800-2p',
+      name: 'Vanitory Colgante 800mm (2 Puertas)',
+      type: 'base',
+      icon: Vanitory2PuertasIcon,
+      width: 800,
+      height: 460,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'door', height: 404 },
+        { type: 'opening', height: 56 },
+      ],
+      imageUrl: '/vanity-hanging-2p.png'
     },
     // De Pie
     {
@@ -207,10 +273,10 @@ const vanitoryCabinets: Cabinet[] = [
       depth: 460,
       pieces: [],
       defaultComponents: [
-        // vany004 - PERFECTO NO MODIFICAR
-        { type: 'opening', height: 493.34 }, // Bottom opening
-        { type: 'drawer', height: 246.66 },  // Top drawer matching hanging vanity size exactly
-      ]
+        { type: 'opening', height: 400 },
+        { type: 'drawer', height: 340 },
+      ],
+      imageUrl: '/vanity-patas-1d1o.png'
     },
     {
       id: 'vanity-patas-3d',
@@ -222,10 +288,11 @@ const vanitoryCabinets: Cabinet[] = [
       depth: 460,
       pieces: [],
       defaultComponents: [
-        { type: 'drawer', height: 246.66 },
-        { type: 'drawer', height: 246.67 },
-        { type: 'drawer', height: 246.67 },
-      ]
+        { type: 'drawer', height: 246 },
+        { type: 'drawer', height: 246 },
+        { type: 'drawer', height: 246 },
+      ],
+      imageUrl: '/vanity-patas-3d.png'
     },
     {
       id: 'vanity-patas-1d2p',
@@ -237,10 +304,10 @@ const vanitoryCabinets: Cabinet[] = [
       depth: 460,
       pieces: [],
       defaultComponents: [
-        // vany006 - PERFECTO NO MODIFICAR
-        { type: 'door', height: 493.34, numDoors: 2 },
-        { type: 'drawer', height: 246.66 },
-      ]
+        { type: 'door', height: 540 },
+        { type: 'drawer', height: 200 },
+      ],
+      imageUrl: '/vanity-patas-1d2p.png'
     },
     {
       id: 'vanity-patas-2p',
@@ -252,15 +319,32 @@ const vanitoryCabinets: Cabinet[] = [
       depth: 460,
       pieces: [],
       defaultComponents: [
-        { type: 'door', height: 740, numDoors: 2 }
-      ]
-    }
+        { type: 'door', height: 684 },
+        { type: 'opening', height: 56 },
+      ],
+      imageUrl: '/vanity-patas-2p.png'
+    },
+    {
+      id: 'vanity-patas-800-2p',
+      name: 'Vanitory 800mm Patas (2 Puertas)',
+      type: 'base',
+      icon: VanitoryPatas2PIcon,
+      width: 800,
+      height: 840,
+      depth: 460,
+      pieces: [],
+      defaultComponents: [
+        { type: 'door', height: 684 },
+        { type: 'opening', height: 56 },
+      ],
+      imageUrl: '/vanity-patas-2p.png'
+    },
 ];
 
 const placarCabinets: Cabinet[] = [
     {
-        id: 'PLR001',
-        name: 'Interior de Placard (PLR001)',
+        id: 'placar-module',
+        name: 'Módulo Placar',
         type: 'placar',
         icon: PlacarModuleIcon,
         width: 800,
@@ -269,7 +353,8 @@ const placarCabinets: Cabinet[] = [
         pieces: [], // Will be generated by logic
         defaultComponents: [
             { type: 'opening', height: 1800 - MELAMINE_THICKNESS * 2 },
-        ]
+        ],
+        imageUrl: '/tall.png'
     },
 ];
 

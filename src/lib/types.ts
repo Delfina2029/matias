@@ -47,6 +47,7 @@ export type MaterialPrices = {
   perfilJ: number;
   tapaTornillo: number;
   cantoPreencolado: number;
+  factoryMarkupPercent?: number; // Optional factory markup percentage (default 100%)
 };
 
 export interface CabinetComponent {
@@ -65,6 +66,7 @@ export interface Cabinet {
   id: string;
   name: string;
   type: 'base' | 'wall' | 'tall' | 'placar';
+  description?: string;
   icon: React.ComponentType<LucideProps>;
   width: number;
   width2?: number; // Added width2 here
@@ -74,6 +76,7 @@ export interface Cabinet {
   pieces: Piece[];
   defaultComponents?: Omit<CabinetComponent, 'id'>[];
   notes?: string;
+  imageUrl?: string;
 }
 
 export interface PlacedCabinet {
@@ -91,6 +94,7 @@ export interface PlacedCabinet {
   useJProfileDiscounts?: boolean;
   useLegs?: boolean;
   hasInnerShelf?: boolean;
+  innerShelfHeights?: number[];
   invertSide?: boolean;
 }
 

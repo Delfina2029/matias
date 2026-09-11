@@ -50,7 +50,7 @@ type CabinetEditorPanelProps = {
   onHoverPiece: (name: string | null) => void;
 };
 
-type ActiveTool = 'drawer' | 'shelf' | 'door' | 'hanging-rail';
+type ActiveTool = 'drawer' | 'shelf' | 'door' | 'hanging-rail' | 'vertical-divider';
 
 
 const MELAMINE_THICKNESS = 18;
@@ -74,16 +74,30 @@ export function CabinetEditorPanel({
     hoveredPieceName,
     onHoverPiece
 }: CabinetEditorPanelProps) {
-  const [dimensions, setDimensions] = useState({
+  const [dimensions, setDimensions] = useState<{
+    width: number | '';
+    width2: number | '';
+    height: number | '';
+    depth: number | '';
+    depth2: number | '';
+  }>({
     width: cabinet.width,
     width2: cabinet.width2 || cabinet.width,
     height: cabinet.height,
     depth: cabinet.depth,
     depth2: cabinet.depth2 || cabinet.depth,
   });
+
+  const resolvedWidth = Number(dimensions.width) || cabinet.width;
+  const resolvedWidth2 = Number(dimensions.width2) || cabinet.width2 || cabinet.width;
+  const resolvedHeight = Number(dimensions.height) || cabinet.height;
+  const resolvedDepth = Number(dimensions.depth) || cabinet.depth;
+  const resolvedDepth2 = Number(dimensions.depth2) || cabinet.depth2 || cabinet.depth;
   const [useJProfileDiscounts, setUseJProfileDiscounts] = useState(cabinet.useJProfileDiscounts || false);
   const [useLegs, setUseLegs] = useState(cabinet.useLegs || false);
   const [hasInnerShelf, setHasInnerShelf] = useState(cabinet.hasInnerShelf || false);
+  const [innerShelfHeights, setInnerShelfHeights] = useState<number[] | undefined>(cabinet.innerShelfHeights);
+  const [shelfHeightsText, setShelfHeightsText] = useState(cabinet.innerShelfHeights ? cabinet.innerShelfHeights.join(', ') : '');
   const [invertSide, setInvertSide] = useState(cabinet.invertSide || false);
   const [rotation, setRotation] = useState<[number, number, number]>(cabinet.rotation || [0, 0, 0]);
   const [components, setComponents] = useState<CabinetComponent[]>(cabinet.components || []);
@@ -128,6 +142,8 @@ export function CabinetEditorPanel({
     setUseJProfileDiscounts(cabinet.useJProfileDiscounts || false);
     setUseLegs(cabinet.useLegs || false);
     setHasInnerShelf(cabinet.hasInnerShelf || false);
+    setInnerShelfHeights(cabinet.innerShelfHeights);
+    setShelfHeightsText(cabinet.innerShelfHeights ? cabinet.innerShelfHeights.join(', ') : '');
     setInvertSide(cabinet.invertSide || false);
     setRotation(cabinet.rotation || [0, 0, 0]);
     setSelectedComponentId(null);
@@ -157,11 +173,11 @@ export function CabinetEditorPanel({
 
   const handleDimensionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setDimensions((prev) => ({ ...prev, [name]: Number(value) }));
+    setDimensions((prev) => ({ ...prev, [name]: value === '' ? '' : Number(value) }));
   };
 
   const handleHeightBlur = () => {
-    const newHeight = dimensions.height;
+    const newHeight = resolvedHeight;
     const currentTotal = components.reduce((sum, c) => sum + c.height, 0);
 
     // Scale components to fill the new cabinet height
@@ -181,21 +197,146 @@ export function CabinetEditorPanel({
   const cabinetPieces = useMemo(() => {
     return generatePiecesForCabinet({ 
         ...cabinet, 
-        ...dimensions, 
+        width: resolvedWidth,
+        width2: resolvedWidth2,
+        height: resolvedHeight,
+        depth: resolvedDepth,
+        depth2: resolvedDepth2,
         components, 
         useJProfileDiscounts, 
         useLegs, 
         hasInnerShelf,
+        innerShelfHeights,
         invertSide, 
         rotation 
     }, appearance);
-  }, [cabinet, dimensions, components, useJProfileDiscounts, useLegs, hasInnerShelf, invertSide, rotation, appearance]);
+  }, [cabinet, resolvedWidth, resolvedWidth2, resolvedHeight, resolvedDepth, resolvedDepth2, components, useJProfileDiscounts, useLegs, hasInnerShelf, innerShelfHeights, invertSide, rotation, appearance]);
 
   const handleSave = () => {
-    onUpdate({ ...cabinet, ...dimensions, components, useJProfileDiscounts, useLegs, hasInnerShelf, invertSide, rotation });
+    onUpdate({ 
+      ...cabinet, 
+      width: resolvedWidth,
+      width2: resolvedWidth2,
+      height: resolvedHeight,
+      depth: resolvedDepth,
+      depth2: resolvedDepth2,
+      components, 
+      useJProfileDiscounts, 
+      useLegs, 
+      hasInnerShelf, 
+      innerShelfHeights,
+      invertSide, 
+      rotation 
+    });
     toast({
       title: 'Gabinete Actualizado',
       description: 'Los componentes del gabinete han sido guardados.',
+    });
+  };
+
+  const placardGaps = useMemo(() => {
+    if (!isPlacar) return [];
+    
+    // Get all shelves Y coordinates
+    const shelves = components
+      .filter(c => c.type === 'shelf')
+      .map(c => Math.round(c.positionY || 0))
+      .sort((a, b) => a - b);
+      
+    const bottomLimit = MELAMINE_THICKNESS; 
+    const topLimit = resolvedHeight - MELAMINE_THICKNESS; 
+    
+    const boundaries = [bottomLimit, ...shelves, topLimit];
+    const gaps: { start: number; end: number; height: number; name: string }[] = [];
+    
+    for (let i = 0; i < boundaries.length - 1; i++) {
+      const start = boundaries[i];
+      const end = boundaries[i + 1];
+      
+      const actualStart = i === 0 ? start : start + MELAMINE_THICKNESS;
+      const actualEnd = end;
+      const gapHeight = actualEnd - actualStart;
+      
+      if (gapHeight > 10) {
+        let name = '';
+        if (i === 0) name = 'Espacio Inferior';
+        else if (i === boundaries.length - 2) name = 'Espacio Superior';
+        else name = `Espacio Medio ${i}`;
+        
+        gaps.push({
+          start: actualStart,
+          end: actualEnd,
+          height: gapHeight,
+          name
+        });
+      }
+    }
+    
+    return gaps;
+  }, [components, resolvedHeight, isPlacar]);
+
+  const handleAddDrawerInGap = (gap: { start: number; end: number; height: number }) => {
+    const newComp: CabinetComponent = {
+        id: Math.random().toString(36).substring(7),
+        type: 'drawer',
+        height: gap.height,
+        positionY: gap.start,
+    };
+    
+    const newComponents = [...components, newComp];
+    setComponents(newComponents);
+    onUpdate({
+        ...cabinet,
+        width: resolvedWidth,
+        width2: resolvedWidth2,
+        height: resolvedHeight,
+        depth: resolvedDepth,
+        depth2: resolvedDepth2,
+        components: newComponents,
+        useJProfileDiscounts,
+        useLegs,
+        hasInnerShelf,
+        innerShelfHeights,
+        invertSide,
+        rotation
+    });
+    
+    toast({
+        title: 'Cajón Acomodado',
+        description: `Se añadió un cajón de ${gap.height}mm en el espacio disponible.`,
+    });
+  };
+
+  const handleAddShelfInGap = (gap: { start: number; end: number; height: number }) => {
+    const shelfY = Math.round(gap.start + (gap.height / 2) - (MELAMINE_THICKNESS / 2));
+    const newComp: CabinetComponent = {
+        id: Math.random().toString(36).substring(7),
+        type: 'shelf',
+        height: MELAMINE_THICKNESS,
+        positionY: shelfY,
+    };
+    
+    const newComponents = [...components, newComp];
+    setComponents(newComponents);
+    onUpdate({
+        ...cabinet,
+        width: resolvedWidth,
+        width2: resolvedWidth2,
+        height: resolvedHeight,
+        depth: resolvedDepth,
+        depth2: resolvedDepth2,
+        components: newComponents,
+        useJProfileDiscounts,
+        useLegs,
+        hasInnerShelf,
+        innerShelfHeights,
+        invertSide,
+        rotation
+    });
+    
+    toast({
+        title: 'Estante Añadido',
+        description: `Se colocó un estante a una altura de ${shelfY}mm (mitad del hueco).`,
     });
   };
 
@@ -209,14 +350,14 @@ export function CabinetEditorPanel({
           positionY = 400;
       } else if (toolType === 'hanging-rail') {
           height = 30;
-          positionY = dimensions.height - 150; // Near top
+          positionY = resolvedHeight - 150; // Near top
       } else if (toolType === 'vertical-divider') {
           height = 400;
           positionY = 0; // Floor
           positionX = 0; // Left side default
       }
 
-      const interiorWidth = dimensions.width - (2 * CABINET_MELAMINE_THICKNESS);
+      const interiorWidth = resolvedWidth - (2 * CABINET_MELAMINE_THICKNESS);
       if (toolType === 'vertical-divider') {
           positionX = interiorWidth / 2; // Center
       }
@@ -234,7 +375,21 @@ export function CabinetEditorPanel({
 
       const newComponents = [...components, newComp];
       setComponents(newComponents);
-      onUpdate({ ...cabinet, ...dimensions, components: newComponents, useJProfileDiscounts, useLegs, hasInnerShelf, invertSide, rotation });
+      onUpdate({ 
+          ...cabinet, 
+          width: resolvedWidth,
+          width2: resolvedWidth2,
+          height: resolvedHeight,
+          depth: resolvedDepth,
+          depth2: resolvedDepth2,
+          components: newComponents, 
+          useJProfileDiscounts, 
+          useLegs, 
+          hasInnerShelf, 
+          innerShelfHeights,
+          invertSide, 
+          rotation 
+      });
       
       toast({
           title: 'Componente Añadido',
@@ -297,7 +452,7 @@ export function CabinetEditorPanel({
   const handleDoorConfig = (doorCount: number) => {
     setSelectedComponentId(null);
     setActiveTool(null);
-    const effectiveHeight = useLegs && cabinet.type === 'base' ? dimensions.height - 100 : dimensions.height;
+    const effectiveHeight = useLegs && cabinet.type === 'base' ? resolvedHeight - 100 : resolvedHeight;
     
     // For corner cabinets, doors always come in pairs (2 leaves forming the L shape)
     if (isCornerCabinet) {
@@ -316,7 +471,7 @@ export function CabinetEditorPanel({
   const handleStartWithDrawers = () => {
       setSelectedComponentId(null);
       setActiveTool(null);
-      const effectiveHeight = useLegs && cabinet.type === 'base' ? dimensions.height - 100 : dimensions.height;
+      const effectiveHeight = useLegs && cabinet.type === 'base' ? resolvedHeight - 100 : resolvedHeight;
       setComponents([{ id: `comp_${Date.now()}`, type: 'opening', height: effectiveHeight }]);
       toast({ title: "Espacio Creado", description: "Ahora usa la barra de herramientas para añadir cajones."});
   };
@@ -367,7 +522,7 @@ export function CabinetEditorPanel({
         }
 
         if (newComponents.length === 0) {
-            const effectiveHeight = useLegs && cabinet.type === 'base' ? dimensions.height - 100 : dimensions.height;
+            const effectiveHeight = useLegs && cabinet.type === 'base' ? resolvedHeight - 100 : resolvedHeight;
             return [{ id: `comp_open_${Date.now()}`, type: 'opening', height: effectiveHeight }];
         }
 
@@ -499,7 +654,7 @@ export function CabinetEditorPanel({
     return true;
   };
   
-  const effectiveCabinetHeight = useLegs && cabinet.type === 'base' ? dimensions.height - 100 : dimensions.height;
+  const effectiveCabinetHeight = useLegs && cabinet.type === 'base' ? resolvedHeight - 100 : resolvedHeight;
   const internalHeight = isPlacar ? effectiveCabinetHeight - (2 * CABINET_MELAMINE_THICKNESS) : effectiveCabinetHeight;
   
   const hasGlobalHorizontalDoors = cabinet.type !== 'tall' && !cabinet.cabinetId.startsWith('vanity') && components.length > 1 && components.every(c => c.type === 'door');
@@ -522,7 +677,9 @@ export function CabinetEditorPanel({
       return [];
     }
 
-    const { width, depth } = dimensions;
+    const width = resolvedWidth;
+    const depth = resolvedDepth;
+    const height = resolvedHeight;
     const pieces: { name: string, dimensions: string, quantity: number }[] = [];
     const interiorWidth = width - (2 * CABINET_MELAMINE_THICKNESS);
     const compIndex = components.findIndex(c => c.id === selectedComponent.id);
@@ -538,7 +695,7 @@ export function CabinetEditorPanel({
         useJProfileDiscounts,
         useLegs,
         appearance.frontStyle,
-        dimensions.height
+        height
     );
 
     pieces.push({
@@ -602,7 +759,7 @@ export function CabinetEditorPanel({
     }
 
     return pieces;
-  }, [selectedComponent, dimensions, cabinet.cabinetId, cabinet.type, components, useJProfileDiscounts, useLegs]);
+  }, [selectedComponent, resolvedWidth, resolvedDepth, resolvedHeight, cabinet.cabinetId, cabinet.type, components, useJProfileDiscounts, useLegs]);
 
   const DraggableTool = ({ tool, children, disabled }: {tool: ActiveTool, children: React.ReactNode, disabled?: boolean}) => {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -709,8 +866,43 @@ export function CabinetEditorPanel({
                                         <Switch 
                                             id="shelf-switch" 
                                             checked={hasInnerShelf} 
-                                            onCheckedChange={setHasInnerShelf}
+                                            onCheckedChange={(checked) => {
+                                                setHasInnerShelf(checked);
+                                                if (checked && !innerShelfHeights) {
+                                                    const defaultMiddle = Math.round((resolvedHeight - (useLegs ? 100 : 0)) / 2);
+                                                    setInnerShelfHeights([defaultMiddle]);
+                                                    setShelfHeightsText(String(defaultMiddle));
+                                                }
+                                            }}
                                         />
+                                    </div>
+                                )}
+                                {((hasInnerShelf && (cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p')) || cabinet.cabinetId === 'base-nicho') && (
+                                    <div className="flex flex-col gap-1.5 mt-1.5 border p-2 rounded bg-muted/30">
+                                        <Label htmlFor="shelf-heights" className="text-[10px] font-semibold text-muted-foreground">Alturas de Estantes desde abajo (mm)</Label>
+                                        <div className="flex flex-col gap-1.5">
+                                            <Input
+                                                id="shelf-heights"
+                                                type="text"
+                                                className="h-7 text-xs font-bold w-full"
+                                                placeholder="Ej: 200, 450"
+                                                value={shelfHeightsText}
+                                                onChange={(e) => {
+                                                    const text = e.target.value;
+                                                    setShelfHeightsText(text);
+                                                    
+                                                    // Parse values dynamically
+                                                    const vals = text.split(',')
+                                                        .map(s => parseInt(s.trim()))
+                                                        .filter(n => !isNaN(n) && n >= 0);
+                                                    
+                                                    setInnerShelfHeights(vals.length > 0 ? vals : undefined);
+                                                }}
+                                            />
+                                            <span className="text-[9px] text-muted-foreground italic leading-tight">
+                                                (Medidas desde el piso interno. Separa con comas para agregar varios, ej: 200, 450)
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
                                 {cabinet.cabinetId === 'base-blind-corner' && (
@@ -798,29 +990,116 @@ export function CabinetEditorPanel({
                     <div className="flex flex-col gap-6 items-center">
                           <div className="w-full max-w-2xl grid grid-cols-1 gap-6">
                             {isPlacar ? (
-                              <div className="space-y-4 bg-muted/30 p-4 rounded-lg border">
-                                  <h5 className="font-semibold text-sm">Paleta de Accesorios (Arrastrar o Hacer Clic)</h5>
-                                  <p className="text-xs text-muted-foreground mb-4">
-                                      Hacé clic en un elemento para agregarlo rápidamente, o arrastralo y soltalo directamente sobre el interior del placard en el modelo 3D.
-                                  </p>
-                                  <div className="flex flex-col gap-3">
-                                      <HTML5DraggableTool tool="shelf" onClick={() => handleQuickAddPlacarComponent('shelf')}>
-                                          <span className="flex-1">Estante (18mm)</span>
-                                          <span className="text-[10px] text-muted-foreground font-semibold bg-secondary/50 px-2 py-1 rounded">CLIC O ARRASTRAR</span>
-                                      </HTML5DraggableTool>
-                                      <HTML5DraggableTool tool="hanging-rail" onClick={() => handleQuickAddPlacarComponent('hanging-rail')}>
-                                          <span className="flex-1">Barral de Colgar</span>
-                                          <span className="text-[10px] text-muted-foreground font-semibold bg-secondary/50 px-2 py-1 rounded">CLIC O ARRASTRAR</span>
-                                      </HTML5DraggableTool>
-                                      <HTML5DraggableTool tool="drawer" onClick={() => handleQuickAddPlacarComponent('drawer')}>
-                                          <span className="flex-1">Cajón (200mm)</span>
-                                          <span className="text-[10px] text-muted-foreground font-semibold bg-secondary/50 px-2 py-1 rounded">CLIC O ARRASTRAR</span>
-                                      </HTML5DraggableTool>
-                                      <HTML5DraggableTool tool="vertical-divider" onClick={() => handleQuickAddPlacarComponent('vertical-divider')}>
-                                          <span className="flex-1">Divisor Vertical (18mm)</span>
-                                          <span className="text-[10px] text-muted-foreground font-semibold bg-secondary/50 px-2 py-1 rounded">CLIC O ARRASTRAR</span>
-                                      </HTML5DraggableTool>
-                                  </div>
+                              <div className="space-y-4">
+                                <div className="space-y-4 bg-muted/30 p-4 rounded-lg border">
+                                    <h5 className="font-semibold text-sm">Paleta de Accesorios (Arrastrar o Hacer Clic)</h5>
+                                    <p className="text-xs text-muted-foreground mb-4">
+                                        Hacé clic en un elemento para agregarlo rápidamente, o arrastralo y soltalo directamente sobre el interior del placard en el modelo 3D.
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Button variant="outline" className="justify-start text-xs font-semibold" onClick={() => handleQuickAddPlacarComponent('shelf')}>
+                                            Estante (18mm)
+                                        </Button>
+                                        <Button variant="outline" className="justify-start text-xs font-semibold" onClick={() => handleQuickAddPlacarComponent('hanging-rail')}>
+                                            Barral de Colgar
+                                        </Button>
+                                        <Button variant="outline" className="justify-start text-xs font-semibold" onClick={() => handleQuickAddPlacarComponent('drawer')}>
+                                            Cajón (200mm)
+                                        </Button>
+                                        <Button variant="outline" className="justify-start text-xs font-semibold" onClick={() => handleQuickAddPlacarComponent('vertical-divider')}>
+                                            Divisor Vertical (18mm)
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* List of currently placed items inside the Placar */}
+                                {components.length > 0 && (
+                                    <div className="space-y-2 p-4 bg-background border rounded-lg shadow-sm">
+                                        <h6 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Accesorios en el Placard:</h6>
+                                        <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                                            {components.map((comp) => {
+                                                const isSelected = selectedComponentId === comp.id;
+                                                let description = '';
+                                                if (comp.type === 'vertical-divider') {
+                                                    description = `Izquierda: ${Math.round(comp.positionX || 0)}mm | Alto: ${comp.height}mm`;
+                                                } else {
+                                                    description = `Altura: ${Math.round(comp.positionY || 0)}mm`;
+                                                }
+                                                
+                                                return (
+                                                    <div 
+                                                        key={comp.id} 
+                                                        className={cn(
+                                                            "flex items-center justify-between p-2 rounded-md border text-xs cursor-pointer transition-all",
+                                                            isSelected ? "bg-amber-50 border-amber-500 shadow-sm" : "bg-background hover:bg-accent border-muted/50"
+                                                        )}
+                                                        onClick={() => setSelectedComponentId(comp.id)}
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className="font-semibold text-foreground">{typeLabels[comp.type] || comp.type}</span>
+                                                            <span className="text-[10px] text-muted-foreground">{description}</span>
+                                                        </div>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-6 w-6 text-destructive hover:bg-destructive/10" 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRemoveComponent(comp.id);
+                                                            }}
+                                                        >
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground italic text-center mt-2">
+                                            Haz clic sobre cualquier accesorio para editar su altura o posición.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Available gaps between shelves / floor / top */}
+                                {placardGaps.length > 0 && (
+                                    <div className="space-y-2.5 p-4 bg-[#81B29A]/10 border border-[#81B29A]/40 rounded-lg">
+                                        <h6 className="text-xs font-bold text-[#81B29A] uppercase tracking-wider">Huecos Detectados (Organización Inteligente):</h6>
+                                        <p className="text-[10px] text-muted-foreground leading-tight">
+                                            Acomoda cajones o estantes de forma automática ajustando las medidas al espacio libre disponible.
+                                        </p>
+                                        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                            {placardGaps.map((gap, idx) => (
+                                                <div key={idx} className="flex flex-col gap-1.5 p-2.5 rounded-md border bg-background border-muted/50 text-xs">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="font-semibold text-foreground">{gap.name}</span>
+                                                        <span className="font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px]">{gap.height} mm libres</span>
+                                                    </div>
+                                                    <div className="text-[9px] text-muted-foreground leading-none">
+                                                        Rango: {gap.start}mm a {gap.end}mm
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-1.5 mt-1">
+                                                        <Button 
+                                                            variant="secondary" 
+                                                            size="sm" 
+                                                            className="h-6 text-[10px] bg-[#E07A5F] hover:bg-[#d66c50] text-white font-semibold"
+                                                            onClick={() => handleAddDrawerInGap(gap)}
+                                                        >
+                                                            Acomodar Cajón
+                                                        </Button>
+                                                        <Button 
+                                                            variant="secondary" 
+                                                            size="sm" 
+                                                            className="h-6 text-[10px] bg-slate-600 hover:bg-slate-700 text-white font-semibold"
+                                                            onClick={() => handleAddShelfInGap(gap)}
+                                                        >
+                                                            Acomodar Estante
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                               </div>
                             ) : (
                             <div className="space-y-4">
@@ -837,7 +1116,7 @@ export function CabinetEditorPanel({
                                     </Button>
                                 </div>
                                 <div className="flex flex-col items-center justify-end w-full bg-secondary/10 rounded-md border p-4" style={{ height: `${VISUAL_EDITOR_HEIGHT_PX + 40}px` }}>
-                                    <div className="relative w-full bg-secondary/30 rounded-md border-2 border-dashed transition-all" style={{ height: `${(effectiveCabinetHeight / dimensions.height) * VISUAL_EDITOR_HEIGHT_PX}px` }}>
+                                    <div className="relative w-full bg-secondary/30 rounded-md border-2 border-dashed transition-all" style={{ height: `${(effectiveCabinetHeight / resolvedHeight) * VISUAL_EDITOR_HEIGHT_PX}px` }}>
                                         <div className={cn(
                                             "absolute inset-0 flex",
                                             hasGlobalHorizontalDoors ? "flex-row" : "flex-col-reverse"
@@ -928,7 +1207,7 @@ export function CabinetEditorPanel({
                                     </div>
                                     
                                     {useLegs && cabinet.type === 'base' && (
-                                        <div className="flex justify-around w-full" style={{ height: `${(100 / dimensions.height) * VISUAL_EDITOR_HEIGHT_PX}px` }}>
+                                        <div className="flex justify-around w-full" style={{ height: `${(100 / resolvedHeight) * VISUAL_EDITOR_HEIGHT_PX}px` }}>
                                             <div className="w-4 bg-muted-foreground/40 rounded-b-sm" />
                                             <div className="w-4 bg-muted-foreground/40 rounded-b-sm" />
                                             <div className="w-4 bg-muted-foreground/40 rounded-b-sm" />
@@ -977,8 +1256,7 @@ export function CabinetEditorPanel({
                             </div>
                             )}
 
-                            {/* Active Tools Palette (only for standard cabinets) */}
-                            {!isPlacar && (
+                            {/* Active Tools Palette (Now available for all cabinets including Placards) */}
                             <div className="space-y-4">
                                 {selectedComponent ? (
                                     <div className="space-y-4 p-3 border rounded-md bg-background animate-in fade-in-50">
@@ -1149,12 +1427,12 @@ export function CabinetEditorPanel({
                                                 cabinet.cabinetId,
                                                 selectedComponent,
                                                 compIndex,
-                                                dimensions.width,
+                                                resolvedWidth,
                                                 1, // Utility will use component.numDoors internally
                                                 useJProfileDiscounts,
                                                 useLegs,
                                                 appearance.frontStyle,
-                                                dimensions.height
+                                                resolvedHeight
                                             );
 
                                             return (
@@ -1183,11 +1461,10 @@ export function CabinetEditorPanel({
                                     </div>
                                 ) : (
                                     <div className="text-center text-sm text-muted-foreground p-4 flex items-center justify-center h-40 border-2 border-dashed rounded-md">
-                                        <p>{activeTool ? `Haz clic en un hueco para añadir un ${typeLabels[activeTool] || activeTool}` : 'Selecciona un componente para editarlo.'}</p>
+                                        <p>{activeTool ? (isPlacar ? 'Agrega accesorios haciendo clic en la paleta o arrastrando.' : `Haz clic en un hueco para añadir un ${typeLabels[activeTool] || activeTool}`) : (isPlacar ? 'Selecciona un accesorio de la lista para editar su altura o posición.' : 'Selecciona un componente para editarlo.')}</p>
                                     </div>
                                 )}
                             </div>
-                            )}
                         </div>
                     </div>
                 </div>

@@ -129,18 +129,22 @@ export function Header({
                 className="hidden sm:block"
               />
 
-              <Button
-                id="header-materials"
-                variant="ghost"
-                size="sm"
-                onClick={onOpenMaterials}
-                className="hidden sm:flex items-center gap-2 h-9 px-3 text-xs font-semibold rounded-lg"
-                style={{ color: "#a0a0c0" }}
-                title="Editar Materiales"
-              >
-                <Settings className="w-4 h-4" />
-                <span>Materiales</span>
-              </Button>
+              {onOpenMaterials && (
+                <>
+                  <Button
+                    id="header-materials"
+                    variant="ghost"
+                    size="sm"
+                    onClick={onOpenMaterials}
+                    className="hidden sm:flex items-center gap-2 h-9 px-3 text-xs font-semibold rounded-lg"
+                    style={{ color: "#a0a0c0" }}
+                    title="Editar Materiales"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Materiales</span>
+                  </Button>
+                </>
+              )}
 
               <div
                 style={{

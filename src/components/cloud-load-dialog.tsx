@@ -19,12 +19,38 @@ interface Design {
   appearance: any;
   prices: any;
   updatedAt: string;
+  isLocal?: boolean;
 }
 
 interface CloudLoadDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onLoadDesign: (design: Design) => void;
+}
+
+const LOCAL_DESIGNS_KEY = 'nidel_kitchen_designs';
+
+function getLocalDesigns(): Design[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(LOCAL_DESIGNS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return parsed.map((d: any) => ({ ...d, isLocal: true }));
+  } catch {
+    return [];
+  }
+}
+
+function removeLocalDesign(id: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(LOCAL_DESIGNS_KEY);
+    const designs = raw ? JSON.parse(raw) : [];
+    const filtered = designs.filter((d: any) => d.id !== id);
+    localStorage.setItem(LOCAL_DESIGNS_KEY, JSON.stringify(filtered));
+  } catch (e) {
+    console.error('Error removing local design:', e);
+  }
 }
 
 export function CloudLoadDialog({
@@ -39,33 +65,45 @@ export function CloudLoadDialog({
 
   const fetchDesigns = async () => {
     setIsLoading(true);
+    const localDesigns = getLocalDesigns();
+    const map = new Map<string, Design>();
+
+    // Add local designs first
+    localDesigns.forEach((d) => {
+      map.set(d.name.toLowerCase(), d);
+    });
+
     try {
       const q = query(
         collection(db, 'kitchen-designs'),
         orderBy('updatedAt', 'desc')
       );
       const querySnapshot = await getDocs(q);
-      const fetchedDesigns: Design[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        fetchedDesigns.push({
-          id: doc.id,
-          name: data.name || 'Sin nombre',
-          placedCabinets: data.placedCabinets || [],
-          appearance: data.appearance || {},
-          prices: data.prices || {},
-          updatedAt: data.updatedAt || new Date().toISOString(),
-        });
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const designName = (data.name || 'Sin nombre').trim();
+        const existing = map.get(designName.toLowerCase());
+        const cloudUpdatedAt = data.updatedAt || new Date().toISOString();
+
+        if (!existing || new Date(cloudUpdatedAt) >= new Date(existing.updatedAt)) {
+          map.set(designName.toLowerCase(), {
+            id: docSnap.id,
+            name: designName,
+            placedCabinets: data.placedCabinets || [],
+            appearance: data.appearance || {},
+            prices: data.prices || {},
+            updatedAt: cloudUpdatedAt,
+            isLocal: false,
+          });
+        }
       });
-      setDesigns(fetchedDesigns);
     } catch (error) {
-      console.error('Error fetching designs from Firestore:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error al cargar listado',
-        description: 'No se pudieron recuperar los diseños de la nube.',
-      });
+      console.warn('Firestore designs fetch unavailable, displaying locally saved designs:', error);
     } finally {
+      const sorted = Array.from(map.values()).sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      setDesigns(sorted);
       setIsLoading(false);
     }
   };
@@ -76,20 +114,31 @@ export function CloudLoadDialog({
     }
   }, [isOpen]);
 
-  const handleDelete = async (id: string, name: string, e: React.MouseEvent) => {
+  const handleDelete = async (design: Design, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm(`¿Estás seguro de que quieres eliminar el diseño "${name}"?`)) {
+    if (!confirm(`¿Estás seguro de que quieres eliminar el diseño "${design.name}"?`)) {
       return;
     }
 
-    setIsDeleting(id);
+    setIsDeleting(design.id);
     try {
-      await deleteDoc(doc(db, 'kitchen-designs', id));
+      // Remove from local storage
+      removeLocalDesign(design.id);
+
+      // Remove from Firestore if not only local
+      if (!design.id.startsWith('local-')) {
+        try {
+          await deleteDoc(doc(db, 'kitchen-designs', design.id));
+        } catch (e) {
+          console.warn('Could not delete from Firestore:', e);
+        }
+      }
+
       toast({
         title: 'Diseño Eliminado',
-        description: `El diseño "${name}" ha sido eliminado de la nube.`,
+        description: `El diseño "${design.name}" ha sido eliminado.`,
       });
-      setDesigns((prev) => prev.filter((d) => d.id !== id));
+      setDesigns((prev) => prev.filter((d) => d.id !== design.id));
     } catch (error) {
       console.error('Error deleting design:', error);
       toast({
@@ -121,7 +170,7 @@ export function CloudLoadDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Cargar Diseño desde la Nube</DialogTitle>
+          <DialogTitle>Cargar Diseño Guardado</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto my-4 min-h-[200px] max-h-[50vh] pr-2">
@@ -134,7 +183,7 @@ export function CloudLoadDialog({
             <div className="flex flex-col items-center justify-center h-full py-12 text-center">
               <FolderOpen className="h-10 w-10 text-muted-foreground/60 mb-2" />
               <p className="text-muted-foreground text-sm font-medium">No hay diseños guardados</p>
-              <p className="text-muted-foreground text-xs">Usa el botón "Guardar en la Nube" para empezar.</p>
+              <p className="text-muted-foreground text-xs">Usa el botón "Guardar" para empezar.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -158,7 +207,7 @@ export function CloudLoadDialog({
                       size="sm"
                       variant="ghost"
                       disabled={isDeleting === design.id}
-                      onClick={(e) => handleDelete(design.id, design.name, e)}
+                      onClick={(e) => handleDelete(design, e)}
                       className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
                     >
                       {isDeleting === design.id ? (

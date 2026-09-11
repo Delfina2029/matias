@@ -22,6 +22,31 @@ interface CloudSaveDialogProps {
   prices: any;
 }
 
+const LOCAL_DESIGNS_KEY = 'nidel_kitchen_designs';
+
+export function saveDesignLocally(designData: any): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    const raw = localStorage.getItem(LOCAL_DESIGNS_KEY);
+    const designs = raw ? JSON.parse(raw) : [];
+    const existingIndex = designs.findIndex(
+      (d: any) => (d.name || '').trim().toLowerCase() === (designData.name || '').trim().toLowerCase()
+    );
+    const id = existingIndex >= 0 ? designs[existingIndex].id : 'local-' + Date.now();
+    const newEntry = { ...designData, id };
+    if (existingIndex >= 0) {
+      designs[existingIndex] = newEntry;
+    } else {
+      designs.unshift(newEntry);
+    }
+    localStorage.setItem(LOCAL_DESIGNS_KEY, JSON.stringify(designs));
+    return id;
+  } catch (e) {
+    console.error('Error saving local design:', e);
+    return '';
+  }
+}
+
 export function CloudSaveDialog({
   isOpen,
   onOpenChange,
@@ -54,36 +79,44 @@ export function CloudSaveDialog({
         updatedAt: new Date().toISOString(),
       };
 
-      // Search for design with same name
-      const q = query(
-        collection(db, 'kitchen-designs'),
-        where('name', '==', name.trim()),
-        limit(1)
-      );
-      const querySnapshot = await getDocs(q);
+      // Always save to local storage for guaranteed persistence
+      saveDesignLocally(designData);
 
-      if (!querySnapshot.empty) {
-        const existingDocId = querySnapshot.docs[0].id;
-        await setDoc(doc(db, 'kitchen-designs', existingDocId), designData);
-        toast({
-          title: 'Diseño Actualizado',
-          description: `El diseño "${name}" ha sido guardado exitosamente en la nube.`,
-        });
-      } else {
-        await addDoc(collection(db, 'kitchen-designs'), designData);
-        toast({
-          title: 'Diseño Guardado',
-          description: `El diseño "${name}" ha sido guardado exitosamente en la nube.`,
-        });
+      // Attempt to save to Firestore as well if available
+      let savedInCloud = false;
+      try {
+        const q = query(
+          collection(db, 'kitchen-designs'),
+          where('name', '==', name.trim()),
+          limit(1)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const existingDocId = querySnapshot.docs[0].id;
+          await setDoc(doc(db, 'kitchen-designs', existingDocId), designData);
+        } else {
+          await addDoc(collection(db, 'kitchen-designs'), designData);
+        }
+        savedInCloud = true;
+      } catch (cloudError) {
+        console.warn('Firestore unavailable, design safely saved locally:', cloudError);
       }
+
+      toast({
+        title: 'Diseño Guardado',
+        description: savedInCloud
+          ? `El diseño "${name}" ha sido guardado exitosamente en la nube y en tu equipo.`
+          : `El diseño "${name}" ha sido guardado exitosamente en tu equipo.`,
+      });
 
       onOpenChange(false);
     } catch (error) {
-      console.error('Error saving design to Firestore:', error);
+      console.error('Error saving design:', error);
       toast({
         variant: 'destructive',
         title: 'Error al guardar',
-        description: 'No se pudo guardar el diseño en la nube. Revisa tu conexión a internet.',
+        description: 'No se pudo guardar el diseño. Intenta nuevamente.',
       });
     } finally {
       setIsLoading(false);
@@ -95,7 +128,7 @@ export function CloudSaveDialog({
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSave}>
           <DialogHeader>
-            <DialogTitle>Guardar Diseño en la Nube</DialogTitle>
+            <DialogTitle>Guardar Diseño de Cocina</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">

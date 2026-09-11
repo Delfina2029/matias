@@ -185,7 +185,76 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet, appearance?: Ap
     return cornerPieces;
   }
   
+  if (cabinet.cabinetId === 'base-spice') {
+    const pieces: Piece[] = [];
+    const { width, height, depth, useLegs } = cabinet;
+
+    const effectiveHeight = useLegs ? height - 100 : height;
+    const interiorWidth = width - (2 * MELAMINE_THICKNESS);
+
+    // ─── CARCASA ─────────────────────────────────────────────────────
+    pieces.push({ name: 'Lateral Carcasa', width: carcassDepth, height: effectiveHeight, quantity: 2, material: carcassMaterial, edgeBanding: { h1: true } });
+    pieces.push({ name: 'Piso', width: interiorWidth, height: interiorDepth, quantity: 1, material: carcassMaterial, edgeBanding: { w1: true } });
+    // Refuerzos superiores: descontados el grosor de los laterales
+    pieces.push({ name: 'Refuerzo Superior (Frente)', width: interiorWidth, height: 100, quantity: 1, material: carcassMaterial });
+    pieces.push({ name: 'Refuerzo Superior (Fondo)', width: interiorWidth, height: 100, quantity: 1, material: carcassMaterial });
+    pieces.push({ name: 'Panel Trasero', width: width - 5, height: effectiveHeight - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
+    if (useLegs) {
+      pieces.push({ name: 'Patas Cuadradas 10cm', width: 0, height: 0, quantity: 4, material: 'Herrajes' });
+    }
+    pieces.push({ name: 'Tapas Tornillo (Melamina)', width: 0, height: 0, quantity: 12, material: 'Herrajes' });
+
+    // ─── FRENTE DEL CAJÓN ESPECIERO (corre con el carrito) ───────────
+    const doorComp = cabinet.components[0] || { type: 'opening', height: effectiveHeight };
+    const door = calculateComponentDimensions(
+      'base',
+      cabinet.cabinetId,
+      doorComp,
+      0,
+      width,
+      1,
+      cabinet.useJProfileDiscounts,
+      useLegs,
+      appearance?.frontStyle || 'overlay',
+      cabinet.height
+    );
+    pieces.push({ name: 'Frente Especiero', width: door.width, height: door.height, quantity: 1, material: frontMaterial, edgeBanding: { w1: true, w2: true, h1: true, h2: true } });
+
+    if (cabinet.useJProfileDiscounts) {
+      pieces.push({ name: 'Perfil J (Aluminio)', width: door.width, height: 0, quantity: 1, material: 'Herrajes' });
+    } else {
+      pieces.push({ name: 'Tirador / Manija', width: 0, height: 0, quantity: 1, material: 'Herrajes' });
+    }
+
+    // ─── CARRITO EXTRAÍBLE ────────────────────────────────────────────
+    // Determinar largo de corredera según profundidad
+    let slideLength = 500;
+    if (depth < 350) slideLength = 300;
+    else if (depth < 400) slideLength = 350;
+    else if (depth < 450) slideLength = 400;
+    else if (depth < 500) slideLength = 450;
+
+    // ─── 2 CAJONES INTERNOS ───────────────────────────────────────────
+    const drawerBoxWidth = interiorWidth - 26; // Descuento estándar para correderas telescópicas (13mm de cada lado)
+    const drawerBoxInnerWidth = drawerBoxWidth - (2 * MELAMINE_THICKNESS); // Ancho de frente/trasero del cajón
+
+    // 4 laterales de cajón (2 para cada cajón interno) de 10cm de alto
+    pieces.push({ name: 'Lateral Cajón Especiero', width: slideLength, height: 100, quantity: 4, material: carcassMaterial, canRotate: true });
+    
+    // 4 frentes/traseros de cajón (2 frentes, 2 traseros)
+    pieces.push({ name: 'Frente/Trasero Cajón Especiero', width: drawerBoxInnerWidth, height: 100, quantity: 4, material: carcassMaterial, canRotate: true });
+    
+    // 2 fondos de MDF 3mm (uno para cada cajón)
+    pieces.push({ name: 'Fondo Cajón Especiero', width: drawerBoxInnerWidth, height: slideLength, quantity: 2, material: BACK_PANEL_MATERIAL, canRotate: true });
+
+    // Correderas telescópicas (2 juegos, uno por cada cajón)
+    pieces.push({ name: `Correderas Telescópicas (${slideLength}mm)`, width: 0, height: 0, quantity: 2, material: 'Herrajes', notes: '2 pares, uno por cada cajón interno' });
+
+    return pieces;
+  }
+
   if (cabinet.cabinetId === 'wall-microwave') {
+
     const pieces: Piece[] = [];
     const { width, height, depth, components } = cabinet;
     const interiorWidth = width - (2 * MELAMINE_THICKNESS);
@@ -491,17 +560,22 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet, appearance?: Ap
     // Always add two top reinforcements (front and back)
     pieces.push({ name: 'Refuerzo Superior', width: interiorWidth, height: 100, quantity: 2, material: carcassMaterial, notes: 'Para frente y fondo' });
 
-    // Optional Inner Shelf for base-1p and base-2p
-    if (cabinet.hasInnerShelf && (cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p')) {
-      pieces.push({
-        name: 'Estante Interno',
-        width: interiorWidth,
-        height: interiorDepth - 7, // 7mm deduction for back panel
-        quantity: 1,
-        material: carcassMaterial,
-        edgeBanding: { w1: true }
-      });
-      pieces.push({ name: 'Soportes Estante', width: 0, height: 0, quantity: 4, material: 'Herrajes' });
+    // Optional Inner Shelf for base-1p, base-2p, and base-nicho
+    const hasShelf = (cabinet.hasInnerShelf && (cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p')) || cabinet.cabinetId === 'base-nicho';
+    if (hasShelf) {
+      const shelfHeights = cabinet.innerShelfHeights || [Math.round(effectiveHeight / 2)];
+      const shelfCount = shelfHeights.length;
+      if (shelfCount > 0) {
+        pieces.push({
+          name: 'Estante Interno',
+          width: interiorWidth,
+          height: interiorDepth - 40, // 40mm (4cm) less depth
+          quantity: shelfCount,
+          material: carcassMaterial,
+          edgeBanding: { w1: true }
+        });
+        pieces.push({ name: 'Soportes Estante', width: 0, height: 0, quantity: shelfCount * 4, material: 'Herrajes' });
+      }
     }
 
     // Add reinforcements between vertically stacked components (drawers or doors)
@@ -525,6 +599,9 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet, appearance?: Ap
   } else { // For wall and tall cabinets
     pieces.push({ name: 'Piso', width: interiorWidth, height: interiorDepth, quantity: 1, material: carcassMaterial, edgeBanding: { w1: true } });
     pieces.push({ name: 'Tapa', width: interiorWidth, height: interiorDepth, quantity: 1, material: carcassMaterial, edgeBanding: { w1: true } });
+    if (cabinet.cabinetId === 'wall-cube') {
+      pieces.push({ name: 'Refuerzo para colgar', width: interiorWidth, height: 100, quantity: 1, material: carcassMaterial });
+    }
   }
 
   if (useLegs && type === 'base') {
@@ -535,7 +612,7 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet, appearance?: Ap
   pieces.push({ name: 'Panel Trasero', width: width - 5, height: effectiveHeight - 5, quantity: 1, material: BACK_PANEL_MATERIAL });
   
   // 4. Shelves
-  if (components.every(c => c.type === 'door')) {
+  if (components.length > 0 && components.every(c => c.type === 'door')) {
     const shelfQty = type !== 'tall' ? 1 : 4;
     pieces.push({ name: 'Estante', width: interiorWidth - 2, height: interiorDepth - 25, quantity: shelfQty, material: carcassMaterial, edgeBanding: { w1: true } });
     pieces.push({ name: 'Soportes Estante', width: 0, height: 0, quantity: shelfQty * 4, material: 'Herrajes' });
@@ -626,6 +703,33 @@ export function generatePiecesForCabinet(cabinet: PlacedCabinet, appearance?: Ap
       pieces.push({ name: 'Lateral de Cajón', width: box.depth, height: box.height, quantity: 2, material: carcassMaterial, edgeBanding: { h1: true }, canRotate: true });
       pieces.push({ name: 'Frente/Trasero de Cajón', width: box.width - (2*MELAMINE_THICKNESS), height: box.height, quantity: 2, material: carcassMaterial, edgeBanding: { h1: true }, canRotate: true });
       pieces.push({ name: 'Fondo de Cajón', width: box.width - (2*MELAMINE_THICKNESS), height: box.depth, quantity: 1, material: BACK_PANEL_MATERIAL, canRotate: true });
+    } else if (component.type === 'shelf') {
+      pieces.push({
+        name: 'Estante de Placar',
+        width: interiorWidth,
+        height: cabinet.depth - 40, // 40mm less depth
+        quantity: 1,
+        material: carcassMaterial,
+        edgeBanding: { w1: true }
+      });
+      pieces.push({ name: 'Soportes Estante', width: 0, height: 0, quantity: 4, material: 'Herrajes' });
+    } else if (component.type === 'vertical-divider') {
+      pieces.push({
+        name: 'Divisor Vertical',
+        width: cabinet.depth - 40,
+        height: component.height,
+        quantity: 1,
+        material: carcassMaterial,
+        edgeBanding: { h1: true }
+      });
+    } else if (component.type === 'hanging-rail') {
+      pieces.push({
+        name: 'Barral para Placar',
+        width: interiorWidth,
+        height: 0,
+        quantity: 1,
+        material: 'Herrajes'
+      });
     }
   });
 

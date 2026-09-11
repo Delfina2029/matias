@@ -475,7 +475,7 @@ const Cabinet = memo(function Cabinet({
                               onSelectPiece({ name: 'Refuerzo Superior Delantero (Perfil J Vertical)', dimensions: `${Math.round(interiorWidth*1000)} x 100 x 18 mm` });
                             }}
                           />
-                        ) : (cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p' || cabinet.cabinetId === 'base-2c' || cabinet.cabinetId === 'base-3c') ? (
+                         ) : (cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p' || cabinet.cabinetId === 'base-2c' || cabinet.cabinetId === 'base-3c' || cabinet.cabinetId === 'base-spice') ? (
                           <>
                             {/* bajo001 / bajo002 / bajo003 - Vertical Front Reinforcement (Pushed Back) */}
                             <CADBox
@@ -521,7 +521,7 @@ const Cabinet = memo(function Cabinet({
                           />
                         )}
                         {/* Back Reinforcement */}
-                        {(cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p' || cabinet.cabinetId === 'base-2c' || cabinet.cabinetId === 'base-3c') ? (
+                         {(cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p' || cabinet.cabinetId === 'base-2c' || cabinet.cabinetId === 'base-3c' || cabinet.cabinetId === 'base-spice') ? (
                           <CADBox
                             args={[interiorWidth, 0.100, melamineThickness]}
                             position={[0, cabinetHeight / 2 - 0.050, -cabinetDepth / 2 + melamineThickness / 2 + 0.003]}
@@ -571,6 +571,23 @@ const Cabinet = memo(function Cabinet({
                         onSelectPiece({ name: 'Techo', dimensions: `${Math.round(interiorWidth*1000)} x ${Math.round(interiorDepth*1000)} x 18 mm` });
                       }}
                     />
+                    {/* Cubo Abierto hanging reinforcement */}
+                    {cabinet.cabinetId === 'wall-cube' && (
+                      <CADBox
+                        args={[interiorWidth, 0.100, melamineThickness]}
+                        position={[
+                          0, 
+                          cabinetHeight / 2 - melamineThickness - 0.050, 
+                          -cabinetDepth / 2 + melamineThickness / 2 + 0.003
+                        ]}
+                        map={carcassTexture}
+                        color={appearance.carcassColor}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectPiece({ name: 'Refuerzo para colgar', dimensions: `${Math.round(interiorWidth*1000)} x 100 x 18 mm` });
+                        }}
+                      />
+                    )}
                  </>
             )}
 
@@ -734,19 +751,29 @@ const Cabinet = memo(function Cabinet({
               />
             )}
 
-            {/* Optional Inner Shelf for base-1p and base-2p */}
-            {cabinet.hasInnerShelf && (cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p') && (
-              <CADBox
-                args={[interiorWidth, melamineThickness, interiorDepth - 0.007]}
-                position={[0, -cabinetHeight / 2 + legHeight + (cabinetHeight - legHeight) / 2, isInset ? -0.01 : 0]}
-                map={carcassTexture}
-                color={appearance.carcassColor}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectPiece({ name: 'Estante Interno', dimensions: `${Math.round(interiorWidth * 1000)} x ${Math.round((interiorDepth - 0.007) * 1000)} x 18 mm` });
-                }}
-              />
-            )}
+            {/* Optional Inner Shelf for base-1p, base-2p and base-nicho */}
+            {((cabinet.hasInnerShelf && (cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p')) || cabinet.cabinetId === 'base-nicho') && (() => {
+              const defaultMiddle = Math.round((cabinetHeight - legHeight) * 1000 / 2);
+              const shelfHeights = cabinet.innerShelfHeights || [defaultMiddle];
+              
+              return shelfHeights.map((sh, idx) => {
+                const shelfY = -cabinetHeight / 2 + legHeight + melamineThickness + (sh / 1000);
+                const shelfZ = (isInset ? -0.01 : 0) - 0.0165; // Shift back by half of the 33mm difference to keep it flush against the back panel
+                return (
+                  <CADBox
+                    key={`inner-shelf-${idx}`}
+                    args={[interiorWidth, melamineThickness, interiorDepth - 0.040]}
+                    position={[0, shelfY, shelfZ]}
+                    map={carcassTexture}
+                    color={appearance.carcassColor}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectPiece({ name: 'Estante Interno', dimensions: `${Math.round(interiorWidth * 1000)} x ${Math.round((interiorDepth - 0.040) * 1000)} x 18 mm` });
+                    }}
+                  />
+                );
+              });
+            })()}
 
             {/* Legs rendering */}
             {cabinet.useLegs && (
@@ -948,7 +975,7 @@ const Cabinet = memo(function Cabinet({
           finalFrontHeight = compHeight - deductionPerFront;
           
           finalFrontYOffset = (3 + index * 30) / 1000 - (index + 0.5) * deductionPerFront;
-        } else if (cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p') {
+        } else if (cabinet.cabinetId === 'base-1p' || cabinet.cabinetId === 'base-2p' || cabinet.cabinetId === 'base-spice') {
           // ==============================================================
           // LOCKED BY USER REQUEST: bajo001 & bajo002
           // ==============================================================
@@ -1321,12 +1348,133 @@ const Cabinet = memo(function Cabinet({
         }
 
         // Door/Opening/Others handling with support for numDoors
-        if (comp.type === 'opening') {
+        if (comp.type === 'opening' && cabinet.cabinetId !== 'base-spice') {
           return null;
         }
 
+        if (cabinet.cabinetId === 'base-spice') {
+          const spiceBoxDepth = cabinetDepth - 0.04;
+          const spiceFrontWidth = isInset ? interiorWidth - 0.004 : availableWidth - 0.004;
+          const spiceFrontZ = cabinetDepth / 2 - 0.009;
+          const spiceBoxWidth = interiorWidth - 0.036;
+          const shelfThickness = 0.018;
+          const sideH = cabinetHeight - legHeight - melamineThickness * 2 - 0.020;
+          const sideCenterY = -cabinetHeight / 2 + legHeight + melamineThickness + sideH / 2 + 0.010;
+          const sideCenterZ = spiceFrontZ - spiceBoxDepth / 2 - 0.009;
+
+          // The whole unit slides like a drawer on double-click
+          const isOpen = openedComponents[comp.id] || false;
+          const unitExplode = isOpen ? 1 : explode;
+          const slideDistance = spiceBoxDepth * 0.85 * unitExplode;
+
+          // 3 shelves distributed vertically
+          const innerBottom = -cabinetHeight / 2 + legHeight + melamineThickness + 0.010;
+          const innerTop = cabinetHeight / 2 - melamineThickness - 0.010;
+          const innerH = innerTop - innerBottom;
+          const shelfY1 = innerBottom + innerH * 0.22;
+          const shelfY2 = innerBottom + innerH * 0.52;
+          const shelfY3 = innerBottom + innerH * 0.80;
+
+          // Perforated panel: holes grid
+          const holeRadius = 0.018;
+          const holeRows = 5;
+          const holeCols = 3;
+          const holeSpacingY = sideH / (holeRows + 1);
+          const holeSpacingZ = spiceBoxDepth / (holeCols + 1);
+          const perforatedSideX = (spiceBoxWidth / 2) + 0.009;
+
+          return (
+            <group
+              key={comp.id}
+              position={[0, 0, slideDistance]}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                toggleComponentOpen(comp.id);
+              }}
+            >
+              {/* ── FRONT PANEL (frente del cajón especiero) ── */}
+              <CADBox
+                args={[spiceFrontWidth, finalFrontHeight, 0.018]}
+                position={[0, yPos + finalFrontYOffset, spiceFrontZ]}
+                map={frontTexture}
+                color={appearance.frontColor}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectPiece({ name: 'Frente Especiero', dimensions: `${Math.round(spiceFrontWidth * 1000)} x ${Math.round(finalFrontHeight * 1000)} x 18 mm` });
+                }}
+              />
+              {cabinet.useJProfileDiscounts && (
+                <CADBox
+                  args={[spiceFrontWidth, 0.030, 0.020]}
+                  position={[0, yPos + finalFrontYOffset + finalFrontHeight / 2 + 0.015, spiceFrontZ - 0.001]}
+                  color="#d4d4d8"
+                  onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Perfil J (Aluminio)', dimensions: `${Math.round(spiceFrontWidth * 1000)} mm (Largo)` }); }}
+                />
+              )}
+              {!cabinet.useJProfileDiscounts && (
+                <CADHandle
+                  length={0.15}
+                  vertical={false}
+                  position={[0, yPos + finalFrontYOffset, spiceFrontZ + 0.009]}
+                />
+              )}
+
+
+              {/* ── INTERNAL DRAWER BOX 1 (Bottom) ── */}
+              <group position={[0, shelfY1, sideCenterZ]}>
+                {/* Back */}
+                <CADBox args={[spiceBoxWidth - 0.036, 0.100, 0.018]} position={[0, 0, -spiceBoxDepth / 2 + 0.009]} map={carcassTexture} color={appearance.carcassColor} onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Trasero Cajón Especiero', dimensions: '100 mm' }); }} />
+                {/* Front (inner) */}
+                <CADBox args={[spiceBoxWidth - 0.036, 0.100, 0.018]} position={[0, 0, spiceBoxDepth / 2 - 0.009]} map={carcassTexture} color={appearance.carcassColor} onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Frente Cajón Especiero', dimensions: '100 mm' }); }} />
+                {/* Left Side */}
+                <CADBox args={[0.018, 0.100, spiceBoxDepth]} position={[-(spiceBoxWidth / 2) + 0.009, 0, 0]} map={carcassTexture} color={appearance.carcassColor} onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Lateral Cajón Especiero', dimensions: '100 mm' }); }} />
+                {/* Right Side */}
+                <CADBox args={[0.018, 0.100, spiceBoxDepth]} position={[(spiceBoxWidth / 2) - 0.009, 0, 0]} map={carcassTexture} color={appearance.carcassColor} onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Lateral Cajón Especiero', dimensions: '100 mm' }); }} />
+                {/* Bottom (MDF) */}
+                <CADBox args={[spiceBoxWidth - 0.036, 0.003, spiceBoxDepth]} position={[0, -0.050 + 0.0015, 0]} color="#d0d0d0" onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Fondo Cajón Especiero', dimensions: '3 mm' }); }} />
+                {/* Left slide */}
+                <mesh position={[-(spiceBoxWidth / 2) - 0.004, 0, 0]}>
+                  <boxGeometry args={[0.007, 0.018, spiceBoxDepth]} />
+                  <meshStandardMaterial color="#777777" metalness={0.9} roughness={0.1} />
+                </mesh>
+                {/* Right slide */}
+                <mesh position={[(spiceBoxWidth / 2) + 0.004, 0, 0]}>
+                  <boxGeometry args={[0.007, 0.018, spiceBoxDepth]} />
+                  <meshStandardMaterial color="#777777" metalness={0.9} roughness={0.1} />
+                </mesh>
+              </group>
+
+              {/* ── INTERNAL DRAWER BOX 2 (Top) ── */}
+              <group position={[0, shelfY2 + (shelfY3 - shelfY2) / 2, sideCenterZ]}>
+                {/* Back */}
+                <CADBox args={[spiceBoxWidth - 0.036, 0.100, 0.018]} position={[0, 0, -spiceBoxDepth / 2 + 0.009]} map={carcassTexture} color={appearance.carcassColor} onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Trasero Cajón Especiero', dimensions: '100 mm' }); }} />
+                {/* Front (inner) */}
+                <CADBox args={[spiceBoxWidth - 0.036, 0.100, 0.018]} position={[0, 0, spiceBoxDepth / 2 - 0.009]} map={carcassTexture} color={appearance.carcassColor} onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Frente Cajón Especiero', dimensions: '100 mm' }); }} />
+                {/* Left Side */}
+                <CADBox args={[0.018, 0.100, spiceBoxDepth]} position={[-(spiceBoxWidth / 2) + 0.009, 0, 0]} map={carcassTexture} color={appearance.carcassColor} onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Lateral Cajón Especiero', dimensions: '100 mm' }); }} />
+                {/* Right Side */}
+                <CADBox args={[0.018, 0.100, spiceBoxDepth]} position={[(spiceBoxWidth / 2) - 0.009, 0, 0]} map={carcassTexture} color={appearance.carcassColor} onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Lateral Cajón Especiero', dimensions: '100 mm' }); }} />
+                {/* Bottom (MDF) */}
+                <CADBox args={[spiceBoxWidth - 0.036, 0.003, spiceBoxDepth]} position={[0, -0.050 + 0.0015, 0]} color="#d0d0d0" onClick={(e) => { e.stopPropagation(); onSelectPiece({ name: 'Fondo Cajón Especiero', dimensions: '3 mm' }); }} />
+                {/* Left slide */}
+                <mesh position={[-(spiceBoxWidth / 2) - 0.004, 0, 0]}>
+                  <boxGeometry args={[0.007, 0.018, spiceBoxDepth]} />
+                  <meshStandardMaterial color="#777777" metalness={0.9} roughness={0.1} />
+                </mesh>
+                {/* Right slide */}
+                <mesh position={[(spiceBoxWidth / 2) + 0.004, 0, 0]}>
+                  <boxGeometry args={[0.007, 0.018, spiceBoxDepth]} />
+                  <meshStandardMaterial color="#777777" metalness={0.9} roughness={0.1} />
+                </mesh>
+              </group>
+            </group>
+          );
+        }
+
+
         return (
           <group key={comp.id}>
+
             {/* Blind Front Panel for Corner */}
             {isBlindCorner && index === 0 && (
                 <CADBox
@@ -1768,15 +1916,6 @@ export function KitchenLayout(props: KitchenLayoutProps & { viewMode: 'plan' | '
                     title="Vista en Planta"
                 >
                     <Square className="w-4 h-4" />
-                </Button>
-                <Button
-                    variant={viewMode === '2d' ? 'secondary' : 'ghost'}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setViewMode('2d')}
-                    title="Vista Frontal 2D"
-                >
-                    <LayoutGrid className="w-4 h-4" />
                 </Button>
                 <Button
                     variant={viewMode === '3d' ? 'secondary' : 'ghost'}

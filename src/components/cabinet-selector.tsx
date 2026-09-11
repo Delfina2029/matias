@@ -37,7 +37,15 @@ export function CabinetSelector({ onSelectCabinet, onAddCustomCabinet }: Cabinet
                                         className="flex items-center justify-between py-1.5 px-2 border rounded-md bg-background hover:bg-secondary transition-colors"
                                     >
                                         <div className="flex items-center">
-                                            { cabinet.icon && <cabinet.icon className="w-6 h-6 mr-3 text-primary shrink-0" /> }
+                                            {cabinet.imageUrl ? (
+                                                <img 
+                                                    src={cabinet.imageUrl} 
+                                                    alt={cabinet.name} 
+                                                    className="w-10 h-10 mr-3 rounded border object-cover shrink-0" 
+                                                />
+                                            ) : (
+                                                cabinet.icon && <cabinet.icon className="w-6 h-6 mr-3 text-primary shrink-0" />
+                                            )}
                                             <span className="text-sm">{cabinet.name}</span>
                                         </div>
                                         <Button

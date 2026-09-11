@@ -96,12 +96,22 @@ export default function Home() {
   }
 
   if (isMatias && selectedApp === 'fabrica') {
-    return <FactoryDashboard onBack={() => setSelectedApp(null)} />;
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <KitchenBuilder 
+          onBackToMenu={() => setSelectedApp(null)} 
+          isFactoryMode={true}
+        />
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <KitchenBuilder onBackToMenu={isMatias ? () => setSelectedApp(null) : undefined} />
+      <KitchenBuilder 
+        onBackToMenu={isMatias ? () => setSelectedApp(null) : undefined} 
+        isFactoryMode={isMatias ? selectedApp === 'fabrica' : false}
+      />
     </div>
   );
 }
